@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
-    kotlin("plugin.serialization") version "2.0.21"
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -37,7 +37,11 @@ kotlin {
             implementation(libs.androidx.activity.compose)
 
             implementation(libs.timber)
+
+            // ktor
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.client.android)
+            implementation(libs.slf4j.simple)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -49,8 +53,19 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
+            // navigation
             implementation(libs.navigation.compose)
+
+            // ktor
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.cio)
+
+            // FileKit
+            implementation(libs.filekit.core)
+            implementation(libs.filekit.dialogs.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -58,6 +73,11 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.logback.classic)
+        }
+        webMain.dependencies {
+            implementation(libs.ktor.client.js)
         }
     }
 }
