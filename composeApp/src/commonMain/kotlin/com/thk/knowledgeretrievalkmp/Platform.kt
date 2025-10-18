@@ -1,0 +1,7 @@
+package com.thk.knowledgeretrievalkmp
+
+interface Platform {
+    val name: String
+}
+
+expect fun getPlatform(): Platform
