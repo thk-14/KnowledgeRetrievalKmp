@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">KnowledgeRetrievalApp</string>
+    <string name="login_title">SIGN IN</string>
+    <string name="facebook_btn">Facebook</string>
+    <string name="google_btn">Google</string>
+    <string name="login_or">Or</string>
+    <string name="email">Email</string>
+    <string name="email_placeholder">abc@xyz.com</string>
+    <string name="password">Password</string>
+    <string name="login_btn">Log In</string>
+    <string name="signup_prompt">Don\'t have an account? </string>
+    <string name="signup_btn">Sign Up</string>
+    <string name="signup_title">SIGN UP</string>
+    <string name="knowledge_base_title">KNOWLEDGE BASE</string>
+    <string name="knowledge_base_create_dialog_title">Create Knowledge Base</string>
+    <string name="knowledge_base_create_dialog_name">Name</string>
+    <string name="knowledge_base_create_dialog_name_placeholder">Knowledge base\'s name</string>
+    <string name="knowledge_base_create_dialog_description">Description</string>
+    <string name="knowledge_base_create_dialog_description_placeholder">Knowledge base\'s description</string>
+    <string name="logout_btn">Log Out</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="create_btn">Create</string>
+    <string name="delete_btn">Delete</string>
+    <string name="rename_btn">Rename</string>
+    <string name="chat_delete_conversation_title">Delete Conversation %s</string>
+    <string name="chat_delete_conversation_content">Are you sure you want to delete this conversation?</string>
+    <string name="chat_delete_document_title">Delete Document %s</string>
+    <string name="chat_delete_document_content">Are you sure you want to delete this document?</string>
+    <string name="chat_rename_conversation_title">Rename Conversation</string>
+    <string name="chat_rename_conversation_label">Name</string>
+    <string name="chat_title">CHAT</string>
+    <string name="chat_placeholder">Ask %d sources...</string>
+
+    <!-- Warning -->
+    <string name="email_invalid_warning">Email is not valid!</string>
+    <string name="password_empty_warning">Password can not be empty!</string>
+    <string name="login_failed_warning">Log in failed</string>
+    <string name="signup_failed_warning">Sign up failed</string>
+    <string name="logout_failed_warning">Log out failed</string>
+    <string name="kb_name_empty_warning">Name can not be empty</string>
+    <string name="kb_description_empty_warning">Description cannot be empty</string>
+    <string name="kb_rename_with_same_name_warning">Name can not be the same</string>
+
+    <!-- Inform -->
+    <string name="kb_create_success">Knowledge base created !</string>
+    <string name="kb_create_failed">Create knowledge base failed !</string>
+    <string name="kb_rename_success">Rename knowledge base success !</string>
+    <string name="kb_rename_failed">Rename knowledge base failed !</string>
+    <string name="kb_delete_success">Knowledge base deleted !</string>
+    <string name="kb_delete_failed">Error deleting knowledge base !</string>
+    <string name="document_upload_finish">Document uploaded !</string>
+    <string name="document_upload_failed">Error processing document.</string>
+    <string name="document_delete_success">Document deleted !</string>
+    <string name="document_delete_failed">Error deleting document.</string>
+
+    <!-- Loading Screen -->
+    <string name="LS_login">Logging in ...</string>
+    <string name="LS_signup">Signing up ...</string>
+    <string name="LS_logout">Logging out ...</string>
+    <string name="LS_create_kb">Creating Knowledge Base ...</string>
+    <string name="LS_rename_kb">Rename Knowledge Base ...</string>
+    <string name="LS_delete_kb">Deleting Knowledge Base ...</string>
+    <string name="LS_upload_document">Uploading document ...</string>
+    <string name="LS_delete_document">Deleting document ...</string>
+
+</resources>
