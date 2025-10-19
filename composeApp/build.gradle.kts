@@ -42,6 +42,10 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.client.android)
             implementation(libs.slf4j.simple)
+
+            // Data Store
+            implementation(libs.androidx.datastore.preferences)
+            implementation(libs.multiplatform.settings.datastore)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -66,6 +70,13 @@ kotlin {
             // FileKit
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs.compose)
+
+            // Multiplatform-settings
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.coroutines)
+
+            // crypto
+            implementation(libs.krypto)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -75,10 +86,19 @@ kotlin {
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.ktor.client.cio)
             implementation(libs.logback.classic)
+
+            // Data Store
+            implementation(libs.androidx.datastore.preferences)
+            implementation(libs.multiplatform.settings.datastore)
         }
         webMain.dependencies {
             implementation(libs.ktor.client.js)
         }
+    }
+
+    compilerOptions {
+        optIn.add("com.russhwolf.settings.ExperimentalSettingsApi")
+        optIn.add("com.russhwolf.settings.ExperimentalSettingsImplementation")
     }
 }
 

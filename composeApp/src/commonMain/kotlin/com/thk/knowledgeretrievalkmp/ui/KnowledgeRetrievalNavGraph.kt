@@ -3,6 +3,8 @@ package com.thk.knowledgeretrievalkmp.ui
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,52 +40,31 @@ fun KnowledgeRetrievalNavGraph(
                 composable<KbDestination.Login> {
                     // Login screen
                     val coroutineScope = rememberCoroutineScope()
-                    log("login")
+                    val textFieldState = rememberTextFieldState()
                     Column {
                         Text("Login")
+                        BasicTextField(
+                            state = textFieldState,
+                        )
                         Button(onClick = {
                             coroutineScope.launch {
-                                selectFile()
+
                             }
                         }) {
-                            Text("test select file")
+                            Text("test")
                         }
                     }
 
                 }
                 composable<KbDestination.Signup> {
                     // Signup screen
-                    log("Signup")
-                    Column {
-                        Text("Signup")
-                        Button(onClick = { navController.navigate(KbDestination.KnowledgeBase) }) {
-                            Text("KnowledgeBase")
-                        }
-                    }
-
                 }
             }
             composable<KbDestination.KnowledgeBase> {
                 // Kb screen
-                log("Kb")
-                Column {
-                    Text("Kb")
-                    Button(onClick = { navController.navigate(KbDestination.Chat("")) }) {
-                        Text("Chat")
-                    }
-                }
-
             }
             composable<KbDestination.Chat> {
                 // Chat screen
-                log("Chat")
-                Column {
-                    Text("Chat")
-                    Button(onClick = { navController.navigate(KbDestination.Login) }) {
-                        Text("Login")
-                    }
-                }
-
             }
         }
     }
