@@ -1,0 +1,109 @@
+import com.thk.knowledgeretrievalkmp.data.network.NetworkDocumentStatus;
+import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole;
+import kotlin.Boolean;
+
+
+CREATE TABLE KnowledgeBase (
+    KbId TEXT NOT NULL PRIMARY KEY,
+    UserId TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    Description TEXT NOT NULL,
+    CreatedAt TEXT,
+    UpdatedAt TEXT,
+    IsActive INTEGER AS Boolean,
+    DocumentCount INTEGER,
+    ConversationId TEXT
+);
+
+CREATE TABLE Document (
+    DocumentId TEXT NOT NULL PRIMARY KEY,
+    KbId TEXT NOT NULL,
+    FileName TEXT,
+    Description TEXT,
+    FilePath TEXT,
+    FileSize TEXT,
+    FileType TEXT,
+    MimeType TEXT,
+    Status TEXT AS NetworkDocumentStatus NOT NULL,
+    ProcessingError TEXT,
+    CreatedAt TEXT,
+    UpdatedAt TEXT,
+    UploadedBy TEXT,
+    ProcessedAt TEXT,
+    IsInactive INTEGER AS Boolean,
+    Uri TEXT
+);
+
+CREATE TABLE Conversation (
+    ConversationId TEXT NOT NULL PRIMARY KEY,
+    Name TEXT,
+    IsActive INTEGER AS Boolean
+);
+
+CREATE TABLE Message (
+    MessageId TEXT NOT NULL PRIMARY KEY,
+    ConversationId TEXT NOT NULL,
+    KbId TEXT NOT NULL,
+    UserId TEXT NOT NULL,
+    Role TEXT AS NetworkMessageRole NOT NULL,
+    Content TEXT NOT NULL,
+    CreatedAt INTEGER
+);
+
+-- Upsert
+
+upsertKnowledgeBase:
+INSERT OR REPLACE INTO KnowledgeBase(KbId, UserId, Name, Description, CreatedAt, UpdatedAt, IsActive, DocumentCount, ConversationId)
+VALUES (:kbId, :userId, :name, :description, :createdAt, :updatedAt, :isActive, :documentCount, :conversationId);
+
+upsertDocument:
+INSERT OR REPLACE INTO Document(DocumentId, KbId, FileName, Description, FilePath, FileSize, FileType, MimeType, Status, ProcessingError, CreatedAt, UpdatedAt, UploadedBy, ProcessedAt, IsInactive, Uri)
+VALUES (:documentId, :kbId, :fileName, :description, :filePath, :fileSize, :fileType, :mimeType, :status, :processingError, :createdAt, :updatedAt, :uploadedBy, :processedAt, :isInactive, :uri);
+
+upsertConversation:
+INSERT OR REPLACE INTO Conversation(ConversationId, Name, IsActive)
+VALUES (:conversationId, :name, :isActive);
+
+upsertMessage:
+INSERT OR REPLACE INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, CreatedAt)
+VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :createdAt);
+
+-- Delete
+
+deleteKnowledgeBaseWithId:
+DELETE FROM KnowledgeBase WHERE KbId = :kbId;
+
+deleteDocumentWithId:
+DELETE FROM Document WHERE DocumentId = :documentId;
+
+deleteDocumentsWithKbId:
+DELETE FROM Document WHERE KbId = :kbId;
+
+deleteConversationWithId:
+DELETE FROM Conversation WHERE ConversationId = :conversationId;
+
+deleteMessageWithId:
+DELETE FROM Message WHERE MessageId = :messageId;
+
+deleteMessagesWithConversationId:
+DELETE FROM Message WHERE ConversationId = :conversationId;
+
+-- Select
+
+getKnowledgeBasesWithUserId:
+SELECT * FROM KnowledgeBase WHERE UserId = :userId;
+
+getKnowledgeBaseWithId:
+SELECT * FROM KnowledgeBase WHERE KbId = :kbId;
+
+getKnowledgeBaseWithConversationId:
+SELECT * FROM KnowledgeBase WHERE ConversationId = :conversationId;
+
+getConversationWithId:
+SELECT * FROM Conversation WHERE ConversationId = :conversationId;
+
+getDocumentWithId:
+SELECT * FROM Document WHERE DocumentId = :documentId;
+
+getDocumentsWithKbId:
+SELECT * FROM Document WHERE KbId = :kbId;

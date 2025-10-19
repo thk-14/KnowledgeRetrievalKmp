@@ -9,6 +9,16 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.sqldelight)
+}
+
+sqldelight {
+    databases {
+        create("KbDatabase") {
+            packageName.set("com.thk.knowledgeretrievalkmp.db")
+            generateAsync.set(true)
+        }
+    }
 }
 
 kotlin {
@@ -46,6 +56,9 @@ kotlin {
             // Data Store
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.multiplatform.settings.datastore)
+
+            // SqlDelight
+            implementation(libs.sqldelight.android.driver)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -77,6 +90,9 @@ kotlin {
 
             // crypto
             implementation(libs.krypto)
+
+            // SqlDelight
+            implementation(libs.sqldelight.coroutines.extensions)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -90,9 +106,18 @@ kotlin {
             // Data Store
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.multiplatform.settings.datastore)
+
+            // SqlDelight
+            implementation(libs.sqldelight.jvm.driver)
         }
         webMain.dependencies {
             implementation(libs.ktor.client.js)
+
+            // SqlDelight
+            implementation(libs.sqldelight.web.worker.driver)
+            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.1.0"))
+            implementation(devNpm("copy-webpack-plugin", "13.0.1"))
+            implementation(npm("sql.js", "1.13.0"))
         }
     }
 

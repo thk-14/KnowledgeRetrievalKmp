@@ -8,13 +8,18 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import com.thk.knowledgeretrievalkmp.data.local.db.createDatabase
+import com.thk.knowledgeretrievalkmp.data.local.db.createDriver
 import com.thk.knowledgeretrievalkmp.data.network.NetworkApiService
+import com.thk.knowledgeretrievalkmp.db.KbDatabase
 import com.thk.knowledgeretrievalkmp.util.log
 import io.github.vinceglb.filekit.*
 import io.github.vinceglb.filekit.dialogs.FileKitMode
@@ -116,3 +121,6 @@ suspend fun selectFile() {
         }
     }
 }
+
+// For testing
+lateinit var db: KbDatabase
