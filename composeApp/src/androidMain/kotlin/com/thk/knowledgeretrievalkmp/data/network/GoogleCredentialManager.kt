@@ -14,7 +14,9 @@ class AndroidGoogleCredentialManager : GoogleCredentialManager {
         CredentialManager.create(AppContainer.appContext)
     }
 
-    override suspend fun signInWithGoogle(): GoogleCredentialResponse? {
+    override suspend fun signInWithGoogle(
+        onSignInFinish: (GoogleCredentialResponse?) -> Unit
+    ) {
         val bytes = UUID.randomUUID().toString().toByteArray()
         val md = MessageDigest.getInstance("SHA-256")
         val digest = md.digest(bytes)
@@ -32,13 +34,17 @@ class AndroidGoogleCredentialManager : GoogleCredentialManager {
             request = request,
             context = AppContainer.appContext
         )
-        return handleSignInWithGoogleOption(result)
+        val googleCredentialResponse = handleSignInWithGoogleOption(result)
+        onSignInFinish(googleCredentialResponse)
     }
 
-    override suspend fun logOutFromGoogle() {
+    override suspend fun logOutFromGoogle(
+        onLogOutFinish: () -> Unit
+    ) {
         credentialManager.clearCredentialState(
             ClearCredentialStateRequest()
         )
+        onLogOutFinish()
     }
 
     private fun handleSignInWithGoogleOption(result: GetCredentialResponse): GoogleCredentialResponse? {
@@ -81,7 +87,6 @@ fun GoogleIdTokenCredential.toGoogleCredentialResponse() = GoogleCredentialRespo
     givenName = this.givenName ?: "",
     id = this.id,
     idToken = this.idToken,
-    phoneNumber = this.phoneNumber ?: "",
     profilePictureUri = this.profilePictureUri.toString()
 )
 

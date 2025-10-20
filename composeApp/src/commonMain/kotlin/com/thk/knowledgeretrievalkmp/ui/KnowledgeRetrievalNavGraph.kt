@@ -49,11 +49,23 @@ fun KnowledgeRetrievalNavGraph(
                         )
                         Button(onClick = {
                             coroutineScope.launch {
-                                val response = googleCredentialManager.signInWithGoogle()
+                                val response = googleCredentialManager.signInWithGoogle { googleCredentialResponse ->
+                                    log("googleCredentialResponse: $googleCredentialResponse")
+                                }
                                 log("response: $response")
                             }
                         }) {
-                            Text("test")
+                            Text("test sign in")
+                        }
+                        Button(onClick = {
+                            coroutineScope.launch {
+                                val response = googleCredentialManager.logOutFromGoogle {
+                                    log("log out finished")
+                                }
+                                log("response: $response")
+                            }
+                        }) {
+                            Text("test sign out")
                         }
                     }
 
