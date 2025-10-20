@@ -1,23 +1,42 @@
 package com.thk.knowledgeretrievalkmp.data.network
 
 import com.thk.knowledgeretrievalkmp.util.log
+import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.sse.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.sse.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.serialization.json.Json
 
-object NetworkApiService {
-    private val client = httpClient
-    private const val BASE_URL = "https://smart-kind-macaque.ngrok-free.app"
+class NetworkApiService {
+    private val client = HttpClient(getHttpClientEngine()) {
+        install(ContentNegotiation) {
+            json(Json {
+                prettyPrint = true
+                isLenient = true
+                ignoreUnknownKeys = true
+            })
+        }
+        install(SSE) {
+        }
+        install(Logging) {
+            level = LogLevel.ALL
+        }
+    }
+
+    private val baseUrl = "https://smart-kind-macaque.ngrok-free.app"
 
     // Authentication
 
     suspend fun registerUser(registerUserRequest: RegisterUserRequest): NetworkResponse<String>? = try {
-        client.post("$BASE_URL/auth/register") {
+        client.post("$baseUrl/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(registerUserRequest)
         }.body()
@@ -27,7 +46,7 @@ object NetworkApiService {
     }
 
     suspend fun loginUser(loginUserRequest: LoginUserRequest): NetworkResponse<AuthenticationData>? = try {
-        client.post("$BASE_URL/auth/login") {
+        client.post("$baseUrl/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(loginUserRequest)
         }.body()
@@ -38,7 +57,7 @@ object NetworkApiService {
 
     suspend fun loginUserWithGoogle(loginUserWithGoogleRequest: LoginUserWithGoogleRequest): NetworkResponse<AuthenticationData>? =
         try {
-            client.post("$BASE_URL/auth/google") {
+            client.post("$baseUrl/auth/google") {
                 contentType(ContentType.Application.Json)
                 setBody(loginUserWithGoogleRequest)
             }.body()
@@ -48,7 +67,7 @@ object NetworkApiService {
         }
 
     suspend fun logoutUser(logoutRequest: LogoutRequest): NetworkResponse<String>? = try {
-        client.post("$BASE_URL/auth/logout") {
+        client.post("$baseUrl/auth/logout") {
             contentType(ContentType.Application.Json)
             setBody(logoutRequest)
         }.body()
@@ -58,7 +77,7 @@ object NetworkApiService {
     }
 
     suspend fun refreshToken(refreshTokenRequest: RefreshTokenRequest): NetworkResponse<AuthenticationData>? = try {
-        client.post("$BASE_URL/auth/refresh") {
+        client.post("$baseUrl/auth/refresh") {
             contentType(ContentType.Application.Json)
             setBody(refreshTokenRequest)
         }.body()
@@ -71,7 +90,7 @@ object NetworkApiService {
 
     suspend fun getKnowledgeBases(getKnowledgeBasesRequest: GetKnowledgeBasesRequest): NetworkResponse<GetKnowledgeBasesData>? =
         try {
-            client.post("$BASE_URL/kb/user") {
+            client.post("$baseUrl/kb/user") {
                 contentType(ContentType.Application.Json)
                 setBody(getKnowledgeBasesRequest)
             }.body()
@@ -82,7 +101,7 @@ object NetworkApiService {
 
     suspend fun createKnowledgeBase(createKnowledgeBaseRequest: CreateKnowledgeBaseRequest): NetworkResponse<NetworkKnowledgeBase>? =
         try {
-            client.post("$BASE_URL/kb/create") {
+            client.post("$baseUrl/kb/create") {
                 contentType(ContentType.Application.Json)
                 setBody(createKnowledgeBaseRequest)
             }.body()
@@ -92,7 +111,7 @@ object NetworkApiService {
         }
 
     suspend fun getKnowledgeBaseById(id: String): NetworkResponse<NetworkKnowledgeBase>? = try {
-        client.get("$BASE_URL/kb/$id").body()
+        client.get("$baseUrl/kb/$id").body()
     } catch (exception: Exception) {
         log("getKnowledgeBaseById failed: ${exception.message}")
         null
@@ -102,7 +121,7 @@ object NetworkApiService {
         id: String,
         updateKnowledgeBaseRequest: UpdateKnowledgeBaseRequest
     ): NetworkResponse<NetworkKnowledgeBase>? = try {
-        client.put("$BASE_URL/kb/$id/update") {
+        client.put("$baseUrl/kb/$id/update") {
             contentType(ContentType.Application.Json)
             setBody(updateKnowledgeBaseRequest)
         }.body()
@@ -112,7 +131,7 @@ object NetworkApiService {
     }
 
     suspend fun deleteKnowledgeBase(id: String, deleteKnowledgeBaseRequest: DeleteKnowledgeBaseRequest): Boolean = try {
-        client.delete("$BASE_URL/kb/$id") {
+        client.delete("$baseUrl/kb/$id") {
             contentType(ContentType.Application.Json)
             setBody(deleteKnowledgeBaseRequest)
         }.status == HttpStatusCode.OK
@@ -122,7 +141,7 @@ object NetworkApiService {
     }
 
     suspend fun getKnowledgeBaseQa(id: String, limit: Int = 25): NetworkResponse<List<NetworkDocumentQa>>? = try {
-        client.get("$BASE_URL/kb/$id/qa") {
+        client.get("$baseUrl/kb/$id/qa") {
             parameter("limit", limit)
         }.body()
     } catch (exception: Exception) {
@@ -141,7 +160,7 @@ object NetworkApiService {
         file: ByteArray
     ): NetworkResponse<UploadDocumentData>? = try {
         client.submitFormWithBinaryData(
-            url = "$BASE_URL/documents/upload_and_process",
+            url = "$baseUrl/documents/upload_and_process",
             formData = formData {
                 append(
                     key = key,
@@ -164,7 +183,7 @@ object NetworkApiService {
     }
 
     suspend fun getDocumentStatus(id: String): NetworkResponse<GetDocumentStatusData>? = try {
-        client.get("$BASE_URL/documents/$id/status").body()
+        client.get("$baseUrl/documents/$id/status").body()
     } catch (exception: Exception) {
         log("getDocumentStatus failed: ${exception.message}")
         null
@@ -176,7 +195,7 @@ object NetworkApiService {
         limit: Int = 10,
         createdBy: String? = null
     ): NetworkResponse<GetDocumentsData>? = try {
-        client.get("$BASE_URL/documents") {
+        client.get("$baseUrl/documents") {
             parameter("knowledge_base_id", knowledgeBaseId)
             parameter("skip", skip)
             parameter("limit", limit)
@@ -188,21 +207,21 @@ object NetworkApiService {
     }
 
     suspend fun getDocument(id: String): NetworkResponse<NetworkDocument>? = try {
-        client.get("$BASE_URL/documents/$id").body()
+        client.get("$baseUrl/documents/$id").body()
     } catch (exception: Exception) {
         log("getDocument failed: ${exception.message}")
         null
     }
 
     suspend fun deleteDocument(id: String): Boolean = try {
-        client.delete("$BASE_URL/documents/$id").status == HttpStatusCode.OK
+        client.delete("$baseUrl/documents/$id").status == HttpStatusCode.OK
     } catch (exception: Exception) {
         log("deleteDocument failed: ${exception.message}")
         false
     }
 
     suspend fun toggleDocumentActive(id: String, active: Boolean): NetworkResponse<NetworkDocument>? = try {
-        httpClient.patch("$BASE_URL/documents/$id/active") {
+        client.patch("$baseUrl/documents/$id/active") {
             parameter("active", active)
         }.body()
     } catch (exception: Exception) {
@@ -211,7 +230,7 @@ object NetworkApiService {
     }
 
     suspend fun getDocumentQa(id: String): NetworkResponse<List<NetworkDocumentQa>>? = try {
-        client.get("$BASE_URL/documents/$id/qa").body()
+        client.get("$baseUrl/documents/$id/qa").body()
     } catch (exception: Exception) {
         log("getDocumentQa failed: ${exception.message}")
         null
@@ -220,7 +239,7 @@ object NetworkApiService {
     // Conversation and Messages
 
     suspend fun getConversations(userId: String): NetworkResponse<List<NetworkConversation>>? = try {
-        client.get("$BASE_URL/conversation/list") {
+        client.get("$baseUrl/conversation/list") {
             parameter("user_id", userId)
         }.body()
     } catch (exception: Exception) {
@@ -230,7 +249,7 @@ object NetworkApiService {
 
     suspend fun createConversation(conversationName: String, userId: String): NetworkResponse<NetworkConversation>? =
         try {
-            client.post("$BASE_URL/conversation/create") {
+            client.post("$baseUrl/conversation/create") {
                 parameter("app_name", conversationName)
                 parameter("user_id", userId)
             }.body()
@@ -243,7 +262,7 @@ object NetworkApiService {
         conversationId: String,
         userId: String
     ): NetworkResponse<List<NetworkMessage>>? = try {
-        client.get("$BASE_URL/message/list") {
+        client.get("$baseUrl/message/list") {
             parameter("conversation_id", conversationId)
             parameter("user_id", userId)
         }.body()
@@ -253,7 +272,7 @@ object NetworkApiService {
     }
 
     suspend fun deleteConversation(conversationId: String, userId: String): Boolean = try {
-        client.delete("$BASE_URL/conversation/delete") {
+        client.delete("$baseUrl/conversation/delete") {
             parameter("conversation_id", conversationId)
             parameter("user_id", userId)
         }.status == HttpStatusCode.OK
@@ -268,7 +287,7 @@ object NetworkApiService {
         active: Boolean,
         name: String
     ): NetworkResponse<NetworkConversation>? = try {
-        client.patch("$BASE_URL/conversation/update") {
+        client.patch("$baseUrl/conversation/update") {
             parameter("conversation_id", conversationId)
             parameter("user_id", userId)
             parameter("active", active)
@@ -282,7 +301,7 @@ object NetworkApiService {
     // Chat
 
     suspend fun ask(askRequest: AskRequest): NetworkResponse<NetworkMessage>? = try {
-        client.post("$BASE_URL/chat/ask") {
+        client.post("$baseUrl/chat/ask") {
             contentType(ContentType.Application.Json)
             setBody(askRequest)
         }.body()
@@ -297,7 +316,7 @@ object NetworkApiService {
         handleEvent: (ServerSentEvent) -> Unit
     ) = try {
         client.sse(
-            urlString = "$BASE_URL/chat/ask/sse",
+            urlString = "$baseUrl/chat/ask/sse",
             request = {
                 method = HttpMethod.Post
                 contentType(ContentType.Application.Json)
