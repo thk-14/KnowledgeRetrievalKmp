@@ -4,14 +4,14 @@ import androidx.credentials.*
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
-import com.thk.knowledgeretrievalkmp.AppContainer
+import com.thk.knowledgeretrievalkmp.AndroidAppContainer
 import timber.log.Timber
 import java.security.MessageDigest
 import java.util.*
 
 class AndroidGoogleCredentialManager : GoogleCredentialManager {
     val credentialManager: CredentialManager by lazy {
-        CredentialManager.create(AppContainer.appContext)
+        CredentialManager.create(AndroidAppContainer.appContext)
     }
 
     override suspend fun signInWithGoogle(
@@ -32,7 +32,7 @@ class AndroidGoogleCredentialManager : GoogleCredentialManager {
             .build()
         val result = credentialManager.getCredential(
             request = request,
-            context = AppContainer.appContext
+            context = AndroidAppContainer.appContext
         )
         val googleCredentialResponse = handleSignInWithGoogleOption(result)
         onSignInFinish(googleCredentialResponse)

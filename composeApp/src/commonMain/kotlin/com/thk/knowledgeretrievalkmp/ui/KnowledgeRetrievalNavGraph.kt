@@ -2,27 +2,23 @@ package com.thk.knowledgeretrievalkmp.ui
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.mmk.kmpauth.google.GoogleButtonUiContainer
+import com.mmk.kmpauth.uihelper.google.GoogleSignInButtonIconOnly
 import com.thk.knowledgeretrievalkmp.data.network.NetworkApiService
-import com.thk.knowledgeretrievalkmp.data.network.getGoogleCredentialManager
 import com.thk.knowledgeretrievalkmp.util.log
 import io.github.vinceglb.filekit.*
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitPickerState
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -40,35 +36,6 @@ fun KnowledgeRetrievalNavGraph(
             ) {
                 composable<KbDestination.Login> {
                     // Login screen
-                    val coroutineScope = rememberCoroutineScope()
-                    val textFieldState = rememberTextFieldState()
-                    Column {
-                        Text("Login")
-                        BasicTextField(
-                            state = textFieldState,
-                        )
-                        Button(onClick = {
-                            coroutineScope.launch {
-                                val response = googleCredentialManager.signInWithGoogle { googleCredentialResponse ->
-                                    log("googleCredentialResponse: $googleCredentialResponse")
-                                }
-                                log("response: $response")
-                            }
-                        }) {
-                            Text("test sign in")
-                        }
-                        Button(onClick = {
-                            coroutineScope.launch {
-                                val response = googleCredentialManager.logOutFromGoogle {
-                                    log("log out finished")
-                                }
-                                log("response: $response")
-                            }
-                        }) {
-                            Text("test sign out")
-                        }
-                    }
-
                 }
                 composable<KbDestination.Signup> {
                     // Signup screen
@@ -131,5 +98,13 @@ suspend fun selectFile() {
     }
 }
 
-// For testing
-val googleCredentialManager = getGoogleCredentialManager()
+@Composable
+fun GoogleButton() {
+    GoogleButtonUiContainer(onGoogleSignInResult = { googleUser ->
+        val idToken = googleUser?.idToken // Send this idToken to your backend to verify
+        log("googleUser: $googleUser")
+    }) {
+        Button(onClick = { this.onClick() }) { Text("Google Sign-In(Custom Design)") }
+    }
+    GoogleSignInButtonIconOnly(onClick = {})
+}

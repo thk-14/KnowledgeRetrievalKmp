@@ -37,11 +37,11 @@ kotlin {
         binaries.executable()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
+//    @OptIn(ExperimentalWasmDsl::class)
+//    wasmJs {
+//        browser()
+//        binaries.executable()
+//    }
 
     sourceSets {
         androidMain.dependencies {
@@ -100,6 +100,10 @@ kotlin {
 
             // SqlDelight
             implementation(libs.sqldelight.coroutines.extensions)
+
+            // Auth
+            implementation(libs.kmpauth.google)
+            implementation(libs.kmpauth.uihelper)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
