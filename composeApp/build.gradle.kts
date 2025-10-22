@@ -104,6 +104,12 @@ kotlin {
             // Auth
             implementation(libs.kmpauth.google)
             implementation(libs.kmpauth.uihelper)
+
+            // Datetime
+            implementation(libs.kotlinx.datetime)
+
+            // json
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

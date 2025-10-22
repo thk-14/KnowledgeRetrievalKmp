@@ -8,22 +8,22 @@ CREATE TABLE KnowledgeBase (
     UserId TEXT NOT NULL,
     Name TEXT NOT NULL,
     Description TEXT NOT NULL,
-    CreatedAt TEXT,
-    UpdatedAt TEXT,
-    IsActive INTEGER AS Boolean,
-    DocumentCount INTEGER,
+    CreatedAt TEXT NOT NULL,
+    UpdatedAt TEXT NOT NULL,
+    IsActive INTEGER AS Boolean NOT NULL,
+    DocumentCount INTEGER NOT NULL,
     ConversationId TEXT
 );
 
 CREATE TABLE Document (
     DocumentId TEXT NOT NULL PRIMARY KEY,
     KbId TEXT NOT NULL,
-    FileName TEXT,
+    FileName TEXT NOT NULL,
     Description TEXT,
     FilePath TEXT,
-    FileSize TEXT,
+    FileSize INTEGER,
     FileType TEXT,
-    MimeType TEXT,
+    MimeType TEXT NOT NULL,
     Status TEXT AS NetworkDocumentStatus NOT NULL,
     ProcessingError TEXT,
     CreatedAt TEXT,
@@ -36,8 +36,8 @@ CREATE TABLE Document (
 
 CREATE TABLE Conversation (
     ConversationId TEXT NOT NULL PRIMARY KEY,
-    Name TEXT,
-    IsActive INTEGER AS Boolean
+    Name TEXT NOT NULL,
+    IsActive INTEGER AS Boolean NOT NULL
 );
 
 CREATE TABLE Message (
@@ -47,7 +47,7 @@ CREATE TABLE Message (
     UserId TEXT NOT NULL,
     Role TEXT AS NetworkMessageRole NOT NULL,
     Content TEXT NOT NULL,
-    CreatedAt INTEGER
+    CreatedAt INTEGER NOT NULL
 );
 
 -- Upsert

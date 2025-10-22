@@ -1,9 +1,7 @@
 package com.thk.knowledgeretrievalkmp.data.local.db
 
 import app.cash.sqldelight.db.SqlDriver
-import com.thk.knowledgeretrievalkmp.db.Document
-import com.thk.knowledgeretrievalkmp.db.KbDatabase
-import com.thk.knowledgeretrievalkmp.db.Message
+import com.thk.knowledgeretrievalkmp.db.*
 
 fun createDatabase(driver: SqlDriver) = KbDatabase(
     driver = driver,
@@ -13,4 +11,10 @@ fun createDatabase(driver: SqlDriver) = KbDatabase(
     MessageAdapter = Message.Adapter(
         RoleAdapter = MessageRoleStringAdapter
     )
+)
+
+data class KbWithDocumentsAndConversation(
+    val kb: KnowledgeBase,
+    val documents: List<Document>,
+    val conversation: Conversation?
 )

@@ -119,7 +119,7 @@ data class NetworkKnowledgeBase(
     @SerialName("is_active")
     val isActive: Boolean,
     @SerialName("document_count")
-    val documentCount: Int
+    val documentCount: Long
 )
 
 @Serializable
@@ -134,7 +134,7 @@ data class NetworkDocument(
     @SerialName("file_path")
     val filePath: String,
     @SerialName("file_size")
-    val fileSize: Int,
+    val fileSize: Long,
     @SerialName("file_type")
     val fileType: String,
     @SerialName("mime_type")

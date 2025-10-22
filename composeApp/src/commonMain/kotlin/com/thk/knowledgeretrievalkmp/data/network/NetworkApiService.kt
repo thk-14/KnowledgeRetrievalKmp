@@ -313,7 +313,7 @@ class NetworkApiService {
     suspend fun askSse(
         askRequest: AskRequest,
         dispatcher: CoroutineDispatcher,
-        handleEvent: (ServerSentEvent) -> Unit
+        handleEvent: suspend (ServerSentEvent) -> Unit
     ) = try {
         client.sse(
             urlString = "$baseUrl/chat/ask/sse",
