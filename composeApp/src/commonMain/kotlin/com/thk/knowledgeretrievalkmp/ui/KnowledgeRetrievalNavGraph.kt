@@ -1,18 +1,15 @@
 package com.thk.knowledgeretrievalkmp.ui
 
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
-import com.mmk.kmpauth.google.GoogleButtonUiContainer
-import com.mmk.kmpauth.uihelper.google.GoogleSignInButtonIconOnly
 import com.thk.knowledgeretrievalkmp.data.network.NetworkApiService
+import com.thk.knowledgeretrievalkmp.ui.view.login.LoginScreen
+import com.thk.knowledgeretrievalkmp.ui.view.signup.SignupScreen
 import com.thk.knowledgeretrievalkmp.util.log
 import io.github.vinceglb.filekit.*
 import io.github.vinceglb.filekit.dialogs.FileKitMode
@@ -21,7 +18,6 @@ import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.serialization.Serializable
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun KnowledgeRetrievalNavGraph(
     navController: NavHostController = rememberNavController()
@@ -35,10 +31,41 @@ fun KnowledgeRetrievalNavGraph(
                 startDestination = KbDestination.Login,
             ) {
                 composable<KbDestination.Login> {
-                    // Login screen
+                    LoginScreen(
+                        onNavigateToSignup = {
+                            navController.navigate(KbDestination.Signup)
+                        },
+                        onNavigateToKnowledgeBase = {
+                            navController.navigate(
+                                route = KbDestination.KnowledgeBase,
+                                builder = {
+                                    popUpTo(KbDestination.Authentication) {
+                                        inclusive = true
+                                    }
+                                }
+                            )
+                        }
+                    )
                 }
                 composable<KbDestination.Signup> {
-                    // Signup screen
+                    SignupScreen(
+                        onBackPressed = {
+                            navController.popBackStack()
+                        },
+                        onNavigateToLogin = {
+                            navController.navigate(KbDestination.Login)
+                        },
+                        onNavigateToKnowledgeBase = {
+                            navController.navigate(
+                                route = KbDestination.KnowledgeBase,
+                                builder = {
+                                    popUpTo(KbDestination.Authentication) {
+                                        inclusive = true
+                                    }
+                                }
+                            )
+                        }
+                    )
                 }
             }
             composable<KbDestination.KnowledgeBase> {
@@ -96,15 +123,4 @@ suspend fun selectFile() {
             is FileKitPickerState.Cancelled -> log("Selection cancelled")
         }
     }
-}
-
-@Composable
-fun GoogleButton() {
-    GoogleButtonUiContainer(onGoogleSignInResult = { googleUser ->
-        val idToken = googleUser?.idToken // Send this idToken to your backend to verify
-        log("googleUser: $googleUser")
-    }) {
-        Button(onClick = { this.onClick() }) { Text("Google Sign-In(Custom Design)") }
-    }
-    GoogleSignInButtonIconOnly(onClick = {})
 }

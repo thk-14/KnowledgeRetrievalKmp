@@ -1,5 +1,4 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
 import java.util.*
@@ -110,6 +109,10 @@ kotlin {
 
             // json
             implementation(libs.kotlinx.serialization.json)
+
+            // precompose
+            implementation(libs.precompose)
+            implementation(libs.precompose.viewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -117,6 +120,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+
+            // ktor
             implementation(libs.ktor.client.cio)
             implementation(libs.logback.classic)
 
@@ -141,6 +146,9 @@ kotlin {
     compilerOptions {
         optIn.add("com.russhwolf.settings.ExperimentalSettingsApi")
         optIn.add("com.russhwolf.settings.ExperimentalSettingsImplementation")
+        optIn.add("kotlin.uuid.ExperimentalUuidApi")
+        optIn.add("kotlin.time.ExperimentalTime")
+        optIn.add("androidx.compose.animation.ExperimentalSharedTransitionApi")
     }
 }
 

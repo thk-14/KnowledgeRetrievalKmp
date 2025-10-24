@@ -20,18 +20,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@ExperimentalUuidApi
-@ExperimentalTime
 object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
 
     private val sessionManager = SessionManager(AppContainer.dataStore)
     private val dispatcher = Dispatchers.Default
     private val apiService: NetworkApiService = AppContainer.apiService
-    private val dbQueries: KnowledgeBaseQueries = AppContainer.db.knowledgeBaseQueries
+    private val dbQueries: KnowledgeBaseQueries by lazy {
+        AppContainer.db.knowledgeBaseQueries
+    }
 
     override suspend fun getProfileUri() = sessionManager.getProfileUri()
     override suspend fun getDisplayName() = sessionManager.getDisplayName()

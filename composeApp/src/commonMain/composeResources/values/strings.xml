@@ -8,7 +8,7 @@
     <string name="email_placeholder">abc@xyz.com</string>
     <string name="password">Password</string>
     <string name="login_btn">Log In</string>
-    <string name="signup_prompt">Don\'t have an account? </string>
+    <string name="signup_prompt">Don't have an account? </string>
     <string name="signup_btn">Sign Up</string>
     <string name="signup_title">SIGN UP</string>
     <string name="knowledge_base_title">KNOWLEDGE BASE</string>
