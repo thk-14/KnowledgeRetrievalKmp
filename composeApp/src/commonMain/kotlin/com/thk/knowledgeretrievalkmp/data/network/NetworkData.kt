@@ -128,7 +128,7 @@ data class NetworkDocument(
     @SerialName("knowledge_base_id")
     val knowledgeBaseId: String,
     val filename: String,
-    val description: String,
+    val description: String?,
     @SerialName("original_filename")
     val originalFilename: String,
     @SerialName("file_path")
@@ -141,13 +141,13 @@ data class NetworkDocument(
     val mimeType: String,
     val status: NetworkDocumentStatus,
     @SerialName("processing_error")
-    val processingError: String,
+    val processingError: String?,
     @SerialName("created_at")
     val createdAt: String,
     @SerialName("updated_at")
     val updatedAt: String,
     @SerialName("uploaded_by")
-    val uploadedBy: String,
+    val uploadedBy: String?,
     @SerialName("total_chunks")
     val totalChunks: Int,
     @SerialName("processed_at")
@@ -295,8 +295,8 @@ data class GetDocumentStatusData(
     @SerialName("original_filename")
     val originalFileName: String,
     val status: NetworkDocumentStatus,
-    @SerialName("task_id")
-    val taskId: String
+//    @SerialName("task_id")
+//    val taskId: String
 )
 
 @Serializable

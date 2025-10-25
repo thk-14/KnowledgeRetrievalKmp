@@ -52,7 +52,7 @@ fun DeleteConfirmationDialog(
             ) {
                 Text(
                     text = title,
-                    color = DeepBlue,
+                    color = Black,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -129,7 +129,7 @@ fun RenameDialog(
             ) {
                 Text(
                     text = title,
-                    color = DeepBlue,
+                    color = Black,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )

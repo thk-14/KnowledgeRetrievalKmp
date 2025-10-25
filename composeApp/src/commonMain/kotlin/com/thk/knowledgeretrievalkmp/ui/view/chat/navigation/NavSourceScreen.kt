@@ -253,7 +253,7 @@ fun DocumentItem(
             }
             Spacer(modifier = Modifier.weight(1f))
             when (document.Status) {
-                NetworkDocumentStatus.PROCESSING -> {
+                NetworkDocumentStatus.PENDING, NetworkDocumentStatus.PROCESSING -> {
                     InfiniteLoadingCircle(
                         size = Dimens.top_bar_icon_size,
                         modifier = Modifier.offset(x = (-10).dp)

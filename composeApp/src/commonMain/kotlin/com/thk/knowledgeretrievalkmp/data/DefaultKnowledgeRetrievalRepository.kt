@@ -4,6 +4,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.thk.knowledgeretrievalkmp.Configs
 import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocumentsAndConversation
@@ -16,8 +17,8 @@ import com.thk.knowledgeretrievalkmp.util.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -583,7 +584,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         }
     }
 
-    override suspend fun deleteDocument(kbId: String, documentId: String): Boolean {
+    override suspend fun deleteDocument(documentId: String): Boolean {
         try {
             withContext(dispatcher) {
                 apiService.deleteDocument(documentId)
@@ -699,7 +700,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
 
     private suspend fun checkDocumentStatusUntilFinished(
         documentId: String,
-        checkInterval: Long = 1000
+        checkInterval: Long = 2000
     ) {
         try {
             val localDocument = dbQueries.getDocumentWithId(documentId).awaitAsOneOrNull() ?: return
@@ -708,12 +709,27 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 val status = apiService.getDocumentStatus(documentId)?.data?.status?.apply {
                     upsertLocalDocumentInLocal(localDocument.copy(Status = this))
                 }
-                if (status == NetworkDocumentStatus.FINISHED) break
+                when (status) {
+                    NetworkDocumentStatus.FINISHED -> {
+                        log("$documentId status: $status")
+                        // fetch full document detail
+                        val networkDocument = apiService.getDocument(documentId)?.data ?: return
+                        upsertNetworkDocumentInLocal(networkDocument)
+                        break
+                    }
+
+                    NetworkDocumentStatus.TIMEOUT, NetworkDocumentStatus.FAILED -> {
+                        log("$documentId status: $status")
+                        deleteDocument(documentId)
+                        break
+                    }
+
+                    else -> {
+                        log("$documentId status: $status")
+                    }
+                }
                 delay(checkInterval)
             }
-            // fetch full document detail
-            val networkDocument = apiService.getDocument(documentId)?.data ?: return
-            upsertNetworkDocumentInLocal(networkDocument)
             log("checkDocumentStatusUntilFinished $documentId success")
         } catch (exception: Exception) {
             log("checkDocumentStatusUntilFinished $documentId failed: ${exception.message}")
@@ -745,29 +761,28 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     }
 
     override suspend fun getKnowledgeBaseWithIdInLocalFlow(kbId: String): Flow<KbWithDocumentsAndConversation?> {
-        return dbQueries.getKnowledgeBaseWithId(kbId)
-            .asFlow().map { kbQuery ->
-                val kb = kbQuery.awaitAsOneOrNull() ?: return@map null
-                val documents = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
-                val conversation =
-                    if (kb.ConversationId == null)
-                        null
-                    else
-                        dbQueries.getConversationWithId(kb.ConversationId).awaitAsOneOrNull()
-                val conversationWithMessages = conversation?.let {
-                    val messages =
-                        dbQueries.getMessagesWithConversationId(it.ConversationId).awaitAsList().toMutableList()
-                    ConversationWithMessages(
-                        conversation = it,
-                        messages = messages
-                    )
-                }
+        val conversationId = dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()?.ConversationId ?: ""
+        log("getKnowledgeBaseWithIdInLocalFlow conversationId: $conversationId")
+        val kbFlow = dbQueries.getKnowledgeBaseWithId(kbId).asFlow().mapToOneOrNull(dispatcher)
+        val documentsFlow = dbQueries.getDocumentsWithKbId(kbId).asFlow().mapToList(dispatcher)
+        val conversationFlow = dbQueries.getConversationWithId(conversationId).asFlow().mapToOneOrNull(dispatcher)
+        val messagesFlow = dbQueries.getMessagesWithConversationId(conversationId).asFlow().mapToList(dispatcher)
+
+        return combine(kbFlow, documentsFlow, conversationFlow, messagesFlow) { kb, documents, conversation, messages ->
+            if (kb == null)
+                null
+            else
                 KbWithDocumentsAndConversation(
                     kb = kb,
                     documents = documents,
-                    conversation = conversationWithMessages
+                    conversation = conversation?.let {
+                        ConversationWithMessages(
+                            conversation = it,
+                            messages = messages.toMutableList()
+                        )
+                    }
                 )
-            }.flowOn(dispatcher)
+        }.flowOn(dispatcher)
     }
 
     private suspend fun upsertLocalKnowledgeBaseInLocal(localKnowledgeBase: KnowledgeBase) {

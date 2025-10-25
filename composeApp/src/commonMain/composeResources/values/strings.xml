@@ -24,7 +24,7 @@
     <string name="rename_btn">Rename</string>
     <string name="chat_delete_conversation_title">Delete Conversation %s</string>
     <string name="chat_delete_conversation_content">Are you sure you want to delete this conversation?</string>
-    <string name="chat_delete_document_title">Delete Document %s</string>
+    <string name="chat_delete_document_title">Delete Document %1$s</string>
     <string name="chat_delete_document_content">Are you sure you want to delete this document?</string>
     <string name="chat_rename_conversation_title">Rename Conversation</string>
     <string name="chat_rename_conversation_label">Name</string>

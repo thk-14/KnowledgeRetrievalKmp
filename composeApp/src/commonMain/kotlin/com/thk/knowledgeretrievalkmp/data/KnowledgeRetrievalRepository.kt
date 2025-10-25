@@ -53,7 +53,7 @@ interface KnowledgeRetrievalRepository {
         onUploadFailed: () -> Unit
     ): Boolean
 
-    suspend fun deleteDocument(kbId: String, documentId: String): Boolean
+    suspend fun deleteDocument(documentId: String): Boolean
 
     suspend fun toggleDocumentsActiveForKnowledgeBase(kbId: String, active: Boolean): Boolean
 

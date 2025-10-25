@@ -52,6 +52,7 @@ class ChatViewModel(
             displayName.value = repository.getDisplayName() ?: ""
             repository.getKnowledgeBaseWithIdInLocalFlow(knowledgeBaseId)
                 .collect { newKb ->
+                    log("newKb: $newKb")
                     if (newKb != null) {
                         newKb.conversation?.messages?.sortBy { it.CreatedAt }
                         chatUiState.knowledgeBase.value = newKb.toUiKnowledgeBase()
@@ -110,7 +111,7 @@ class ChatViewModel(
         documentId: String,
         onDeleteFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
-        val succeed = repository.deleteDocument(knowledgeBaseId, documentId)
+        val succeed = repository.deleteDocument(documentId)
         log("deleteDocument succeed: $succeed")
         onDeleteFinish(succeed)
     }
