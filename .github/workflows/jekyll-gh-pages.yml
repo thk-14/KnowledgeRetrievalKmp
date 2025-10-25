@@ -1,0 +1,68 @@
+name: Deploy Web to GitHub Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"] # Change "main" if your default branch is different
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions for the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17' # Use the JDK version your project requires
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build with Gradle
+        # IMPORTANT: Replace ':composeApp' with your KMP module's name
+        run: ./gradlew :composeApp:jsBrowserDistribution
+
+      - name: Adjust base href for GitHub Pages
+        # This is CRITICAL for routing to work on a sub-path (e.g., user.github.io/repo-name)
+        # It changes <base href="/"> to <base href="/<repo-name>/">
+        run: |
+          REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d '/' -f 2)
+          find composeApp/build/dist/js/productionExecutable -name index.html -exec sed -i "s|<base href=\"/\">|<base href=\"/$REPO_NAME/\">|" {} +
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload the directory containing your built web app
+          # IMPORTANT: Adjust 'composeApp' if your module name is different
+          path: 'composeApp/build/dist/js/productionExecutable'
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
