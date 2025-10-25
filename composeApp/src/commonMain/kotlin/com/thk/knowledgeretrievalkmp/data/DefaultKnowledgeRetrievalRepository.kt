@@ -5,6 +5,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.thk.knowledgeretrievalkmp.Configs
+import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocumentsAndConversation
 import com.thk.knowledgeretrievalkmp.data.network.*
 import com.thk.knowledgeretrievalkmp.db.Document
@@ -749,12 +750,22 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 val kb = kbQuery.awaitAsOneOrNull() ?: return@map null
                 val documents = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
                 val conversation =
-                    if (kb.ConversationId == null) null else dbQueries.getConversationWithId(kb.ConversationId)
-                        .awaitAsOneOrNull()
+                    if (kb.ConversationId == null)
+                        null
+                    else
+                        dbQueries.getConversationWithId(kb.ConversationId).awaitAsOneOrNull()
+                val conversationWithMessages = conversation?.let {
+                    val messages =
+                        dbQueries.getMessagesWithConversationId(it.ConversationId).awaitAsList().toMutableList()
+                    ConversationWithMessages(
+                        conversation = it,
+                        messages = messages
+                    )
+                }
                 KbWithDocumentsAndConversation(
                     kb = kb,
                     documents = documents,
-                    conversation = conversation
+                    conversation = conversationWithMessages
                 )
             }.flowOn(dispatcher)
     }

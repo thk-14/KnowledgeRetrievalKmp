@@ -7,16 +7,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
-import com.thk.knowledgeretrievalkmp.data.network.NetworkApiService
+import com.thk.knowledgeretrievalkmp.ui.view.chat.ChatScreen
 import com.thk.knowledgeretrievalkmp.ui.view.kb.KbScreen
 import com.thk.knowledgeretrievalkmp.ui.view.login.LoginScreen
 import com.thk.knowledgeretrievalkmp.ui.view.signup.SignupScreen
-import com.thk.knowledgeretrievalkmp.util.log
-import io.github.vinceglb.filekit.*
-import io.github.vinceglb.filekit.dialogs.FileKitMode
-import io.github.vinceglb.filekit.dialogs.FileKitPickerState
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.serialization.Serializable
 
 @Composable
@@ -82,7 +76,13 @@ fun KnowledgeRetrievalNavGraph(
                 )
             }
             composable<KbDestination.Chat> {
-                // Chat screen
+                ChatScreen(
+                    onBackPressed = {
+                        navController.popBackStack()
+                    },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedContentScope = this@composable
+                )
             }
         }
     }
@@ -106,31 +106,4 @@ sealed class KbDestination {
     data class Chat(
         val knowledgeBaseId: String
     ) : KbDestination()
-}
-
-// FOR TESTING
-suspend fun selectFile() {
-    val stateFlow = FileKit.openFilePicker(
-        mode = FileKitMode.SingleWithState,
-        type = FileKitType.File(listOf("pdf", "docx", "txt"))
-    )
-    stateFlow.collect { state ->
-        when (state) {
-            is FileKitPickerState.Started -> log("Selection started with ${state.total} files")
-            is FileKitPickerState.Progress -> log("Processing: ${state.processed.size()} / ${state.total}")
-            is FileKitPickerState.Completed -> {
-                log("Completed: ${state.result.size()} files selected")
-                val file = state.result
-                log("File selected: $file")
-                NetworkApiService().uploadDocument(
-                    knowledgeBaseId = "068f3aa1-de61-72c6-8000-d36e326c329c",
-                    fileName = file.name,
-                    mimeType = file.mimeType().toString(),
-                    file = file.readBytes()
-                )
-            }
-
-            is FileKitPickerState.Cancelled -> log("Selection cancelled")
-        }
-    }
 }

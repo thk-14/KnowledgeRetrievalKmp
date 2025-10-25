@@ -152,8 +152,9 @@ fun KbMainScreen(
                 .padding(paddingValues)
         ) {
             items(
-                kbViewModel.kbUiState.knowledgeBases,
-                key = { it.KbId }) { knowledgeBase ->
+                items = kbViewModel.kbUiState.knowledgeBases,
+                key = { it.KbId }
+            ) { knowledgeBase ->
                 KbItem(
                     knowledgeBase = knowledgeBase,
                     modifier = Modifier

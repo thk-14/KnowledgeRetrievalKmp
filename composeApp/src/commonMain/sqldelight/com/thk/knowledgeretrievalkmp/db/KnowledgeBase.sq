@@ -107,3 +107,6 @@ SELECT * FROM Document WHERE DocumentId = :documentId;
 
 getDocumentsWithKbId:
 SELECT * FROM Document WHERE KbId = :kbId;
+
+getMessagesWithConversationId:
+SELECT * FROM Message WHERE ConversationId = :conversationId;
