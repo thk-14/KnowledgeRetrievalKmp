@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.thk.knowledgeretrievalkmp.data.network.NetworkApiService
+import com.thk.knowledgeretrievalkmp.ui.view.kb.KbScreen
 import com.thk.knowledgeretrievalkmp.ui.view.login.LoginScreen
 import com.thk.knowledgeretrievalkmp.ui.view.signup.SignupScreen
 import com.thk.knowledgeretrievalkmp.util.log
@@ -69,7 +70,16 @@ fun KnowledgeRetrievalNavGraph(
                 }
             }
             composable<KbDestination.KnowledgeBase> {
-                // Kb screen
+                KbScreen(
+                    onNavigateToChat = { kbId ->
+                        navController.navigate(KbDestination.Chat(kbId))
+                    },
+                    onNavigateToAuthentication = {
+                        navController.navigate(KbDestination.Authentication)
+                    },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedContentScope = this@composable
+                )
             }
             composable<KbDestination.Chat> {
                 // Chat screen

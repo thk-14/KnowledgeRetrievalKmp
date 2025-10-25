@@ -3,6 +3,7 @@ package com.thk.knowledgeretrievalkmp.data
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
 import com.thk.knowledgeretrievalkmp.Configs
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocumentsAndConversation
 import com.thk.knowledgeretrievalkmp.data.network.*
@@ -739,7 +740,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     override suspend fun getAllKnowledgeBasesInLocalFlow(): Flow<List<KnowledgeBase>> {
         return dbQueries.getKnowledgeBasesWithUserId(
             sessionManager.getUserId() ?: ""
-        ).asFlow().map { it.awaitAsList() }.flowOn(dispatcher)
+        ).asFlow().mapToList(dispatcher).flowOn(dispatcher)
     }
 
     override suspend fun getKnowledgeBaseWithIdInLocalFlow(kbId: String): Flow<KbWithDocumentsAndConversation?> {

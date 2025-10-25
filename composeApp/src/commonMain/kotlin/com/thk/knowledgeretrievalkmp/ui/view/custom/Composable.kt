@@ -31,8 +31,8 @@ import com.thk.knowledgeretrievalkmp.ui.theme.*
 import knowledgeretrievalkmp.composeapp.generated.resources.Res
 import knowledgeretrievalkmp.composeapp.generated.resources.google
 import knowledgeretrievalkmp.composeapp.generated.resources.google_btn
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 
 @Composable
 expect fun getScreenWidthDp(): Dp
@@ -67,7 +67,7 @@ fun GoogleButton(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.google),
+                    imageVector = vectorResource(Res.drawable.google),
                     contentDescription = stringResource(Res.string.google_btn),
                     modifier = Modifier.size(iconSize, iconSize)
                 )

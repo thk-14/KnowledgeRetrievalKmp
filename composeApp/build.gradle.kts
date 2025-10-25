@@ -113,6 +113,10 @@ kotlin {
             // precompose
             implementation(libs.precompose)
             implementation(libs.precompose.viewmodel)
+
+            // Coil
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

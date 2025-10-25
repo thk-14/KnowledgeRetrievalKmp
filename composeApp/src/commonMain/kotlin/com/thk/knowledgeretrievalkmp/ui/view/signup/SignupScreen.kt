@@ -27,8 +27,8 @@ import com.thk.knowledgeretrievalkmp.util.isValidEmail
 import com.thk.knowledgeretrievalkmp.util.log
 import knowledgeretrievalkmp.composeapp.generated.resources.*
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 
 @Composable
 fun SignupScreen(
@@ -48,17 +48,22 @@ fun SignupScreen(
         }
     }
 
-    SignupMainScreen(
-        modifier = modifier
-            .background(White)
-            .fillMaxSize()
-            .safeDrawingPadding()
-            .padding(
-                horizontal = Dimens.padding_horizontal
-            ),
-        signupViewModel = signupViewModel,
-        onBackPressed = onBackPressed
-    )
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = signupViewModel.signupUiState.snackBarHostState)
+        }
+    ) {
+        SignupMainScreen(
+            modifier = modifier
+                .background(White)
+                .fillMaxSize()
+                .padding(
+                    horizontal = Dimens.padding_horizontal
+                ),
+            signupViewModel = signupViewModel,
+            onBackPressed = onBackPressed
+        )
+    }
 
     FullScreenLoader(
         visible = signupViewModel.signupUiState.showLoadingAction.value != null,
@@ -101,8 +106,8 @@ fun SignupMainScreen(
                 onClick = onBackPressed
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.back_arrow),
-                    contentDescription = "",
+                    imageVector = vectorResource(Res.drawable.back),
+                    contentDescription = null,
                 )
             }
         }

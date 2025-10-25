@@ -1,9 +1,12 @@
 package com.thk.knowledgeretrievalkmp.data.network
 
 import com.russhwolf.settings.coroutines.SuspendSettings
+import com.thk.knowledgeretrievalkmp.security.CipherService
 import com.thk.knowledgeretrievalkmp.util.log
 
 class SessionManager(private val dataStore: SuspendSettings) {
+    private val cipherService = CipherService()
+
     suspend fun getUserId() = dataStore.getStringOrNull(USER_ID_KEY)
     suspend fun setUserId(value: String) {
         dataStore.putString(USER_ID_KEY, value)
@@ -24,16 +27,28 @@ class SessionManager(private val dataStore: SuspendSettings) {
         log("Set profile uri: $value")
     }
 
-    suspend fun getAccessToken() = dataStore.getStringOrNull(ACCESS_TOKEN_KEY)
+    suspend fun getAccessToken(): String? {
+        val encryptedValue = dataStore.getStringOrNull(ACCESS_TOKEN_KEY)
+        val decryptedValue = encryptedValue?.let { cipherService.decryptString(it) }
+        return decryptedValue
+    }
+
     suspend fun setAccessToken(value: String) {
-        dataStore.putString(ACCESS_TOKEN_KEY, value)
+        val encryptedValue = cipherService.encryptString(value)
+        dataStore.putString(ACCESS_TOKEN_KEY, encryptedValue)
         log("Set access token: $value")
     }
 
 
-    suspend fun getRefreshToken() = dataStore.getStringOrNull(REFRESH_TOKEN_KEY)
+    suspend fun getRefreshToken(): String? {
+        val encryptedValue = dataStore.getStringOrNull(REFRESH_TOKEN_KEY)
+        val decryptedValue = encryptedValue?.let { cipherService.decryptString(it) }
+        return decryptedValue
+    }
+
     suspend fun setRefreshToken(value: String) {
-        dataStore.putString(REFRESH_TOKEN_KEY, value)
+        val encryptedValue = cipherService.encryptString(value)
+        dataStore.putString(REFRESH_TOKEN_KEY, encryptedValue)
         log("Set refresh token: $value")
     }
 
