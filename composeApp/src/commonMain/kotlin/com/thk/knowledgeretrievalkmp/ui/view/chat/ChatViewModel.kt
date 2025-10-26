@@ -49,17 +49,6 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
-            displayName.value = repository.getDisplayName() ?: ""
-            repository.getKnowledgeBaseWithIdInLocalFlow(knowledgeBaseId)
-                .collect { newKb ->
-                    log("newKb: $newKb")
-                    if (newKb != null) {
-                        newKb.conversation?.messages?.sortBy { it.CreatedAt }
-                        chatUiState.knowledgeBase.value = newKb.toUiKnowledgeBase()
-                    }
-                }
-        }
-        viewModelScope.launch {
             chatUiState.showLoadingAction.value = ShowLoadingAction("Fetching knowledge base ...")
             fetchKnowledgeBaseWithConversation()
 
@@ -69,6 +58,15 @@ class ChatViewModel(
             toggleConversationActiveForKnowledgeBase(true)
 
             chatUiState.showLoadingAction.value = null
+            displayName.value = repository.getDisplayName() ?: ""
+            repository.getKnowledgeBaseWithIdInLocalFlow(knowledgeBaseId)
+                .collect { newKb ->
+                    log("newKb: $newKb")
+                    if (newKb != null) {
+                        newKb.conversation?.messages?.sortBy { it.CreatedAt }
+                        chatUiState.knowledgeBase.value = newKb.toUiKnowledgeBase()
+                    }
+                }
         }
     }
 

@@ -222,8 +222,17 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.thk.knowledgeretrievalkmp"
+            packageName = "KMS"
             packageVersion = "1.0.0"
+            vendor = "thk"
+
+            modules("jdk.unsupported")
+
+            windows {
+                iconFile.set(project.file("icons/book_icon.ico"))
+                console = true
+                shortcut = true
+            }
         }
     }
 }
