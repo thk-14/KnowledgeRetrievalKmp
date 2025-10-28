@@ -61,12 +61,9 @@ fun NavChatScreen(
                     chatViewModel.chatUiState.webSearch.value = !chatViewModel.chatUiState.webSearch.value
                     val webSearchStatusText =
                         if (chatViewModel.chatUiState.webSearch.value) "On" else "Off"
-                    coroutineScope.launch {
-                        chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                            message = "Web search: $webSearchStatusText",
-                            duration = SnackbarDuration.Short
-                        )
-                    }
+                    chatViewModel.showSnackbar(
+                        "Web search: $webSearchStatusText"
+                    )
                 },
                 onSendMessage = {
                     chatViewModel.sendUserRequestWithSSE()

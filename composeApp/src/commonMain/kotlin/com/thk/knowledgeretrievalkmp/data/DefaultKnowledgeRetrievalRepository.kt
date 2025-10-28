@@ -14,6 +14,7 @@ import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBaseQueries
 import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.util.log
+import com.thk.knowledgeretrievalkmp.util.toSseEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -48,26 +49,21 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         profileUri: String,
         idToken: String
     ): Boolean {
-        try {
-            withContext(dispatcher) {
-                sessionManager.apply {
-                    setUserId(userId)
-                    setDisplayName(displayName)
-                    setProfileUri(profileUri)
-                }
-                // TODO send googleIdToken to server
+        withContext(dispatcher) {
+            sessionManager.apply {
+                setUserId(userId)
+                setDisplayName(displayName)
+                setProfileUri(profileUri)
+            }
+            // TODO send googleIdToken to server
 //                val response = apiService.loginUserWithGoogle(
 //                    LoginUserWithGoogleRequest(
 //                        idToken = idToken
 //                    )
-//                )?.data ?: return@withContext
-            }
-            log("Login with google success")
-            return true
-        } catch (exception: Exception) {
-            log("Login with google failed: ${exception.message}")
-            return false
+//                )?.data ?: return@withContext false
         }
+        log("loginWithGoogle success")
+        return true
     }
 
     override suspend fun registerUser(
@@ -82,223 +78,190 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             password = password,
             fullName = fullName
         )
-        try {
-            withContext(dispatcher) {
-                apiService.registerUser(registerUserRequest)
-            }
-            log("Signup success")
-            return true
-        } catch (exception: Exception) {
-            log("Signup failed: ${exception.message}")
-            return false
+        var succeed = false
+        withContext(dispatcher) {
+            val response = apiService.registerUser(registerUserRequest)?.data ?: return@withContext
+            succeed = true
         }
+        log("registerUser succeed: $succeed")
+        return succeed
     }
 
     override suspend fun loginUser(email: String, password: String): Boolean {
         val loginUserRequest = LoginUserRequest(
             email = email,
-            password = password
+            password = password,
+            remember = false
         )
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                val newTokens = apiService.loginUser(loginUserRequest)?.data ?: return@withContext
-                sessionManager.setAccessToken(newTokens.accessToken)
-                sessionManager.setRefreshToken(newTokens.refreshToken)
-                sessionManager.setUserId(loginUserRequest.email)
-                succeed = true
-            }
-            log("Login succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Login failed: ${exception.message}")
-            return false
+        var succeed = false
+        withContext(dispatcher) {
+            val newTokens = apiService.loginUser(loginUserRequest)?.data ?: return@withContext
+            sessionManager.setAccessToken(newTokens.accessToken)
+            sessionManager.setRefreshToken(newTokens.refreshToken)
+            sessionManager.setUserId(loginUserRequest.email)
+            succeed = true
         }
+        log("loginUser succeed: $succeed")
+        return succeed
     }
 
     override suspend fun logout(): Boolean {
-        try {
-            withContext(dispatcher) {
-                val refreshToken = sessionManager.getRefreshToken()
-                if (refreshToken != null) {
-                    apiService.logoutUser(LogoutRequest(refreshToken))
-                }
-                sessionManager.clearSession()
+        withContext(dispatcher) {
+            val refreshToken = sessionManager.getRefreshToken()
+            if (refreshToken != null) {
+                val response = apiService.logoutUser(LogoutRequest(refreshToken))?.data
+                log("logout response: $response")
             }
-            log("Logout success")
-            return true
-        } catch (exception: Exception) {
-            log("Logout failed: ${exception.message}")
-            return false
+            sessionManager.clearSession()
         }
+        return true
     }
 
     override suspend fun refreshToken(): Boolean {
         val refreshToken = sessionManager.getRefreshToken() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                val newTokens = apiService.refreshToken(
-                    RefreshTokenRequest(refreshToken)
-                )?.data ?: return@withContext
-                sessionManager.setAccessToken(newTokens.accessToken)
-                sessionManager.setRefreshToken(newTokens.refreshToken)
-                succeed = true
-            }
-            log("Refresh token succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Refresh token failed: ${exception.message}")
-            sessionManager.clearSession()
-            return false
+        var succeed = false
+        withContext(dispatcher) {
+            val newTokens = apiService.refreshToken(
+                RefreshTokenRequest(refreshToken)
+            )?.data ?: return@withContext
+            sessionManager.setAccessToken(newTokens.accessToken)
+            sessionManager.setRefreshToken(newTokens.refreshToken)
+            succeed = true
         }
+        log("refreshToken succeed: $succeed")
+        return succeed
     }
 
     override suspend fun fetchKnowledgeBasesWithDocuments(): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                // fetch knowledge bases
-                val networkKnowledgeBases = apiService.getKnowledgeBases(
-                    GetKnowledgeBasesRequest(
-                        userId = userId,
-                        skip = 0,
-                        limit = Configs.MAX_KB_PER_USER
-                    )
-                )?.data?.items ?: return@withContext
-                log("get networkKnowledgeBases: $networkKnowledgeBases")
-                networkKnowledgeBases.forEach { networkKnowledgeBase ->
-                    // upsert knowledge base in local
-                    upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
-                    // fetch documents
-                    val networkDocuments = apiService.getDocuments(
-                        knowledgeBaseId = networkKnowledgeBase.id,
-                        skip = 0,
-                        limit = Configs.MAX_DOCUMENTS_PER_KB
-                    )?.data?.items ?: return@forEach
-                    log("get networkDocuments: $networkDocuments")
-                    // upsert documents in local
-                    networkDocuments.forEach { networkDocument ->
-                        upsertNetworkDocumentInLocal(networkDocument)
-                    }
+        var succeed = false
+        withContext(dispatcher) {
+            // fetch knowledge bases
+            val networkKnowledgeBases = apiService.getKnowledgeBases(
+                GetKnowledgeBasesRequest(
+                    userId = userId,
+                    skip = 0,
+                    limit = Configs.MAX_KB_PER_USER
+                )
+            )?.data?.items ?: return@withContext
+            log("get networkKnowledgeBases: $networkKnowledgeBases")
+            networkKnowledgeBases.forEach { networkKnowledgeBase ->
+                // upsert knowledge base in local
+                upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
+                // fetch documents
+                val networkDocuments = apiService.getDocuments(
+                    knowledgeBaseId = networkKnowledgeBase.id,
+                    skip = 0,
+                    limit = Configs.MAX_DOCUMENTS_PER_KB
+                )?.data?.items ?: return@forEach
+                log("get networkDocuments: $networkDocuments")
+                // upsert documents in local
+                networkDocuments.forEach { networkDocument ->
+                    upsertNetworkDocumentInLocal(networkDocument)
                 }
-                // clean up kb
-                val localKnowledgeBases = dbQueries.getKnowledgeBasesWithUserId(userId).awaitAsList()
-                localKnowledgeBases.map { it.KbId }.forEach { kbId ->
-                    if (kbId !in networkKnowledgeBases.map { it.id }) {
-                        deleteKnowledgeBaseInLocal(kbId)
-                    }
-                }
-                succeed = true
             }
-            log("Fetch knowledge bases succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Fetch knowledge bases failed: ${exception.message}")
-            return false
+            // clean up kb
+            val localKnowledgeBases = dbQueries.getKnowledgeBasesWithUserId(userId).awaitAsList()
+            localKnowledgeBases.map { it.KbId }.forEach { kbId ->
+                if (kbId !in networkKnowledgeBases.map { it.id }) {
+                    deleteKnowledgeBaseInLocal(kbId)
+                }
+            }
+            succeed = true
         }
+        log("Fetch knowledge bases succeed: $succeed")
+        return succeed
     }
 
     override suspend fun fetchKnowledgeBaseWithDocuments(kbId: String): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                try {
-                    // fetch then upsert knowledge base
-                    val networkKnowledgeBase =
-                        apiService.getKnowledgeBaseById(kbId)?.data ?: return@withContext
-                    log("get networkKnowledgeBase: $networkKnowledgeBase")
-                    upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
-                    // fetch then upsert documents
-                    val networkDocuments = apiService.getDocuments(
-                        knowledgeBaseId = kbId,
-                        skip = 0,
-                        limit = Configs.MAX_DOCUMENTS_PER_KB
-                    )?.data?.items ?: return@withContext
-                    log("get networkDocuments: $networkDocuments")
-                    networkDocuments.forEach { networkDocument ->
-                        upsertNetworkDocumentInLocal(networkDocument)
-                    }
-                    // clean up documents
-                    val localDocuments = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
-                    localDocuments.map { it.DocumentId }.forEach { documentId ->
-                        if (documentId !in networkDocuments.map { it.id }) {
-                            dbQueries.deleteDocumentWithId(documentId)
-                        }
-                    }
-                } catch (exception: Exception) {
-                    // Silently failed here since we have fetched all kb and documents
-                    log("Fetch knowledge base and documents failed: ${exception.message}")
+        var succeed = false
+        withContext(dispatcher) {
+            // fetch then upsert knowledge base
+            val networkKnowledgeBase =
+                apiService.getKnowledgeBaseById(kbId)?.data ?: return@withContext
+            log("get networkKnowledgeBase: $networkKnowledgeBase")
+            upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
+            // fetch then upsert documents
+            val networkDocuments = apiService.getDocuments(
+                knowledgeBaseId = kbId,
+                skip = 0,
+                limit = Configs.MAX_DOCUMENTS_PER_KB
+            )?.data?.items ?: return@withContext
+            log("get networkDocuments: $networkDocuments")
+            networkDocuments.forEach { networkDocument ->
+                upsertNetworkDocumentInLocal(networkDocument)
+            }
+            // clean up documents
+            val localDocuments = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
+            localDocuments.map { it.DocumentId }.forEach { documentId ->
+                if (documentId !in networkDocuments.map { it.id }) {
+                    dbQueries.deleteDocumentWithId(documentId)
                 }
-                // if there is no conversation tied to this kb
-                val localKnowledgeBase =
-                    dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
-                        ?: return@withContext
-                if (localKnowledgeBase.ConversationId == null) {
-                    // find related conversation in server
-                    val networkConversations = apiService.getConversations(
-                        userId = userId
-                    )?.data
-                    val relatedNetworkConversation = networkConversations?.find {
-                        it.name == kbId
-                    }
-                    val relatedConversationId =
-                        if (relatedNetworkConversation != null) {
-                            log("find relatedNetworkConversation: $relatedNetworkConversation")
-                            // upsert related conversation in local
-                            upsertNetworkConversationInLocal(relatedNetworkConversation)
-                            // fetch messages for related conversation
-                            val networkMessages = apiService.getMessagesForConversation(
-                                conversationId = relatedNetworkConversation.conversationId,
-                                userId = userId
-                            )?.data
-                            // upsert messages in local
-                            networkMessages?.forEach { networkMessage ->
-                                upsertNetworkMessageInLocal(networkMessage)
-                            }
-                            relatedNetworkConversation.conversationId
-                        } else {
-                            log("No relatedNetworkConversation found")
-                            // if not found then create new one
-                            val networkConversation = apiService.createConversation(
-                                conversationName = kbId,
-                                userId = userId
-                            )?.data ?: return@withContext
-                            log("create networkConversation: $networkConversation")
-                            // upsert new conversation in local
-                            upsertNetworkConversationInLocal(networkConversation)
-                            networkConversation.conversationId
-                        }
-                    // update knowledge base in local
-                    upsertLocalKnowledgeBaseInLocal(
-                        localKnowledgeBase.copy(ConversationId = relatedConversationId)
-                    )
-                } else {
-                    // kb has conversation
-                    if (Configs.fetchMessagesFromServer) {
-                        // clear messages in local
-                        dbQueries.deleteMessagesWithConversationId(localKnowledgeBase.ConversationId)
-                        // fetch messages for conversation
+            }
+            // if there is no conversation tied to this kb
+            val localKnowledgeBase =
+                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
+                    ?: return@withContext
+            if (localKnowledgeBase.ConversationId == null) {
+                // find related conversation in server
+                val networkConversations = apiService.getConversations(
+                    userId = userId
+                )?.data
+                val relatedNetworkConversation = networkConversations?.find {
+                    it.name == kbId
+                }
+                val relatedConversationId =
+                    if (relatedNetworkConversation != null) {
+                        log("find relatedNetworkConversation: $relatedNetworkConversation")
+                        // upsert related conversation in local
+                        upsertNetworkConversationInLocal(relatedNetworkConversation)
+                        // fetch messages for related conversation
                         val networkMessages = apiService.getMessagesForConversation(
-                            conversationId = localKnowledgeBase.ConversationId,
+                            conversationId = relatedNetworkConversation.conversationId,
                             userId = userId
                         )?.data
                         // upsert messages in local
                         networkMessages?.forEach { networkMessage ->
                             upsertNetworkMessageInLocal(networkMessage)
                         }
+                        relatedNetworkConversation.conversationId
+                    } else {
+                        log("No relatedNetworkConversation found")
+                        // if not found then create new one
+                        val networkConversation = apiService.createConversation(
+                            conversationName = kbId,
+                            userId = userId
+                        )?.data ?: return@withContext
+                        log("create networkConversation: $networkConversation")
+                        // upsert new conversation in local
+                        upsertNetworkConversationInLocal(networkConversation)
+                        networkConversation.conversationId
+                    }
+                // update knowledge base in local
+                upsertLocalKnowledgeBaseInLocal(
+                    localKnowledgeBase.copy(ConversationId = relatedConversationId)
+                )
+            } else {
+                // kb has conversation
+                if (Configs.fetchMessagesFromServer) {
+                    // clear messages in local
+                    dbQueries.deleteMessagesWithConversationId(localKnowledgeBase.ConversationId)
+                    // fetch messages for conversation
+                    val networkMessages = apiService.getMessagesForConversation(
+                        conversationId = localKnowledgeBase.ConversationId,
+                        userId = userId
+                    )?.data
+                    // upsert messages in local
+                    networkMessages?.forEach { networkMessage ->
+                        upsertNetworkMessageInLocal(networkMessage)
                     }
                 }
-                succeed = true
             }
-            log("Fetch knowledge base with conversations succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Fetch knowledge base with conversations failed: ${exception.message}")
-            return false
+            succeed = true
         }
+        log("Fetch knowledge base with conversations succeed: $succeed")
+        return succeed
     }
 
     override suspend fun createKnowledgeBaseWithConversation(
@@ -306,74 +269,63 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         kbDescription: String
     ): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                // create knowledge base in server
-                val networkKnowledgeBase = apiService.createKnowledgeBase(
-                    createKnowledgeBaseRequest = CreateKnowledgeBaseRequest(
-                        userId = userId,
-                        name = kbName,
-                        description = kbDescription
-                    )
-                )?.data ?: return@withContext
-                upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
-                log("create networkKnowledgeBase: $networkKnowledgeBase")
-                // create a conversation corresponding to the knowledge base
-                val networkConversation = apiService.createConversation(
-                    conversationName = networkKnowledgeBase.id,
-                    userId = userId
-                )?.data ?: return@withContext
-                upsertNetworkConversationInLocal(networkConversation)
-                updateConversationIdForKnowledgeBaseInLocal(networkKnowledgeBase.id, networkConversation.conversationId)
-                log("create networkConversation: $networkConversation")
-                succeed = true
-            }
-            log("Create knowledge base succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Create knowledge base failed: ${exception.message}")
-            return false
+        var succeed = false
+        withContext(dispatcher) {
+            // create knowledge base in server
+            val networkKnowledgeBase = apiService.createKnowledgeBase(
+                createKnowledgeBaseRequest = CreateKnowledgeBaseRequest(
+                    userId = userId,
+                    name = kbName,
+                    description = kbDescription
+                )
+            )?.data ?: return@withContext
+            upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
+            log("create networkKnowledgeBase: $networkKnowledgeBase")
+            // create a conversation corresponding to the knowledge base
+            val networkConversation = apiService.createConversation(
+                conversationName = networkKnowledgeBase.id,
+                userId = userId
+            )?.data ?: return@withContext
+            upsertNetworkConversationInLocal(networkConversation)
+            updateConversationIdForKnowledgeBaseInLocal(networkKnowledgeBase.id, networkConversation.conversationId)
+            log("create networkConversation: $networkConversation")
+            succeed = true
         }
+        log("Create knowledge base succeed: $succeed")
+        return succeed
     }
 
     override suspend fun deleteKnowledgeBaseWithConversation(kbId: String): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                // manually delete related conversation in server
-                val localKnowledgeBase =
-                    dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
-                        ?: return@withContext
-                if (localKnowledgeBase.ConversationId != null) {
-                    try {
-                        apiService.deleteConversation(
-                            conversationId = localKnowledgeBase.ConversationId,
-                            userId = userId
-                        )
-                        deleteConversationInLocal(localKnowledgeBase.ConversationId)
-                    } catch (exception: Exception) {
-                        log("Delete conversation failed: ${exception.message}")
-                    }
-                }
-                // delete knowledge base in server
-                apiService.deleteKnowledgeBase(
-                    id = kbId,
-                    deleteKnowledgeBaseRequest = DeleteKnowledgeBaseRequest(
-                        id = kbId,
-                        userId = userId
-                    )
+        var succeed = false
+        withContext(dispatcher) {
+            // manually delete related conversation in server
+            val localKnowledgeBase =
+                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
+                    ?: return@withContext
+            if (localKnowledgeBase.ConversationId != null) {
+                succeed = apiService.deleteConversation(
+                    conversationId = localKnowledgeBase.ConversationId,
+                    userId = userId
                 )
-                deleteKnowledgeBaseInLocal(kbId)
-                succeed = true
+                if (succeed) {
+                    deleteConversationInLocal(localKnowledgeBase.ConversationId)
+                }
             }
-            log("Delete knowledge base succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Delete knowledge base failed: ${exception.message}")
-            return false
+            // delete knowledge base in server
+            succeed = apiService.deleteKnowledgeBase(
+                id = kbId,
+                deleteKnowledgeBaseRequest = DeleteKnowledgeBaseRequest(
+                    id = kbId,
+                    userId = userId
+                )
+            )
+            if (succeed) {
+                deleteKnowledgeBaseInLocal(kbId)
+            }
         }
+        log("Delete knowledge base succeed: $succeed")
+        return succeed
     }
 
     override suspend fun toggleKnowledgeBaseActive(
@@ -381,36 +333,31 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         active: Boolean
     ): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                val localKnowledgeBase =
-                    dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
-                        ?: return@withContext
-                if (localKnowledgeBase.IsActive == active) {
-                    succeed = true
-                    return@withContext
-                }
-                val updateKnowledgeBaseRequest = UpdateKnowledgeBaseRequest(
-                    id = kbId,
-                    userId = userId,
-                    name = localKnowledgeBase.Name,
-                    description = localKnowledgeBase.Description,
-                    isActive = active
-                )
-                val networkKnowledgeBase = apiService.updateKnowledgeBase(
-                    id = kbId,
-                    updateKnowledgeBaseRequest = updateKnowledgeBaseRequest
-                )?.data ?: return@withContext
-                upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
+        var succeed = false
+        withContext(dispatcher) {
+            val localKnowledgeBase =
+                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
+                    ?: return@withContext
+            if (localKnowledgeBase.IsActive == active) {
                 succeed = true
+                return@withContext
             }
-            log("toggleKnowledgeBaseActive $active succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("toggleKnowledgeBaseActive $active failed: ${exception.message}")
-            return false
+            val updateKnowledgeBaseRequest = UpdateKnowledgeBaseRequest(
+                id = kbId,
+                userId = userId,
+                name = localKnowledgeBase.Name,
+                description = localKnowledgeBase.Description,
+                isActive = active
+            )
+            val networkKnowledgeBase = apiService.updateKnowledgeBase(
+                id = kbId,
+                updateKnowledgeBaseRequest = updateKnowledgeBaseRequest
+            )?.data ?: return@withContext
+            upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
+            succeed = true
         }
+        log("toggleKnowledgeBaseActive $active succeed: $succeed")
+        return succeed
     }
 
     override suspend fun renameKnowledgeBase(
@@ -418,75 +365,65 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         newName: String
     ): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                val localKnowledgeBase =
-                    dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
-                        ?: return@withContext
-                if (localKnowledgeBase.Name == newName) {
-                    succeed = true
-                    return@withContext
-                }
-                val updateKnowledgeBaseRequest = UpdateKnowledgeBaseRequest(
-                    id = kbId,
-                    userId = userId,
-                    name = newName,
-                    description = localKnowledgeBase.Description,
-                    isActive = localKnowledgeBase.IsActive
-                )
-                val networkKnowledgeBase = apiService.updateKnowledgeBase(
-                    id = kbId,
-                    updateKnowledgeBaseRequest = updateKnowledgeBaseRequest
-                )?.data ?: return@withContext
-                upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
-                log("update networkKnowledgeBase: $networkKnowledgeBase")
+        var succeed = false
+        withContext(dispatcher) {
+            val localKnowledgeBase =
+                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
+                    ?: return@withContext
+            if (localKnowledgeBase.Name == newName) {
                 succeed = true
+                return@withContext
             }
-            log("Rename knowledge base succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Rename knowledge base failed: ${exception.message}")
-            return false
+            val updateKnowledgeBaseRequest = UpdateKnowledgeBaseRequest(
+                id = kbId,
+                userId = userId,
+                name = newName,
+                description = localKnowledgeBase.Description,
+                isActive = localKnowledgeBase.IsActive
+            )
+            val networkKnowledgeBase = apiService.updateKnowledgeBase(
+                id = kbId,
+                updateKnowledgeBaseRequest = updateKnowledgeBaseRequest
+            )?.data ?: return@withContext
+            upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
+            log("update networkKnowledgeBase: $networkKnowledgeBase")
+            succeed = true
         }
+        log("Rename knowledge base succeed: $succeed")
+        return succeed
     }
 
     override suspend fun toggleDocumentsActiveForKnowledgeBase(
         kbId: String,
         active: Boolean
     ): Boolean {
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                val localDocuments = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
-                localDocuments.forEach { localDocument ->
-                    launch(dispatcher) {
-                        if (localDocument.Status != NetworkDocumentStatus.FINISHED) {
-                            checkDocumentStatusUntilFinished(
-                                documentId = localDocument.DocumentId
-                            )
+        var succeed = false
+        withContext(dispatcher) {
+            val localDocuments = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
+            localDocuments.forEach { localDocument ->
+                launch(dispatcher) {
+                    if (localDocument.Status != NetworkDocumentStatus.FINISHED) {
+                        checkDocumentStatusUntilFinished(
+                            documentId = localDocument.DocumentId
+                        )
+                        toggleDocumentActive(
+                            documentId = localDocument.DocumentId,
+                            active = active
+                        )
+                    } else {
+                        if (localDocument.IsInactive != !active) {
                             toggleDocumentActive(
                                 documentId = localDocument.DocumentId,
                                 active = active
                             )
-                        } else {
-                            if (localDocument.IsInactive != !active) {
-                                toggleDocumentActive(
-                                    documentId = localDocument.DocumentId,
-                                    active = active
-                                )
-                            }
                         }
                     }
                 }
-                succeed = true
             }
-            log("toggleDocumentsActiveForKnowledgeBase $active succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("toggleDocumentsActiveForKnowledgeBase $active failed: ${exception.message}")
-            return false
+            succeed = true
         }
+        log("toggleDocumentsActiveForKnowledgeBase $active succeed: $succeed")
+        return succeed
     }
 
     override suspend fun toggleConversationActiveForKnowledgeBase(
@@ -494,30 +431,25 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         active: Boolean
     ): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                val conversationId =
-                    dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()?.ConversationId ?: return@withContext
-                val localConversation =
-                    dbQueries.getConversationWithId(conversationId).awaitAsOneOrNull() ?: return@withContext
-                if (localConversation.IsActive != active) {
-                    val networkConversation = apiService.updateConversation(
-                        conversationId = conversationId,
-                        userId = userId,
-                        active = active,
-                        name = localConversation.Name
-                    )?.data ?: return@withContext
-                    upsertNetworkConversationInLocal(networkConversation)
-                }
-                succeed = true
+        var succeed = false
+        withContext(dispatcher) {
+            val conversationId =
+                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()?.ConversationId ?: return@withContext
+            val localConversation =
+                dbQueries.getConversationWithId(conversationId).awaitAsOneOrNull() ?: return@withContext
+            if (localConversation.IsActive != active) {
+                val networkConversation = apiService.updateConversation(
+                    conversationId = conversationId,
+                    userId = userId,
+                    active = active,
+                    name = localConversation.Name
+                )?.data ?: return@withContext
+                upsertNetworkConversationInLocal(networkConversation)
             }
-            log("Set conversation for knowledge base active $active succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Set conversation for knowledge base active $active failed: ${exception.message}")
-            return false
+            succeed = true
         }
+        log("Set conversation for knowledge base active $active succeed: $succeed")
+        return succeed
     }
 
     override suspend fun uploadDocument(
@@ -525,77 +457,71 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         tenantId: String?,
         fileName: String,
         mimeType: String,
-        uri: String,
         file: ByteArray,
         onUploadFinish: () -> Unit,
         onUploadFailed: () -> Unit
     ): Boolean {
-        try {
-            withContext(dispatcher) {
-                val newDocumentData = apiService.uploadDocument(
-                    knowledgeBaseId = knowledgeBaseId,
-                    tenantId = tenantId,
-                    fileName = fileName,
-                    mimeType = mimeType,
-                    file = file
-                )?.data ?: return@withContext
-                val localDocument = Document(
-                    DocumentId = newDocumentData.id,
-                    KbId = knowledgeBaseId,
-                    FileName = fileName,
-                    MimeType = mimeType,
-                    Status = newDocumentData.status,
-                    Uri = uri,
-                    IsInactive = null,
-                    Description = null,
-                    FilePath = null,
-                    FileSize = null,
-                    FileType = null,
-                    ProcessingError = null,
-                    CreatedAt = null,
-                    UpdatedAt = null,
-                    UploadedBy = null,
-                    ProcessedAt = null
-                )
-                upsertLocalDocumentInLocal(localDocument)
+        withContext(dispatcher) {
+            val newDocumentData = apiService.uploadDocument(
+                knowledgeBaseId = knowledgeBaseId,
+                tenantId = tenantId,
+                fileName = fileName,
+                mimeType = mimeType,
+                file = file
+            )?.data
+            if (newDocumentData == null) {
                 withContext(Dispatchers.Main) {
-                    onUploadFinish()
+                    onUploadFailed()
                 }
-                launch(dispatcher) {
-                    // check and wait until finish processing
-                    checkDocumentStatusUntilFinished(
-                        documentId = newDocumentData.id
-                    )
-                    // set document active
-                    toggleDocumentActive(
-                        documentId = newDocumentData.id,
-                        active = true
-                    )
-                }
+                return@withContext
             }
-            log("Upload document finish")
-            return true
-        } catch (exception: Exception) {
+            val localDocument = Document(
+                DocumentId = newDocumentData.id,
+                KbId = knowledgeBaseId,
+                FileName = fileName,
+                MimeType = mimeType,
+                Status = newDocumentData.status,
+                IsInactive = null,
+                Description = null,
+                FilePath = null,
+                FileSize = null,
+                FileType = null,
+                ProcessingError = null,
+                CreatedAt = null,
+                UpdatedAt = null,
+                UploadedBy = null,
+                ProcessedAt = null
+            )
+            upsertLocalDocumentInLocal(localDocument)
             withContext(Dispatchers.Main) {
-                onUploadFailed()
+                onUploadFinish()
             }
-            log("Upload document failed: ${exception.message}")
-            return false
+            launch(dispatcher) {
+                // check and wait until finish processing
+                checkDocumentStatusUntilFinished(
+                    documentId = newDocumentData.id
+                )
+                // set document active
+                toggleDocumentActive(
+                    documentId = newDocumentData.id,
+                    active = true
+                )
+            }
         }
+        log("Upload document finish")
+        return true
     }
 
     override suspend fun deleteDocument(documentId: String): Boolean {
-        try {
-            withContext(dispatcher) {
-                apiService.deleteDocument(documentId)
+        var succeed = false
+        withContext(dispatcher) {
+            succeed = apiService.deleteDocument(documentId)
+            if (succeed) {
                 dbQueries.deleteDocumentWithId(documentId)
             }
-            log("Delete document success")
-            return true
-        } catch (exception: Exception) {
-            log("Delete document failed: ${exception.message}")
-            return false
         }
+        log("deleteDocument succeed: $succeed")
+        return true
     }
 
     override suspend fun sendUserRequest(
@@ -605,41 +531,39 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         webSearch: Boolean
     ): Boolean {
         val userId = sessionManager.getUserId() ?: return false
-        try {
-            var succeed = false
-            withContext(dispatcher) {
-                val requestNetworkMessage = NetworkMessage(
-                    id = Uuid.random().toString(),
-                    role = NetworkMessageRole.USER,
-                    parts = listOf(
-                        NetworkPartText(
-                            text = userRequest
-                        )
-                    ),
-                    metadata = NetworkMessageMetadata(
-                        conversationId = conversationId,
-                        kbId = kbId,
-                        userId = userId,
-                        appName = APP_NAME
+        var succeed = false
+        withContext(dispatcher) {
+            val requestNetworkMessage = NetworkMessage(
+                id = Uuid.random().toString(),
+                role = NetworkMessageRole.USER,
+                parts = listOf(
+                    NetworkPartText(
+                        type = "text",
+                        text = userRequest,
+                        metadata = null
                     )
-                )
-                upsertNetworkMessageInLocal(requestNetworkMessage)
-                val askRequest = AskRequest(
-                    message = requestNetworkMessage,
-                    agentic = true,
-                    webSearch = webSearch
-                )
-                val networkMessage = apiService.ask(askRequest)?.data ?: return@withContext
-                upsertNetworkMessageInLocal(networkMessage)
-                log("get networkMessage: $networkMessage")
-                succeed = true
-            }
-            log("Send user request succeed: $succeed")
-            return succeed
-        } catch (exception: Exception) {
-            log("Send user request failed: ${exception.message}")
-            return false
+                ),
+                metadata = NetworkMessageMetadata(
+                    conversationId = conversationId,
+                    kbId = kbId,
+                    userId = userId,
+                    appName = APP_NAME
+                ),
+                retrievalContext = null
+            )
+            upsertNetworkMessageInLocal(requestNetworkMessage)
+            val askRequest = AskRequest(
+                message = requestNetworkMessage,
+                agentic = true,
+                webSearch = webSearch
+            )
+            val networkMessage = apiService.ask(askRequest)?.data ?: return@withContext
+            upsertNetworkMessageInLocal(networkMessage)
+            log("get networkMessage: $networkMessage")
+            succeed = true
         }
+        log("Send user request succeed: $succeed")
+        return succeed
     }
 
     override suspend fun collectSSEResponseFlow(
@@ -654,7 +578,9 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             role = NetworkMessageRole.USER,
             parts = listOf(
                 NetworkPartText(
+                    type = "text",
                     text = userRequest,
+                    metadata = null
                 )
             ),
             metadata = NetworkMessageMetadata(
@@ -662,7 +588,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 kbId = kbId,
                 userId = userId,
                 appName = APP_NAME
-            )
+            ),
+            retrievalContext = null
         )
         withContext(dispatcher) {
             upsertNetworkMessageInLocal(requestNetworkMessage)
@@ -687,12 +614,42 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 webSearch = webSearch
             ),
             dispatcher = dispatcher,
+            onCompletion = {
+                if (content.isEmpty()) {
+                    dbQueries.deleteMessageWithId(responseLocalMessage.MessageId)
+                }
+            },
             handleEvent = handleSseEvent@{ serverSentEvent ->
-                if (serverSentEvent.event == "content_block_delta") {
-                    val dataString = serverSentEvent.data ?: return@handleSseEvent
-                    val data = Json.decodeFromString<SseContentData>(dataString)
-                    content += data.delta.text
-                    upsertLocalMessageInLocal(responseLocalMessage.copy(Content = content))
+                log("serverSentEvent: $serverSentEvent")
+                when (serverSentEvent.event?.toSseEvent()) {
+                    SseEvent.START -> {
+                        val dataString = serverSentEvent.data ?: return@handleSseEvent
+                        val data = Json.decodeFromString<SseStartData>(dataString)
+                        log("data: $data")
+                    }
+
+                    SseEvent.STATUS -> {
+                        val dataString = serverSentEvent.data ?: return@handleSseEvent
+                        val data = Json.decodeFromString<SseStatusData>(dataString)
+                        log("data: $data")
+                    }
+
+                    SseEvent.CONTENT -> {
+                        val dataString = serverSentEvent.data ?: return@handleSseEvent
+                        val data = Json.decodeFromString<SseContentData>(dataString)
+                        content += data.delta.text
+                        upsertLocalMessageInLocal(responseLocalMessage.copy(Content = content))
+                    }
+
+                    SseEvent.STOP -> {
+                        val dataString = serverSentEvent.data ?: return@handleSseEvent
+                        val data = Json.decodeFromString<SseStopData>(dataString)
+                        log("data: $data")
+                    }
+
+                    null -> {
+                        log("Invalid Sse event: ${serverSentEvent.event}")
+                    }
                 }
             }
         )
@@ -700,56 +657,48 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
 
     private suspend fun checkDocumentStatusUntilFinished(
         documentId: String,
-        checkInterval: Long = 2000
+        checkInterval: Long = 3000
     ) {
-        try {
-            val localDocument = dbQueries.getDocumentWithId(documentId).awaitAsOneOrNull() ?: return
-            if (localDocument.Status == NetworkDocumentStatus.FINISHED) return
-            while (true) {
-                val status = apiService.getDocumentStatus(documentId)?.data?.status?.apply {
-                    upsertLocalDocumentInLocal(localDocument.copy(Status = this))
-                }
-                when (status) {
-                    NetworkDocumentStatus.FINISHED -> {
-                        log("$documentId status: $status")
-                        // fetch full document detail
-                        val networkDocument = apiService.getDocument(documentId)?.data ?: return
-                        upsertNetworkDocumentInLocal(networkDocument)
-                        break
-                    }
-
-                    NetworkDocumentStatus.TIMEOUT, NetworkDocumentStatus.FAILED -> {
-                        log("$documentId status: $status")
-                        deleteDocument(documentId)
-                        break
-                    }
-
-                    else -> {
-                        log("$documentId status: $status")
-                    }
-                }
-                delay(checkInterval)
+        val localDocument = dbQueries.getDocumentWithId(documentId).awaitAsOneOrNull() ?: return
+        if (localDocument.Status == NetworkDocumentStatus.FINISHED) return
+        while (true) {
+            val status = apiService.getDocumentStatus(documentId)?.data?.status?.apply {
+                upsertLocalDocumentInLocal(localDocument.copy(Status = this))
             }
-            log("checkDocumentStatusUntilFinished $documentId success")
-        } catch (exception: Exception) {
-            log("checkDocumentStatusUntilFinished $documentId failed: ${exception.message}")
+            when (status) {
+                NetworkDocumentStatus.FINISHED -> {
+                    log("$documentId status: $status")
+                    // fetch full document detail
+                    val networkDocument = apiService.getDocument(documentId)?.data ?: return
+                    upsertNetworkDocumentInLocal(networkDocument)
+                    break
+                }
+
+                NetworkDocumentStatus.TIMEOUT, NetworkDocumentStatus.FAILED -> {
+                    log("$documentId status: $status")
+                    deleteDocument(documentId)
+                    break
+                }
+
+                else -> {
+                    log("$documentId status: $status")
+                }
+            }
+            delay(checkInterval)
         }
+        log("checkDocumentStatusUntilFinished $documentId success")
     }
 
     private suspend fun toggleDocumentActive(
         documentId: String,
         active: Boolean
     ) {
-        try {
-            val networkDocument = apiService.toggleDocumentActive(
-                id = documentId,
-                active = active
-            )?.data ?: return
-            upsertNetworkDocumentInLocal(networkDocument)
-            log("toggleDocumentActive $documentId $active success")
-        } catch (exception: Exception) {
-            log("toggleDocumentActive $documentId $active failed: ${exception.message}")
-        }
+        val networkDocument = apiService.toggleDocumentActive(
+            id = documentId,
+            active = active
+        )?.data ?: return
+        upsertNetworkDocumentInLocal(networkDocument)
+        log("toggleDocumentActive $documentId $active success")
     }
 
     // FOR LOCAL DATABASE
@@ -815,8 +764,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             updatedAt = localDocument.UpdatedAt,
             uploadedBy = localDocument.UploadedBy,
             processedAt = localDocument.ProcessedAt,
-            isInactive = localDocument.IsInactive,
-            uri = localDocument.Uri
+            isInactive = localDocument.IsInactive
         )
     }
 
@@ -856,7 +804,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     }
 
     private suspend fun upsertNetworkDocumentInLocal(networkDocument: NetworkDocument) {
-        val localUri = dbQueries.getDocumentWithId(networkDocument.id).awaitAsOneOrNull()?.Uri
         dbQueries.upsertDocument(
             documentId = networkDocument.id,
             kbId = networkDocument.knowledgeBaseId,
@@ -872,8 +819,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             updatedAt = networkDocument.updatedAt,
             uploadedBy = networkDocument.uploadedBy,
             processedAt = networkDocument.processedAt,
-            isInactive = networkDocument.isInactive,
-            uri = localUri
+            isInactive = networkDocument.isInactive
         )
     }
 

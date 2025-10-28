@@ -18,7 +18,7 @@ data class LoginUserRequest(
     val email: String,
     val password: String,
     @SerialName("remember_me")
-    val remember: Boolean = false
+    val remember: Boolean
 )
 
 @Serializable
@@ -37,8 +37,8 @@ data class LogoutRequest(
 data class GetKnowledgeBasesRequest(
     @SerialName("user_id")
     val userId: String,
-    val skip: Int = 0,
-    val limit: Int = 10
+    val skip: Int,
+    val limit: Int
 )
 
 @Serializable
@@ -189,14 +189,14 @@ data class NetworkMessage(
     val role: NetworkMessageRole,
     val parts: List<NetworkPartText>,
     val metadata: NetworkMessageMetadata,
-    val retrievalContext: RetrievalContext? = null
+    val retrievalContext: RetrievalContext?
 )
 
 @Serializable
 data class NetworkPartText(
-    val type: String = "text",
+    val type: String,
     val text: String,
-    val metadata: String? = null
+    val metadata: String?
 )
 
 @Serializable

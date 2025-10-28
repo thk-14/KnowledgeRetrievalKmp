@@ -1,6 +1,7 @@
 package com.thk.knowledgeretrievalkmp.ui.view.login
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +68,15 @@ class LoginViewModel(
         )
         log("authenticateUser succeed: $succeed")
         onLoginFinish(succeed)
+    }
+
+    fun showSnackbar(message: String) {
+        viewModelScope.launch {
+            loginUiState.snackBarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
     }
 
     private suspend fun refreshToken() {

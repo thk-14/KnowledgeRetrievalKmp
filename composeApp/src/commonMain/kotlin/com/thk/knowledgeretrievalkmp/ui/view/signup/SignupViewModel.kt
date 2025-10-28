@@ -1,6 +1,7 @@
 package com.thk.knowledgeretrievalkmp.ui.view.signup
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +61,15 @@ class SignupViewModel(
         )
         log("signupUser succeed: $succeed")
         onSignupFinish(succeed)
+    }
+
+    fun showSnackbar(message: String) {
+        viewModelScope.launch {
+            signupUiState.snackBarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
     }
 
     companion object {

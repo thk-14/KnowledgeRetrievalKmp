@@ -5,6 +5,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -146,6 +147,7 @@ fun ChatTopBar(
                     },
                     onClick = {
                         chatViewModel.chatUiState.kbMenuExpanded.value = false
+                        chatViewModel.chatUiState.renameInputState.clearText()
                         chatViewModel.chatUiState.showDialogAction.value =
                             ChatShowDialogAction.RenameKB
                     }

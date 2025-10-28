@@ -2,6 +2,7 @@ package com.thk.knowledgeretrievalkmp.ui.view.kb
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
@@ -79,6 +80,15 @@ class KbViewModel(
         kbUiState.createKBNameState.clearText()
         kbUiState.createKBDescriptionState.clearText()
         kbUiState.showKBCreateDialog.value = true
+    }
+
+    fun showSnackbar(message: String) {
+        viewModelScope.launch {
+            kbUiState.snackBarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
     }
 
     private suspend fun fetchKnowledgeBases() {

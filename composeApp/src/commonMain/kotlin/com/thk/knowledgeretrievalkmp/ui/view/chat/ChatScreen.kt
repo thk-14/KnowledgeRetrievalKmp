@@ -5,7 +5,6 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -15,7 +14,6 @@ import com.thk.knowledgeretrievalkmp.ui.theme.White
 import com.thk.knowledgeretrievalkmp.ui.view.custom.FullScreenLoader
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import knowledgeretrievalkmp.composeapp.generated.resources.*
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -70,12 +68,7 @@ fun ChatScreen(
                             if (succeed) {
                                 onBackPressed()
                             } else {
-                                coroutineScope.launch {
-                                    chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                                        message = kbDeleteFailed,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                                chatViewModel.showSnackbar(kbDeleteFailed)
                             }
                         }
                     )
@@ -102,12 +95,9 @@ fun ChatScreen(
                         documentId = deleteDocument.DocumentId,
                         onDeleteFinish = { succeed ->
                             chatViewModel.chatUiState.showLoadingAction.value = null
-                            coroutineScope.launch {
-                                chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                                    message = if (succeed) documentDeleteSuccess else documentDeleteFailed,
-                                    duration = SnackbarDuration.Short
-                                )
-                            }
+                            chatViewModel.showSnackbar(
+                                if (succeed) documentDeleteSuccess else documentDeleteFailed
+                            )
                         }
                     )
                 }
@@ -130,21 +120,11 @@ fun ChatScreen(
                 onConfirm = ConfirmRename@{
                     val newName = chatViewModel.chatUiState.renameInputState.text.toString()
                     if (newName.isEmpty()) {
-                        coroutineScope.launch {
-                            chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                                message = emptyNameWarning,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
+                        chatViewModel.showSnackbar(emptyNameWarning)
                         return@ConfirmRename
                     }
                     if (newName == chatViewModel.chatUiState.knowledgeBase.value.kb.value.Name) {
-                        coroutineScope.launch {
-                            chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                                message = sameNameWarning,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
+                        chatViewModel.showSnackbar(sameNameWarning)
                         return@ConfirmRename
                     }
                     chatViewModel.chatUiState.showDialogAction.value = null
@@ -153,12 +133,9 @@ fun ChatScreen(
                         newName = newName,
                         onRenameFinish = { succeed ->
                             chatViewModel.chatUiState.showLoadingAction.value = null
-                            coroutineScope.launch {
-                                chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                                    message = if (succeed) kbRenameSuccess else kbRenameFailed,
-                                    duration = SnackbarDuration.Short
-                                )
-                            }
+                            chatViewModel.showSnackbar(
+                                if (succeed) kbRenameSuccess else kbRenameFailed
+                            )
                         }
                     )
                 }

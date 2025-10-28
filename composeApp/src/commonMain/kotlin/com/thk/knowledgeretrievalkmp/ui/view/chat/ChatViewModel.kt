@@ -1,6 +1,7 @@
 package com.thk.knowledgeretrievalkmp.ui.view.chat
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -88,7 +89,6 @@ class ChatViewModel(
     fun uploadDocument(
         fileName: String,
         mimeType: String,
-        uri: String,
         file: ByteArray,
         onUploadFinish: () -> Unit,
         onUploadFailed: () -> Unit
@@ -97,7 +97,6 @@ class ChatViewModel(
             knowledgeBaseId = knowledgeBaseId,
             fileName = fileName,
             mimeType = mimeType,
-            uri = uri,
             file = file,
             onUploadFinish = onUploadFinish,
             onUploadFailed = onUploadFailed
@@ -136,6 +135,15 @@ class ChatViewModel(
                 conversationId = chatUiState.knowledgeBase.value.kb.value.ConversationId ?: "",
                 userRequest = userRequest,
                 webSearch = chatUiState.webSearch.value
+            )
+        }
+    }
+
+    fun showSnackbar(message: String) {
+        viewModelScope.launch {
+            chatUiState.snackBarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
             )
         }
     }

@@ -12,7 +12,9 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.sse.*
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.serialization.json.Json
 
 class NetworkApiService {
@@ -313,7 +315,8 @@ class NetworkApiService {
     suspend fun askSse(
         askRequest: AskRequest,
         dispatcher: CoroutineDispatcher,
-        handleEvent: suspend (ServerSentEvent) -> Unit
+        handleEvent: suspend (ServerSentEvent) -> Unit,
+        onCompletion: suspend () -> Unit
     ) = try {
         client.sse(
             urlString = "$baseUrl/chat/ask/sse",
@@ -326,11 +329,18 @@ class NetworkApiService {
             log("SSE connection established")
             incoming
                 .flowOn(dispatcher)
+                .catch { exception ->
+                    log("Handle SSE failed: ${exception.message}")
+                }
+                .onCompletion {
+                    onCompletion()
+                }
                 .collect { event ->
                     handleEvent(event)
                 }
         }
     } catch (exception: Exception) {
+        onCompletion()
         log("askSse failed: ${exception.message}")
     }
 

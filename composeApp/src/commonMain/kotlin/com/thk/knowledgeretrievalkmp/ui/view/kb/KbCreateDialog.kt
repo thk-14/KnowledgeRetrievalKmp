@@ -5,7 +5,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -18,7 +17,6 @@ import com.thk.knowledgeretrievalkmp.ui.theme.*
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import knowledgeretrievalkmp.composeapp.generated.resources.*
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -28,7 +26,6 @@ fun KbCreateDialog(
 ) {
     val screenWidth = LocalWindowSize.current.width
     val screenHeight = LocalWindowSize.current.height
-    val coroutineScope = rememberCoroutineScope()
 
     val createKbLoadingText = stringResource(Res.string.LS_create_kb)
     val kbCreateSuccess = stringResource(Res.string.kb_create_success)
@@ -126,21 +123,11 @@ fun KbCreateDialog(
                             val description =
                                 kbViewModel.kbUiState.createKBDescriptionState.text.toString()
                             if (name.isEmpty()) {
-                                coroutineScope.launch {
-                                    kbViewModel.kbUiState.snackBarHostState.showSnackbar(
-                                        message = nameEmptyWarning,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                                kbViewModel.showSnackbar(nameEmptyWarning)
                                 return@onCreateButtonClick
                             }
                             if (description.isEmpty()) {
-                                coroutineScope.launch {
-                                    kbViewModel.kbUiState.snackBarHostState.showSnackbar(
-                                        message = descriptionEmptyWarning,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                                kbViewModel.showSnackbar(descriptionEmptyWarning)
                                 return@onCreateButtonClick
                             }
                             kbViewModel.dismissKbCreateDialog()
@@ -152,19 +139,9 @@ fun KbCreateDialog(
                                 onCreateKbFinish = { succeed ->
                                     kbViewModel.kbUiState.showLoadingAction.value = null
                                     if (succeed) {
-                                        coroutineScope.launch {
-                                            kbViewModel.kbUiState.snackBarHostState.showSnackbar(
-                                                message = kbCreateSuccess,
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
+                                        kbViewModel.showSnackbar(kbCreateSuccess)
                                     } else {
-                                        coroutineScope.launch {
-                                            kbViewModel.kbUiState.snackBarHostState.showSnackbar(
-                                                message = kbCreateFailed,
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
+                                        kbViewModel.showSnackbar(kbCreateFailed)
                                     }
                                 }
                             )

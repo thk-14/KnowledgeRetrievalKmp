@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +27,6 @@ import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
 import knowledgeretrievalkmp.composeapp.generated.resources.*
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -84,7 +82,6 @@ fun KbMainScreen(
     animatedContentScope: AnimatedContentScope
 ) {
     val screenHeight = LocalWindowSize.current.height
-    val coroutineScope = rememberCoroutineScope()
 
     val logoutLoadingText = stringResource(Res.string.LS_logout)
     val logoutFailedWarning = stringResource(Res.string.logout_failed_warning)
@@ -115,12 +112,7 @@ fun KbMainScreen(
                             if (succeed) {
                                 onNavigateToAuthentication()
                             } else {
-                                coroutineScope.launch {
-                                    kbViewModel.kbUiState.snackBarHostState.showSnackbar(
-                                        message = logoutFailedWarning,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                                kbViewModel.showSnackbar(logoutFailedWarning)
                             }
                         }
                     )

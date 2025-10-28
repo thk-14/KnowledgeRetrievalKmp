@@ -47,7 +47,6 @@ interface KnowledgeRetrievalRepository {
         tenantId: String? = null,
         fileName: String,
         mimeType: String,
-        uri: String,
         file: ByteArray,
         onUploadFinish: () -> Unit,
         onUploadFailed: () -> Unit

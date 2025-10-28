@@ -115,12 +115,7 @@ fun LoginMainScreen(
                             if (succeed) {
                                 loginViewModel.loginUiState.isLoggedIn.value = true
                             } else {
-                                coroutineScope.launch {
-                                    loginViewModel.loginUiState.snackBarHostState.showSnackbar(
-                                        message = loginFailedWarning,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                                loginViewModel.showSnackbar(loginFailedWarning)
                             }
                         }
                     )
@@ -180,21 +175,11 @@ fun LoginMainScreen(
                     val password =
                         loginViewModel.loginUiState.passwordInputState.text.toString().trim()
                     if (!email.isValidEmail()) {
-                        coroutineScope.launch {
-                            loginViewModel.loginUiState.snackBarHostState.showSnackbar(
-                                message = emailInvalidWarning,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
+                        loginViewModel.showSnackbar(emailInvalidWarning)
                         return@OnLoginClick
                     }
                     if (password.isEmpty()) {
-                        coroutineScope.launch {
-                            loginViewModel.loginUiState.snackBarHostState.showSnackbar(
-                                message = passwordEmptyWarning,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
+                        loginViewModel.showSnackbar(passwordEmptyWarning)
                         return@OnLoginClick
                     }
 
@@ -205,12 +190,7 @@ fun LoginMainScreen(
                             if (succeed) {
                                 loginViewModel.loginUiState.isLoggedIn.value = true
                             } else {
-                                coroutineScope.launch {
-                                    loginViewModel.loginUiState.snackBarHostState.showSnackbar(
-                                        message = loginFailedWarning,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                                loginViewModel.showSnackbar(loginFailedWarning)
                             }
                         }
                     )

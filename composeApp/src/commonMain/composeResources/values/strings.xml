@@ -14,9 +14,9 @@
     <string name="knowledge_base_title">KNOWLEDGE BASE</string>
     <string name="knowledge_base_create_dialog_title">Create Knowledge Base</string>
     <string name="knowledge_base_create_dialog_name">Name</string>
-    <string name="knowledge_base_create_dialog_name_placeholder">Knowledge base\'s name</string>
+    <string name="knowledge_base_create_dialog_name_placeholder">Knowledge base's name</string>
     <string name="knowledge_base_create_dialog_description">Description</string>
-    <string name="knowledge_base_create_dialog_description_placeholder">Knowledge base\'s description</string>
+    <string name="knowledge_base_create_dialog_description_placeholder">Knowledge base's description</string>
     <string name="logout_btn">Log Out</string>
     <string name="cancel_btn">Cancel</string>
     <string name="create_btn">Create</string>

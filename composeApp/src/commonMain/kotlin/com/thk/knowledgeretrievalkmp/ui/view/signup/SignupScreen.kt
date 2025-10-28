@@ -141,12 +141,7 @@ fun SignupMainScreen(
                             if (succeed) {
                                 signupViewModel.signupUiState.isLoggedIn.value = true
                             } else {
-                                coroutineScope.launch {
-                                    signupViewModel.signupUiState.snackBarHostState.showSnackbar(
-                                        message = loginFailedWarning,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                                signupViewModel.showSnackbar(loginFailedWarning)
                             }
                         }
                     )
@@ -203,22 +198,12 @@ fun SignupMainScreen(
                 val password =
                     signupViewModel.signupUiState.passwordInputState.text.toString().trim()
                 if (!email.isValidEmail()) {
-                    coroutineScope.launch {
-                        signupViewModel.signupUiState.snackBarHostState.showSnackbar(
-                            message = emailInvalidWarning,
-                            duration = SnackbarDuration.Short
-                        )
-                    }
+                    signupViewModel.showSnackbar(emailInvalidWarning)
                     return@onSignupClick
                 }
                 val passwordError = checkValidPasswordError(password)
                 if (passwordError != null) {
-                    coroutineScope.launch {
-                        signupViewModel.signupUiState.snackBarHostState.showSnackbar(
-                            message = passwordError,
-                            duration = SnackbarDuration.Short
-                        )
-                    }
+                    signupViewModel.showSnackbar(passwordError)
                     return@onSignupClick
                 }
                 signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(signupLoadingText)
@@ -228,12 +213,7 @@ fun SignupMainScreen(
                         if (succeed) {
                             signupViewModel.signupUiState.signupCompleted.value = true
                         } else {
-                            coroutineScope.launch {
-                                signupViewModel.signupUiState.snackBarHostState.showSnackbar(
-                                    message = signupFailedWarning,
-                                    duration = SnackbarDuration.Short
-                                )
-                            }
+                            signupViewModel.showSnackbar(signupFailedWarning)
                         }
                     }
                 )

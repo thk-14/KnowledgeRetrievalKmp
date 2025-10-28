@@ -77,25 +77,14 @@ fun NavSourceScreen(
                                     chatViewModel.uploadDocument(
                                         fileName = file.name,
                                         mimeType = file.mimeType().toString(),
-                                        uri = "",
                                         file = file.readBytes(),
                                         onUploadFinish = {
                                             chatViewModel.chatUiState.showLoadingAction.value = null
-                                            coroutineScope.launch {
-                                                chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                                                    message = documentUploadFinish,
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                            }
+                                            chatViewModel.showSnackbar(documentUploadFinish)
                                         },
                                         onUploadFailed = {
                                             chatViewModel.chatUiState.showLoadingAction.value = null
-                                            coroutineScope.launch {
-                                                chatViewModel.chatUiState.snackBarHostState.showSnackbar(
-                                                    message = documentUploadFailed,
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                            }
+                                            chatViewModel.showSnackbar(documentUploadFailed)
                                         }
                                     )
                                 }
