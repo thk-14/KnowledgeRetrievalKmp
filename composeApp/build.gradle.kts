@@ -85,6 +85,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.auth)
 
             // FileKit
             implementation(libs.filekit.core)
@@ -117,6 +118,10 @@ kotlin {
             // Coil
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+
+            // Markdown
+            implementation(libs.multiplatform.markdown.renderer)
+            implementation(libs.multiplatform.markdown.renderer.m3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -227,6 +232,7 @@ compose.desktop {
             vendor = "thk"
 
             modules("jdk.unsupported")
+            modules.add("java.sql")
 
             windows {
                 iconFile.set(project.file("icons/book_icon.ico"))

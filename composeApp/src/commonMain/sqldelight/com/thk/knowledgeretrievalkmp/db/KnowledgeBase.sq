@@ -45,7 +45,8 @@ CREATE TABLE Message (
     UserId TEXT NOT NULL,
     Role TEXT AS NetworkMessageRole NOT NULL,
     Content TEXT NOT NULL,
-    CreatedAt INTEGER NOT NULL
+    Status TEXT NOT NULL,
+    MessageOrder INTEGER NOT NULL
 );
 
 -- Upsert
@@ -63,8 +64,22 @@ INSERT OR REPLACE INTO Conversation(ConversationId, Name, IsActive)
 VALUES (:conversationId, :name, :isActive);
 
 upsertMessage:
-INSERT OR REPLACE INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, CreatedAt)
-VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :createdAt);
+INSERT INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, Status, MessageOrder)
+VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :status, :messageOrder);
+
+-- Update
+
+updateMessageContent:
+UPDATE Message
+SET
+Content = :content
+WHERE MessageId = :messageId;
+
+updateMessageStatus:
+UPDATE Message
+SET
+Status = :status
+WHERE MessageId = :messageId;
 
 -- Delete
 
@@ -107,4 +122,12 @@ getDocumentsWithKbId:
 SELECT * FROM Document WHERE KbId = :kbId;
 
 getMessagesWithConversationId:
-SELECT * FROM Message WHERE ConversationId = :conversationId;
+SELECT * FROM Message
+WHERE ConversationId = :conversationId
+ORDER BY MessageOrder;
+
+getLatestMessageInConversation:
+SELECT * FROM Message
+WHERE ConversationId = :conversationId
+ORDER BY MessageOrder DESC
+LIMIT 1;

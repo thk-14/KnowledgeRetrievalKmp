@@ -1,8 +1,11 @@
 package com.thk.knowledgeretrievalkmp.data.network
 
+import com.thk.knowledgeretrievalkmp.data.AppContainer
 import com.thk.knowledgeretrievalkmp.util.log
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.sse.*
@@ -12,9 +15,11 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.sse.*
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.Json
 
 class NetworkApiService {
@@ -27,6 +32,29 @@ class NetworkApiService {
             })
         }
         install(SSE) {
+        }
+        install(Auth) {
+            bearer {
+                loadTokens {
+                    // FOR TESTING
+                    val accessToken = "hapt68"
+                    // END FOR TESTING
+
+//                    val accessToken = AppContainer.sessionManager.getAccessToken()
+                    val refreshToken = AppContainer.sessionManager.getRefreshToken()
+                    if (accessToken != null)
+                        BearerTokens(accessToken, refreshToken)
+                    else
+                        null
+                }
+                refreshTokens refreshTokenHandler@{
+                    val refreshToken = AppContainer.sessionManager.getRefreshToken() ?: return@refreshTokenHandler null
+                    val tokens = refreshToken(
+                        RefreshTokenRequest(refreshToken)
+                    )?.data ?: return@refreshTokenHandler null
+                    BearerTokens(tokens.accessToken, tokens.refreshToken)
+                }
+            }
         }
         install(Logging) {
             level = LogLevel.ALL
@@ -112,8 +140,10 @@ class NetworkApiService {
             null
         }
 
-    suspend fun getKnowledgeBaseById(id: String): NetworkResponse<NetworkKnowledgeBase>? = try {
-        client.get("$baseUrl/kb/$id").body()
+    suspend fun getKnowledgeBaseById(id: String, userId: String): NetworkResponse<NetworkKnowledgeBase>? = try {
+        client.get("$baseUrl/kb/$id") {
+            parameter("user_id", userId)
+        }.body()
     } catch (exception: Exception) {
         log("getKnowledgeBaseById failed: ${exception.message}")
         null
@@ -334,6 +364,9 @@ class NetworkApiService {
                 }
                 .onCompletion {
                     onCompletion()
+                }
+                .onEach {
+                    delay(50)
                 }
                 .collect { event ->
                     handleEvent(event)

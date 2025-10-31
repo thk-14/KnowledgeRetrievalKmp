@@ -13,6 +13,7 @@ import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBaseQueries
 import com.thk.knowledgeretrievalkmp.db.Message
+import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
 import com.thk.knowledgeretrievalkmp.util.toSseEvent
 import kotlinx.coroutines.Dispatchers
@@ -23,17 +24,16 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
 
-    private val sessionManager = SessionManager(AppContainer.dataStore)
-    private val dispatcher = Dispatchers.Default
+    private val sessionManager = AppContainer.sessionManager
     private val apiService: NetworkApiService = AppContainer.apiService
     private val dbQueries: KnowledgeBaseQueries by lazy {
         AppContainer.db.knowledgeBaseQueries
     }
+    private val dispatcher = Dispatchers.Default
 
     override suspend fun getProfileUri() = sessionManager.getProfileUri()
     override suspend fun getDisplayName() = sessionManager.getDisplayName()
@@ -51,7 +51,12 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     ): Boolean {
         withContext(dispatcher) {
             sessionManager.apply {
-                setUserId(userId)
+
+                // FOR TESTING
+                setUserId("hafizh")
+                // END FOR TESTING
+
+//                setUserId(userId)
                 setDisplayName(displayName)
                 setProfileUri(profileUri)
             }
@@ -179,7 +184,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         withContext(dispatcher) {
             // fetch then upsert knowledge base
             val networkKnowledgeBase =
-                apiService.getKnowledgeBaseById(kbId)?.data ?: return@withContext
+                apiService.getKnowledgeBaseById(kbId, userId)?.data ?: return@withContext
             log("get networkKnowledgeBase: $networkKnowledgeBase")
             upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
             // fetch then upsert documents
@@ -223,7 +228,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         )?.data
                         // upsert messages in local
                         networkMessages?.forEach { networkMessage ->
-                            upsertNetworkMessageInLocal(networkMessage)
+                            upsertNetworkMessageInLocal(
+                                networkMessage.copy(
+                                    metadata = networkMessage.metadata.copy(
+                                        conversationId = relatedNetworkConversation.conversationId,
+                                        kbId = kbId,
+                                        userId = userId
+                                    )
+                                )
+                            )
                         }
                         relatedNetworkConversation.conversationId
                     } else {
@@ -254,7 +267,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                     )?.data
                     // upsert messages in local
                     networkMessages?.forEach { networkMessage ->
-                        upsertNetworkMessageInLocal(networkMessage)
+                        upsertNetworkMessageInLocal(
+                            networkMessage.copy(
+                                metadata = networkMessage.metadata.copy(
+                                    conversationId = localKnowledgeBase.ConversationId,
+                                    kbId = kbId,
+                                    userId = userId
+                                )
+                            )
+                        )
                     }
                 }
             }
@@ -533,14 +554,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         val userId = sessionManager.getUserId() ?: return false
         var succeed = false
         withContext(dispatcher) {
+            val latestMessageOrder =
+                dbQueries.getLatestMessageInConversation(conversationId).awaitAsOneOrNull()?.MessageOrder ?: 0
             val requestNetworkMessage = NetworkMessage(
-                id = Uuid.random().toString(),
+                id = Uuid.generateV7().toString(),
                 role = NetworkMessageRole.USER,
                 parts = listOf(
                     NetworkPartText(
                         type = "text",
-                        text = userRequest,
-                        metadata = null
+                        text = userRequest
                     )
                 ),
                 metadata = NetworkMessageMetadata(
@@ -549,9 +571,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                     userId = userId,
                     appName = APP_NAME
                 ),
-                retrievalContext = null
+//                retrievalContext = null
             )
-            upsertNetworkMessageInLocal(requestNetworkMessage)
+            upsertNetworkMessageInLocal(
+                requestNetworkMessage.copy(
+                    metadata = requestNetworkMessage.metadata.copy(
+                        messageOrder = latestMessageOrder + 1
+                    )
+                )
+            )
             val askRequest = AskRequest(
                 message = requestNetworkMessage,
                 agentic = true,
@@ -570,17 +598,19 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         kbId: String,
         conversationId: String,
         userRequest: String,
-        webSearch: Boolean
+        webSearch: Boolean,
+        onSseData: (SseData) -> Unit
     ) {
         val userId = sessionManager.getUserId() ?: return
+        val latestMessageOrder =
+            dbQueries.getLatestMessageInConversation(conversationId).awaitAsOneOrNull()?.MessageOrder ?: 0
         val requestNetworkMessage = NetworkMessage(
-            id = Uuid.random().toString(),
+            id = Uuid.generateV7().toString(),
             role = NetworkMessageRole.USER,
             parts = listOf(
                 NetworkPartText(
                     type = "text",
-                    text = userRequest,
-                    metadata = null
+                    text = userRequest
                 )
             ),
             metadata = NetworkMessageMetadata(
@@ -589,20 +619,28 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 userId = userId,
                 appName = APP_NAME
             ),
-            retrievalContext = null
+//            retrievalContext = null
         )
         withContext(dispatcher) {
-            upsertNetworkMessageInLocal(requestNetworkMessage)
+            upsertNetworkMessageInLocal(
+                requestNetworkMessage.copy(
+                    metadata = requestNetworkMessage.metadata.copy(
+                        messageOrder = latestMessageOrder + 1
+                    )
+                )
+            )
         }
         var content = ""
+        var status = ""
         val responseLocalMessage = Message(
-            MessageId = Uuid.random().toString(),
+            MessageId = Uuid.generateV7().toString(),
             ConversationId = conversationId,
             KbId = kbId,
             UserId = userId,
             Role = NetworkMessageRole.AGENT,
             Content = content,
-            CreatedAt = Clock.System.now().toEpochMilliseconds()
+            Status = status,
+            MessageOrder = latestMessageOrder + 2
         )
         withContext(dispatcher) {
             upsertLocalMessageInLocal(responseLocalMessage)
@@ -626,25 +664,41 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseStartData>(dataString)
                         log("data: $data")
+                        onSseData(data)
                     }
 
                     SseEvent.STATUS -> {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseStatusData>(dataString)
                         log("data: $data")
+                        if (data.phase == "analysis") {
+                            status = "Analyzing ..."
+                        } else {
+                            status = data.message
+                        }
+                        updateMessageStatusInLocal(
+                            messageId = responseLocalMessage.MessageId,
+                            status = status
+                        )
+                        onSseData(data)
                     }
 
                     SseEvent.CONTENT -> {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseContentData>(dataString)
                         content += data.delta.text
-                        upsertLocalMessageInLocal(responseLocalMessage.copy(Content = content))
+                        updateMessageContentInLocal(
+                            messageId = responseLocalMessage.MessageId,
+                            content = content
+                        )
+                        onSseData(data)
                     }
 
                     SseEvent.STOP -> {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseStopData>(dataString)
                         log("data: $data")
+                        onSseData(data)
                     }
 
                     null -> {
@@ -657,7 +711,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
 
     private suspend fun checkDocumentStatusUntilFinished(
         documentId: String,
-        checkInterval: Long = 3000
+        checkInterval: Long = 5000
     ) {
         val localDocument = dbQueries.getDocumentWithId(documentId).awaitAsOneOrNull() ?: return
         if (localDocument.Status == NetworkDocumentStatus.FINISHED) return
@@ -776,7 +830,22 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             userId = localMessage.UserId,
             role = localMessage.Role,
             content = localMessage.Content,
-            createdAt = localMessage.CreatedAt
+            status = localMessage.Status,
+            messageOrder = localMessage.MessageOrder
+        )
+    }
+
+    private suspend fun updateMessageContentInLocal(messageId: String, content: String) {
+        dbQueries.updateMessageContent(
+            messageId = messageId,
+            content = content
+        )
+    }
+
+    private suspend fun updateMessageStatusInLocal(messageId: String, status: String) {
+        dbQueries.updateMessageStatus(
+            messageId = messageId,
+            status = status
         )
     }
 
@@ -839,7 +908,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             userId = networkMessage.metadata.userId,
             role = networkMessage.role,
             content = networkMessage.parts.firstOrNull()?.text ?: "",
-            createdAt = Clock.System.now().toEpochMilliseconds()
+            status = "",
+            messageOrder = networkMessage.metadata.messageOrder ?: 0
         )
     }
 

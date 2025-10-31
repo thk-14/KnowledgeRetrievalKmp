@@ -1,6 +1,9 @@
 package com.thk.knowledgeretrievalkmp.util
 
 import com.thk.knowledgeretrievalkmp.data.network.SseEvent
+import kotlin.random.Random
+import kotlin.time.Clock
+import kotlin.uuid.Uuid
 
 fun String.isValidEmail() =
     Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$")
@@ -39,4 +42,22 @@ fun String.toSseEvent(): SseEvent? {
         }
     }
     return null
+}
+
+fun Uuid.Companion.generateV7(): Uuid {
+    val timestamp = Clock.System.now().toEpochMilliseconds()
+    // Get 16 random bytes
+    val randomBytes = Random.Default.nextBytes(16)
+    // 48 bits for timestamp
+    randomBytes[0] = (timestamp shr 40).toByte()
+    randomBytes[1] = (timestamp shr 32).toByte()
+    randomBytes[2] = (timestamp shr 24).toByte()
+    randomBytes[3] = (timestamp shr 16).toByte()
+    randomBytes[4] = (timestamp shr 8).toByte()
+    randomBytes[5] = timestamp.toByte()
+    // 4 bits for version (0111)
+    randomBytes[6] = (randomBytes[6].toInt() and 0x0F or 0x70).toByte()
+    // 2 bits for variant (10)
+    randomBytes[8] = (randomBytes[8].toInt() and 0x3F or 0x80).toByte()
+    return Uuid.fromByteArray(randomBytes)
 }

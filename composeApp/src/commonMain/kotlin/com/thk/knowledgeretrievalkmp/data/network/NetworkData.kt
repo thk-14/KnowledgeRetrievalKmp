@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RegisterUserRequest(
     val email: String,
+    @SerialName("username")
     val userName: String,
     val password: String,
     @SerialName("full_name")
@@ -180,7 +181,10 @@ data class NetworkConversation(
     val conversationId: String,
     @SerialName("is_active")
     val isActive: Boolean,
-    val name: String
+    val name: String,
+    val summary: String?,
+    @SerialName("summarized_up_to_message_order")
+    val summarizedUpToMessageOrder: Int?
 )
 
 @Serializable
@@ -189,14 +193,13 @@ data class NetworkMessage(
     val role: NetworkMessageRole,
     val parts: List<NetworkPartText>,
     val metadata: NetworkMessageMetadata,
-    val retrievalContext: RetrievalContext?
+//    val retrievalContext: RetrievalContext?
 )
 
 @Serializable
 data class NetworkPartText(
     val type: String,
-    val text: String,
-    val metadata: String?
+    val text: String
 )
 
 @Serializable
@@ -212,7 +215,9 @@ data class RetrievalContext(
     @SerialName("total_cited")
     val totalCited: Int,
     @SerialName("cited_chunks")
-    val citedChunks: List<CitedChunk>
+    val citedChunks: List<CitedChunk>,
+    @SerialName("search_method")
+    val searchMethod: String
 )
 
 @Serializable
@@ -227,13 +232,15 @@ data class CitedChunk(
 @Serializable
 data class NetworkMessageMetadata(
     @SerialName("conversation_id")
-    val conversationId: String,
+    val conversationId: String = "",
     @SerialName("kb_id")
-    val kbId: String,
+    val kbId: String = "",
     @SerialName("user_id")
-    val userId: String,
+    val userId: String = "",
     @SerialName("app_name")
-    val appName: String
+    val appName: String = "",
+    @SerialName("message_order")
+    val messageOrder: Long? = null
 )
 
 @Serializable
@@ -295,8 +302,12 @@ data class GetDocumentStatusData(
     @SerialName("original_filename")
     val originalFileName: String,
     val status: NetworkDocumentStatus,
-//    @SerialName("task_id")
-//    val taskId: String
+    @SerialName("processing_error")
+    val processingError: String?,
+    @SerialName("processed_at")
+    val processedAt: String?,
+    @SerialName("total_chunks")
+    val totalChunks: Int
 )
 
 @Serializable

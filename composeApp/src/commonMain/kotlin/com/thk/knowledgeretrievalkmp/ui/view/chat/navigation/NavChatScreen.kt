@@ -25,18 +25,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
+import com.mikepenz.markdown.m3.Markdown
 import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
+import com.thk.knowledgeretrievalkmp.data.network.SseStartData
+import com.thk.knowledgeretrievalkmp.data.network.SseStopData
 import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.ui.theme.Black
 import com.thk.knowledgeretrievalkmp.ui.theme.Gray50
 import com.thk.knowledgeretrievalkmp.ui.theme.LightGreen
 import com.thk.knowledgeretrievalkmp.ui.theme.White
 import com.thk.knowledgeretrievalkmp.ui.view.chat.ChatViewModel
+import com.thk.knowledgeretrievalkmp.ui.view.custom.InfiniteLoadingCircle
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
-import com.thk.knowledgeretrievalkmp.ui.view.custom.TypingDots
 import knowledgeretrievalkmp.composeapp.generated.resources.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -49,8 +53,18 @@ fun NavChatScreen(
 ) {
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-
     val focusManager = LocalFocusManager.current
+
+    fun scrollToLast() {
+        coroutineScope.launch {
+            val lastIndex =
+                chatViewModel.chatUiState.knowledgeBase.value.conversation.value.messages.size - 1
+            if (lastIndex >= 0) {
+                lazyListState.animateScrollToItem(lastIndex)
+            }
+        }
+    }
+
     Scaffold(
         bottomBar = {
             NavChatBottomBar(
@@ -66,17 +80,25 @@ fun NavChatScreen(
                     )
                 },
                 onSendMessage = {
-                    chatViewModel.sendUserRequestWithSSE()
+                    chatViewModel.sendUserRequestWithSSE { sseData ->
+                        when (sseData) {
+                            SseStartData -> {
+                                scrollToLast()
+                            }
+
+                            SseStopData -> {
+                                scrollToLast()
+                            }
+
+                            else -> {
+                                // do nothing
+                            }
+                        }
+                    }
                     // clear chat input text
                     chatViewModel.chatUiState.chatInputState.clearText()
                     focusManager.clearFocus()
-                    coroutineScope.launch {
-                        val lastIndex =
-                            chatViewModel.chatUiState.knowledgeBase.value.conversation.value.messages.size - 1
-                        if (lastIndex >= 0) {
-                            lazyListState.animateScrollToItem(lastIndex)
-                        }
-                    }
+                    scrollToLast()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -258,17 +280,28 @@ fun ChatContent(
             when (message.Role) {
                 NetworkMessageRole.USER -> UserMessage(
                     message = message,
-                    modifier = Modifier.animateItem()
+//                    modifier = Modifier.animateItem()
                 )
 
                 NetworkMessageRole.AGENT ->
                     if (message.Content.isNotEmpty())
                         ServerMessage(
                             message = message,
-                            modifier = Modifier.animateItem()
+//                            modifier = Modifier.animateItem()
                         )
                     else {
-                        TypingDots()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+//                            TypingDots(dotSize = 8.dp)
+                            InfiniteLoadingCircle(size = 30.dp, strokeWidth = 3.dp)
+                            Text(
+                                text = message.Status,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
             }
         }
@@ -298,7 +331,7 @@ fun UserMessage(
         ) {
             Text(
                 text = message.Content,
-                fontSize = 20.sp,
+//                fontSize = 20.sp,
                 modifier = Modifier.padding(8.dp)
             )
         }
@@ -311,14 +344,23 @@ fun ServerMessage(
     message: Message
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
         horizontalArrangement = Arrangement.Start
     ) {
-        Text(
-            text = message.Content,
-            fontSize = 20.sp,
-            color = Black,
-            modifier = Modifier.padding(8.dp)
-        )
+        if (message.Status == "Response complete" || message.Status == "") {
+            Markdown(
+                content = message.Content,
+                modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp)
+            )
+        } else {
+            Text(
+                text = message.Content,
+//                fontSize = 20.sp,
+//                color = Black,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
     }
 }

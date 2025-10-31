@@ -56,8 +56,8 @@ class SignupViewModel(
         val succeed = repository.registerUser(
             email = signupUiState.emailInputState.text.toString(),
             password = signupUiState.passwordInputState.text.toString(),
-            userName = signupUiState.emailInputState.text.toString(),
-            fullName = signupUiState.emailInputState.text.toString()
+            userName = signupUiState.emailInputState.text.toString().substringBefore('@'),
+            fullName = signupUiState.emailInputState.text.toString().substringBefore('@')
         )
         log("signupUser succeed: $succeed")
         onSignupFinish(succeed)

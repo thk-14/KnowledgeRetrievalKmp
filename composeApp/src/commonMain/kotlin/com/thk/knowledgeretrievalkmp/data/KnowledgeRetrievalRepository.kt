@@ -1,6 +1,7 @@
 package com.thk.knowledgeretrievalkmp.data
 
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocumentsAndConversation
+import com.thk.knowledgeretrievalkmp.data.network.SseData
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import kotlinx.coroutines.flow.Flow
 
@@ -69,7 +70,8 @@ interface KnowledgeRetrievalRepository {
         kbId: String,
         conversationId: String,
         userRequest: String,
-        webSearch: Boolean
+        webSearch: Boolean,
+        onSseData: (SseData) -> Unit
     )
 
     // FOR LOCAL DATABASE

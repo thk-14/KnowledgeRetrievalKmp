@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
+import com.thk.knowledgeretrievalkmp.data.network.SseData
 import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
@@ -62,9 +63,7 @@ class ChatViewModel(
             displayName.value = repository.getDisplayName() ?: ""
             repository.getKnowledgeBaseWithIdInLocalFlow(knowledgeBaseId)
                 .collect { newKb ->
-                    log("newKb: $newKb")
                     if (newKb != null) {
-                        newKb.conversation?.messages?.sortBy { it.CreatedAt }
                         chatUiState.knowledgeBase.value = newKb.toUiKnowledgeBase()
                     }
                 }
@@ -126,7 +125,9 @@ class ChatViewModel(
         }
     }
 
-    fun sendUserRequestWithSSE() {
+    fun sendUserRequestWithSSE(
+        onSseData: (SseData) -> Unit
+    ) {
         val userRequest = chatUiState.chatInputState.text.toString()
         if (userRequest.isEmpty()) return
         viewModelScope.launch {
@@ -134,7 +135,8 @@ class ChatViewModel(
                 kbId = knowledgeBaseId,
                 conversationId = chatUiState.knowledgeBase.value.kb.value.ConversationId ?: "",
                 userRequest = userRequest,
-                webSearch = chatUiState.webSearch.value
+                webSearch = chatUiState.webSearch.value,
+                onSseData = onSseData
             )
         }
     }

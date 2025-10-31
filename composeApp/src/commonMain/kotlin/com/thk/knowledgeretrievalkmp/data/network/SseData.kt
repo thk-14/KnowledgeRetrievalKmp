@@ -35,6 +35,7 @@ data class SseStartData(
 data class SseStatusData(
     val phase: String,
     val message: String,
+    val metadata: SseStatusMetadata? = null,
     val id: String,
     val timestamp: String
 ) : SseData()
@@ -64,5 +65,13 @@ data class SseContentDelta(
 data class SseStopMetadata(
     val route: String,
     @SerialName("response_mode")
-    val responseMode: String
+    val responseMode: String,
+    @SerialName("execution_history")
+    val executionHistory: List<String>
+)
+
+@Serializable
+data class SseStatusMetadata(
+    @SerialName("sources_count")
+    val sourcesCount: Int
 )
