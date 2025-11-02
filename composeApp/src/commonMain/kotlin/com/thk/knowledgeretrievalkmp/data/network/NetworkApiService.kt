@@ -4,6 +4,7 @@ import com.thk.knowledgeretrievalkmp.data.AppContainer
 import com.thk.knowledgeretrievalkmp.util.log
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -55,6 +56,9 @@ class NetworkApiService {
                     BearerTokens(tokens.accessToken, tokens.refreshToken)
                 }
             }
+        }
+        install(DefaultRequest) {
+            header("ngrok-skip-browser-warning", true)
         }
         install(Logging) {
             level = LogLevel.ALL
