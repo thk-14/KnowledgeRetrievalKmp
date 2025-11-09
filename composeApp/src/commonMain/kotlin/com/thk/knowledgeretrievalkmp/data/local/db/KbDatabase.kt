@@ -15,11 +15,10 @@ fun createDatabase(driver: SqlDriver) = KbDatabase(
 
 data class ConversationWithMessages(
     val conversation: Conversation,
-    val messages: MutableList<Message>
+    val messages: List<Message>
 )
 
-data class KbWithDocumentsAndConversation(
+data class KbWithDocuments(
     val kb: KnowledgeBase,
-    val documents: List<Document>,
-    val conversation: ConversationWithMessages?
+    val documents: List<Document>
 )

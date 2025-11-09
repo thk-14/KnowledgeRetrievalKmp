@@ -1,14 +1,13 @@
-package com.thk.knowledgeretrievalkmp.ui.view.chat.navigation
+package com.thk.knowledgeretrievalkmp.ui.view.detail
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,8 +20,6 @@ import com.thk.knowledgeretrievalkmp.ui.theme.Black
 import com.thk.knowledgeretrievalkmp.ui.theme.Blue
 import com.thk.knowledgeretrievalkmp.ui.theme.Gray
 import com.thk.knowledgeretrievalkmp.ui.theme.White
-import com.thk.knowledgeretrievalkmp.ui.view.chat.ChatShowDialogAction
-import com.thk.knowledgeretrievalkmp.ui.view.chat.ChatViewModel
 import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 import com.thk.knowledgeretrievalkmp.util.log
 import io.github.vinceglb.filekit.*
@@ -36,19 +33,21 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 
 @Composable
-fun NavSourceScreen(
+fun DocumentSection(
     modifier: Modifier = Modifier,
-    chatViewModel: ChatViewModel
+    detailViewModel: DetailViewModel,
+    onNavigateToChat: (String) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val documentUploadFinish = stringResource(Res.string.document_upload_finish)
     val documentUploadFailed = stringResource(Res.string.document_upload_failed)
     val uploadDocumentLoadingText = stringResource(Res.string.LS_upload_document)
+    var fabExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            NavSourceTopBar(
-                chatViewModel = chatViewModel,
+            DocumentSectionTopBar(
+                detailViewModel = detailViewModel,
                 modifier = Modifier.padding(
                     start = Dimens.content_padding_horizontal,
                     end = Dimens.content_padding_horizontal,
@@ -57,54 +56,96 @@ fun NavSourceScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    coroutineScope.launch {
-                        val stateFlow = FileKit.openFilePicker(
-                            mode = FileKitMode.SingleWithState,
-                            type = FileKitType.File(FileExtension.entries.map { it.extension })
-                        )
-                        stateFlow.collect { state ->
-                            when (state) {
-                                is FileKitPickerState.Started -> log("Selection started with ${state.total} files")
-                                is FileKitPickerState.Progress -> log("Processing: ${state.processed.size()} / ${state.total}")
-                                is FileKitPickerState.Completed -> {
-                                    log("Completed: ${state.result.size()} files selected")
-                                    val file = state.result
-                                    log("File selected: $file")
-                                    chatViewModel.chatUiState.showLoadingAction.value =
-                                        ShowLoadingAction(uploadDocumentLoadingText)
-                                    chatViewModel.uploadDocument(
-                                        fileName = file.name,
-                                        mimeType = file.mimeType().toString(),
-                                        file = file.readBytes(),
-                                        onUploadFinish = {
-                                            chatViewModel.chatUiState.showLoadingAction.value = null
-                                            chatViewModel.showSnackbar(documentUploadFinish)
-                                        },
-                                        onUploadFailed = {
-                                            chatViewModel.chatUiState.showLoadingAction.value = null
-                                            chatViewModel.showSnackbar(documentUploadFailed)
-                                        }
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                AnimatedVisibility(visible = fabExpanded) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        SmallFloatingActionButton(
+                            onClick = {
+                                fabExpanded = !fabExpanded
+                                coroutineScope.launch {
+                                    val stateFlow = FileKit.openFilePicker(
+                                        mode = FileKitMode.SingleWithState,
+                                        type = FileKitType.File(FileExtension.entries.map { it.extension })
                                     )
-                                }
+                                    stateFlow.collect { state ->
+                                        when (state) {
+                                            is FileKitPickerState.Started -> log("Selection started with ${state.total} files")
+                                            is FileKitPickerState.Progress -> log("Processing: ${state.processed.size()} / ${state.total}")
+                                            is FileKitPickerState.Completed -> {
+                                                log("Completed: ${state.result.size()} files selected")
+                                                val file = state.result
+                                                log("File selected: $file")
+                                                detailViewModel.detailUiState.showLoadingAction.value =
+                                                    ShowLoadingAction(uploadDocumentLoadingText)
+                                                detailViewModel.uploadDocument(
+                                                    fileName = file.name,
+                                                    mimeType = file.mimeType().toString(),
+                                                    file = file.readBytes(),
+                                                    onUploadFinish = {
+                                                        detailViewModel.detailUiState.showLoadingAction.value = null
+                                                        detailViewModel.showSnackbar(documentUploadFinish)
+                                                    },
+                                                    onUploadFailed = {
+                                                        detailViewModel.detailUiState.showLoadingAction.value = null
+                                                        detailViewModel.showSnackbar(documentUploadFailed)
+                                                    }
+                                                )
+                                            }
 
-                                is FileKitPickerState.Cancelled -> log("Selection cancelled")
-                            }
+                                            is FileKitPickerState.Cancelled -> log("Selection cancelled")
+                                        }
+                                    }
+                                }
+                            },
+                            containerColor = White,
+                            contentColor = Black
+                        ) {
+                            Icon(
+                                imageVector = vectorResource(Res.drawable.upload),
+                                contentDescription = null,
+                                modifier = Modifier.size(Dimens.top_bar_icon_size),
+                            )
+                        }
+
+                        SmallFloatingActionButton(
+                            onClick = {
+                                fabExpanded = !fabExpanded
+                                onNavigateToChat(detailViewModel.knowledgeBaseId)
+                            },
+                            containerColor = White,
+                            contentColor = Black
+                        ) {
+                            Icon(
+                                imageVector = vectorResource(Res.drawable.chat),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(Dimens.top_bar_icon_size)
+                            )
                         }
                     }
-                },
-                containerColor = Black,
-                contentColor = White
-            ) {
-                Icon(
-                    imageVector = vectorResource(Res.drawable.upload),
-                    contentDescription = null,
-                    modifier = Modifier.size(Dimens.top_bar_icon_size),
-                )
+                }
+
+                FloatingActionButton(
+                    onClick = { fabExpanded = !fabExpanded },
+                    containerColor = White,
+                    contentColor = Black
+                ) {
+                    Icon(
+                        imageVector = vectorResource(Res.drawable.expandable),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(Dimens.fab_icon_size)
+                    )
+                }
             }
         },
-        floatingActionButtonPosition = FabPosition.Center,
+        floatingActionButtonPosition = FabPosition.End,
         modifier = modifier
     ) { paddingValues ->
         LazyColumn(
@@ -114,17 +155,17 @@ fun NavSourceScreen(
             verticalArrangement = Arrangement.spacedBy(30.dp)
         ) {
             items(
-                items = chatViewModel.chatUiState.knowledgeBase.value.documents,
+                items = detailViewModel.detailUiState.knowledgeBase.value.documents,
                 key = { it.DocumentId }
             ) { document ->
                 DocumentItem(
                     document = document,
-                    showDocumentDeleteOption = chatViewModel.chatUiState.showDocumentDeleteOption.value,
+                    showDocumentDeleteOption = detailViewModel.detailUiState.showDocumentDeleteOption.value,
                     modifier = Modifier.animateItem(),
                     onDocumentDelete = {
-                        chatViewModel.chatUiState.showDocumentDeleteOption.value = false
-                        chatViewModel.chatUiState.showDialogAction.value =
-                            ChatShowDialogAction.DeleteDocumentConfirmation(document)
+                        detailViewModel.detailUiState.showDocumentDeleteOption.value = false
+                        detailViewModel.detailUiState.showDialogAction.value =
+                            DetailShowDialogAction.DeleteDocumentConfirmation(document)
                     }
                 )
             }
@@ -133,9 +174,9 @@ fun NavSourceScreen(
 }
 
 @Composable
-fun NavSourceTopBar(
+fun DocumentSectionTopBar(
     modifier: Modifier = Modifier,
-    chatViewModel: ChatViewModel
+    detailViewModel: DetailViewModel
 ) {
     Row(
         modifier = modifier,
@@ -155,15 +196,15 @@ fun NavSourceTopBar(
                 modifier = Modifier
                     .size(Dimens.top_bar_icon_size)
                     .clickable {
-                        chatViewModel.chatUiState.apply {
+                        detailViewModel.detailUiState.apply {
                             documentMenuExpanded.value = !documentMenuExpanded.value
                         }
                     }
             )
             DropdownMenu(
-                expanded = chatViewModel.chatUiState.documentMenuExpanded.value,
+                expanded = detailViewModel.detailUiState.documentMenuExpanded.value,
                 onDismissRequest = {
-                    chatViewModel.chatUiState.documentMenuExpanded.value = false
+                    detailViewModel.detailUiState.documentMenuExpanded.value = false
                 }
             ) {
                 DropdownMenuItem(
@@ -171,8 +212,8 @@ fun NavSourceTopBar(
                         Text(stringResource(Res.string.delete_btn))
                     },
                     onClick = {
-                        chatViewModel.chatUiState.documentMenuExpanded.value = false
-                        chatViewModel.chatUiState.showDocumentDeleteOption.value = true
+                        detailViewModel.detailUiState.documentMenuExpanded.value = false
+                        detailViewModel.detailUiState.showDocumentDeleteOption.value = true
                     }
                 )
             }

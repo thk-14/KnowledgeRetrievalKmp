@@ -7,7 +7,7 @@ import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.thk.knowledgeretrievalkmp.Configs
 import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
-import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocumentsAndConversation
+import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocuments
 import com.thk.knowledgeretrievalkmp.data.network.*
 import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
@@ -18,9 +18,7 @@ import com.thk.knowledgeretrievalkmp.util.log
 import com.thk.knowledgeretrievalkmp.util.toSseEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -53,10 +51,10 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             sessionManager.apply {
 
                 // FOR TESTING
-                setUserId("hafizh")
-                // END FOR TESTING
+//                setUserId("hafizh")
+                // END TESTING
 
-//                setUserId(userId)
+                setUserId(userId)
                 setDisplayName(displayName)
                 setProfileUri(profileUri)
             }
@@ -164,6 +162,13 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 networkDocuments.forEach { networkDocument ->
                     upsertNetworkDocumentInLocal(networkDocument)
                 }
+                // clean up documents
+                val localDocuments = dbQueries.getDocumentsWithKbId(networkKnowledgeBase.id).awaitAsList()
+                localDocuments.map { it.DocumentId }.forEach { documentId ->
+                    if (documentId !in networkDocuments.map { it.id }) {
+                        dbQueries.deleteDocumentWithId(documentId)
+                    }
+                }
             }
             // clean up kb
             val localKnowledgeBases = dbQueries.getKnowledgeBasesWithUserId(userId).awaitAsList()
@@ -204,88 +209,47 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                     dbQueries.deleteDocumentWithId(documentId)
                 }
             }
-            // if there is no conversation tied to this kb
-            val localKnowledgeBase =
-                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
-                    ?: return@withContext
-            if (localKnowledgeBase.ConversationId == null) {
-                // find related conversation in server
-                val networkConversations = apiService.getConversations(
-                    userId = userId
-                )?.data
-                val relatedNetworkConversation = networkConversations?.find {
-                    it.name == kbId
+            succeed = true
+        }
+        log("Fetch knowledge base with documents succeed: $succeed")
+        return succeed
+    }
+
+    override suspend fun fetchConversationsWithMessages(): Boolean {
+        val userId = sessionManager.getUserId() ?: return false
+        var succeed = false
+        withContext(dispatcher) {
+            // fetch conversations
+            val networkConversations = apiService.getConversations(userId)?.data ?: return@withContext
+            log("get networkConversations: $networkConversations")
+            networkConversations.forEach { networkConversation ->
+                // upsert networkConversation in local
+                upsertNetworkConversationInLocal(networkConversation)
+                // fetch messages
+                val networkMessages =
+                    apiService.getMessagesForConversation(networkConversation.conversationId, userId)?.data
+                        ?: return@forEach
+                log("get networkMessages: $networkMessages")
+                // clear messages in local
+                dbQueries.deleteMessagesWithConversationId(networkConversation.conversationId)
+                // upsert messages in local
+                networkMessages.forEach { networkMessage ->
+                    upsertNetworkMessageInLocal(networkMessage)
                 }
-                val relatedConversationId =
-                    if (relatedNetworkConversation != null) {
-                        log("find relatedNetworkConversation: $relatedNetworkConversation")
-                        // upsert related conversation in local
-                        upsertNetworkConversationInLocal(relatedNetworkConversation)
-                        // fetch messages for related conversation
-                        val networkMessages = apiService.getMessagesForConversation(
-                            conversationId = relatedNetworkConversation.conversationId,
-                            userId = userId
-                        )?.data
-                        // upsert messages in local
-                        networkMessages?.forEach { networkMessage ->
-                            upsertNetworkMessageInLocal(
-                                networkMessage.copy(
-                                    metadata = networkMessage.metadata.copy(
-                                        conversationId = relatedNetworkConversation.conversationId,
-                                        kbId = kbId,
-                                        userId = userId
-                                    )
-                                )
-                            )
-                        }
-                        relatedNetworkConversation.conversationId
-                    } else {
-                        log("No relatedNetworkConversation found")
-                        // if not found then create new one
-                        val networkConversation = apiService.createConversation(
-                            conversationName = kbId,
-                            userId = userId
-                        )?.data ?: return@withContext
-                        log("create networkConversation: $networkConversation")
-                        // upsert new conversation in local
-                        upsertNetworkConversationInLocal(networkConversation)
-                        networkConversation.conversationId
-                    }
-                // update knowledge base in local
-                upsertLocalKnowledgeBaseInLocal(
-                    localKnowledgeBase.copy(ConversationId = relatedConversationId)
-                )
-            } else {
-                // kb has conversation
-                if (Configs.fetchMessagesFromServer) {
-                    // clear messages in local
-                    dbQueries.deleteMessagesWithConversationId(localKnowledgeBase.ConversationId)
-                    // fetch messages for conversation
-                    val networkMessages = apiService.getMessagesForConversation(
-                        conversationId = localKnowledgeBase.ConversationId,
-                        userId = userId
-                    )?.data
-                    // upsert messages in local
-                    networkMessages?.forEach { networkMessage ->
-                        upsertNetworkMessageInLocal(
-                            networkMessage.copy(
-                                metadata = networkMessage.metadata.copy(
-                                    conversationId = localKnowledgeBase.ConversationId,
-                                    kbId = kbId,
-                                    userId = userId
-                                )
-                            )
-                        )
-                    }
+            }
+            // clean up conversations
+            val localConversations = dbQueries.getConversationsWithuserId(userId).awaitAsList()
+            localConversations.map { it.ConversationId }.forEach { conversationId ->
+                if (conversationId !in networkConversations.map { it.conversationId }) {
+                    deleteConversationInLocal(conversationId)
                 }
             }
             succeed = true
         }
-        log("Fetch knowledge base with conversations succeed: $succeed")
         return succeed
     }
 
-    override suspend fun createKnowledgeBaseWithConversation(
+    override suspend fun createKnowledgeBase(
         kbName: String,
         kbDescription: String
     ): Boolean {
@@ -302,37 +266,16 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             )?.data ?: return@withContext
             upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase)
             log("create networkKnowledgeBase: $networkKnowledgeBase")
-            // create a conversation corresponding to the knowledge base
-            val networkConversation = apiService.createConversation(
-                conversationName = networkKnowledgeBase.id,
-                userId = userId
-            )?.data ?: return@withContext
-            upsertNetworkConversationInLocal(networkConversation)
-            updateConversationIdForKnowledgeBaseInLocal(networkKnowledgeBase.id, networkConversation.conversationId)
-            log("create networkConversation: $networkConversation")
             succeed = true
         }
         log("Create knowledge base succeed: $succeed")
         return succeed
     }
 
-    override suspend fun deleteKnowledgeBaseWithConversation(kbId: String): Boolean {
+    override suspend fun deleteKnowledgeBase(kbId: String): Boolean {
         val userId = sessionManager.getUserId() ?: return false
         var succeed = false
         withContext(dispatcher) {
-            // manually delete related conversation in server
-            val localKnowledgeBase =
-                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()
-                    ?: return@withContext
-            if (localKnowledgeBase.ConversationId != null) {
-                succeed = apiService.deleteConversation(
-                    conversationId = localKnowledgeBase.ConversationId,
-                    userId = userId
-                )
-                if (succeed) {
-                    deleteConversationInLocal(localKnowledgeBase.ConversationId)
-                }
-            }
             // delete knowledge base in server
             succeed = apiService.deleteKnowledgeBase(
                 id = kbId,
@@ -447,32 +390,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         return succeed
     }
 
-    override suspend fun toggleConversationActiveForKnowledgeBase(
-        kbId: String,
-        active: Boolean
-    ): Boolean {
-        val userId = sessionManager.getUserId() ?: return false
-        var succeed = false
-        withContext(dispatcher) {
-            val conversationId =
-                dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()?.ConversationId ?: return@withContext
-            val localConversation =
-                dbQueries.getConversationWithId(conversationId).awaitAsOneOrNull() ?: return@withContext
-            if (localConversation.IsActive != active) {
-                val networkConversation = apiService.updateConversation(
-                    conversationId = conversationId,
-                    userId = userId,
-                    active = active,
-                    name = localConversation.Name
-                )?.data ?: return@withContext
-                upsertNetworkConversationInLocal(networkConversation)
-            }
-            succeed = true
-        }
-        log("Set conversation for knowledge base active $active succeed: $succeed")
-        return succeed
-    }
-
     override suspend fun uploadDocument(
         knowledgeBaseId: String,
         tenantId: String?,
@@ -513,7 +430,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 UploadedBy = null,
                 ProcessedAt = null
             )
-            upsertLocalDocumentInLocal(localDocument)
+            upsertLocalDocument(localDocument)
             withContext(Dispatchers.Main) {
                 onUploadFinish()
             }
@@ -543,6 +460,78 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         }
         log("deleteDocument succeed: $succeed")
         return true
+    }
+
+    override suspend fun createConversation(conversationName: String): String? {
+        val userId = sessionManager.getUserId() ?: return null
+        var conversationId: String? = null
+        withContext(dispatcher) {
+            val networkConversation =
+                apiService.createConversation(conversationName, userId)?.data ?: return@withContext
+            upsertNetworkConversationInLocal(networkConversation)
+            conversationId = networkConversation.conversationId
+        }
+        log("createConversation conversationId: $conversationId")
+        return conversationId
+    }
+
+    override suspend fun deleteConversation(conversationId: String): Boolean {
+        val userId = sessionManager.getUserId() ?: return false
+        var succeed = false
+        withContext(dispatcher) {
+            succeed = apiService.deleteConversation(conversationId, userId)
+            if (succeed) {
+                deleteConversationInLocal(conversationId)
+            }
+        }
+        log("deleteConversation succeed: $succeed")
+        return succeed
+    }
+
+    override suspend fun renameConversation(conversationId: String, newName: String): Boolean {
+        val userId = sessionManager.getUserId() ?: return false
+        var succeed = false
+        withContext(dispatcher) {
+            val localConversation =
+                dbQueries.getConversationWithId(conversationId).awaitAsOneOrNull() ?: return@withContext
+            if (localConversation.Name == newName) {
+                succeed = true
+                return@withContext
+            }
+            val networkConversation = apiService.updateConversation(
+                conversationId = conversationId,
+                userId = userId,
+                active = localConversation.IsActive,
+                name = newName
+            )?.data ?: return@withContext
+            upsertNetworkConversationInLocal(networkConversation)
+            succeed = true
+        }
+        log("renameConversation succeed: $succeed")
+        return succeed
+    }
+
+    override suspend fun toggleConversationActive(conversationId: String, active: Boolean): Boolean {
+        val userId = sessionManager.getUserId() ?: return false
+        var succeed = false
+        withContext(dispatcher) {
+            val localConversation =
+                dbQueries.getConversationWithId(conversationId).awaitAsOneOrNull() ?: return@withContext
+            if (localConversation.IsActive == active) {
+                succeed = true
+                return@withContext
+            }
+            val networkConversation = apiService.updateConversation(
+                conversationId = conversationId,
+                userId = userId,
+                active = active,
+                name = localConversation.Name
+            )?.data ?: return@withContext
+            upsertNetworkConversationInLocal(networkConversation)
+            succeed = true
+        }
+        log("toggleConversationActive succeed: $succeed")
+        return succeed
     }
 
     override suspend fun sendUserRequest(
@@ -643,7 +632,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             MessageOrder = latestMessageOrder + 2
         )
         withContext(dispatcher) {
-            upsertLocalMessageInLocal(responseLocalMessage)
+            upsertLocalMessage(responseLocalMessage)
         }
         apiService.askSse(
             askRequest = AskRequest(
@@ -714,10 +703,20 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         checkInterval: Long = 5000
     ) {
         val localDocument = dbQueries.getDocumentWithId(documentId).awaitAsOneOrNull() ?: return
-        if (localDocument.Status == NetworkDocumentStatus.FINISHED) return
+        when (localDocument.Status) {
+            NetworkDocumentStatus.FINISHED -> return
+            NetworkDocumentStatus.TIMEOUT, NetworkDocumentStatus.FAILED -> {
+                deleteDocument(documentId)
+                return
+            }
+
+            else -> {
+                // do nothing
+            }
+        }
         while (true) {
             val status = apiService.getDocumentStatus(documentId)?.data?.status?.apply {
-                upsertLocalDocumentInLocal(localDocument.copy(Status = this))
+                upsertLocalDocument(localDocument.copy(Status = this))
             }
             when (status) {
                 NetworkDocumentStatus.FINISHED -> {
@@ -757,38 +756,81 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
 
     // FOR LOCAL DATABASE
 
-    override suspend fun getAllKnowledgeBasesInLocalFlow(): Flow<List<KnowledgeBase>> {
-        return dbQueries.getKnowledgeBasesWithUserId(
-            sessionManager.getUserId() ?: ""
-        ).asFlow().mapToList(dispatcher).flowOn(dispatcher)
+    override suspend fun getKnowledgeBasesInLocalFlow(): Flow<List<KbWithDocuments>> {
+        val userId = sessionManager.getUserId() ?: return emptyFlow()
+        val kbsFlow = dbQueries.getKnowledgeBasesWithUserId(userId).asFlow().mapToList(dispatcher)
+        val documentsFlow = dbQueries.getDocumentsWithUserId(userId).asFlow().mapToList(dispatcher)
+            .map { documentsWithKbInfo ->
+                documentsWithKbInfo.map {
+                    Document(
+                        DocumentId = it.DocumentId,
+                        KbId = it.KbId,
+                        FileName = it.FileName,
+                        Description = it.Description,
+                        FilePath = it.FilePath,
+                        FileSize = it.FileSize,
+                        FileType = it.FileType,
+                        MimeType = it.MimeType,
+                        Status = it.Status,
+                        ProcessingError = it.ProcessingError,
+                        CreatedAt = it.CreatedAt,
+                        UpdatedAt = it.UpdatedAt,
+                        UploadedBy = it.UploadedBy,
+                        ProcessedAt = it.ProcessedAt,
+                        IsInactive = it.IsInactive
+                    )
+                }
+            }
+        return combine(kbsFlow, documentsFlow) { kbs, documents ->
+            val kbsWithDocuments = mutableListOf<KbWithDocuments>()
+            kbs.forEach { kb ->
+                kbsWithDocuments.add(
+                    KbWithDocuments(
+                        kb = kb,
+                        documents = documents.filter { it.KbId == kb.KbId }
+                    )
+                )
+            }
+            kbsWithDocuments
+        }.flowOn(dispatcher)
     }
 
-    override suspend fun getKnowledgeBaseWithIdInLocalFlow(kbId: String): Flow<KbWithDocumentsAndConversation?> {
-        val conversationId = dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull()?.ConversationId ?: ""
-        log("getKnowledgeBaseWithIdInLocalFlow conversationId: $conversationId")
+    override suspend fun getKnowledgeBaseWithIdInLocalFlow(kbId: String): Flow<KbWithDocuments?> {
         val kbFlow = dbQueries.getKnowledgeBaseWithId(kbId).asFlow().mapToOneOrNull(dispatcher)
         val documentsFlow = dbQueries.getDocumentsWithKbId(kbId).asFlow().mapToList(dispatcher)
-        val conversationFlow = dbQueries.getConversationWithId(conversationId).asFlow().mapToOneOrNull(dispatcher)
-        val messagesFlow = dbQueries.getMessagesWithConversationId(conversationId).asFlow().mapToList(dispatcher)
 
-        return combine(kbFlow, documentsFlow, conversationFlow, messagesFlow) { kb, documents, conversation, messages ->
+        return combine(kbFlow, documentsFlow) { kb, documents ->
             if (kb == null)
                 null
             else
-                KbWithDocumentsAndConversation(
+                KbWithDocuments(
                     kb = kb,
-                    documents = documents,
-                    conversation = conversation?.let {
-                        ConversationWithMessages(
-                            conversation = it,
-                            messages = messages.toMutableList()
-                        )
-                    }
+                    documents = documents
                 )
         }.flowOn(dispatcher)
     }
 
-    private suspend fun upsertLocalKnowledgeBaseInLocal(localKnowledgeBase: KnowledgeBase) {
+    override suspend fun getConversationsInLocalFlow(): Flow<List<ConversationWithMessages>> {
+        val userId = sessionManager.getUserId() ?: return emptyFlow()
+        val conversationsFlow = dbQueries.getConversationsWithuserId(userId).asFlow().mapToList(dispatcher)
+        val messagesFlow = dbQueries.getMessagesWithUserId(userId).asFlow().mapToList(dispatcher)
+        return combine(conversationsFlow, messagesFlow) { conversations, messages ->
+            val conversationsWithMessages = mutableListOf<ConversationWithMessages>()
+            conversations.forEach { conversation ->
+                conversationsWithMessages.add(
+                    ConversationWithMessages(
+                        conversation = conversation,
+                        messages = messages
+                            .filter { it.ConversationId == conversation.ConversationId }
+                            .sortedBy { it.MessageOrder }
+                    )
+                )
+            }
+            conversationsWithMessages
+        }.flowOn(dispatcher)
+    }
+
+    private suspend fun upsertLocalKnowledgeBase(localKnowledgeBase: KnowledgeBase) {
         dbQueries.upsertKnowledgeBase(
             kbId = localKnowledgeBase.KbId,
             userId = localKnowledgeBase.UserId,
@@ -797,12 +839,11 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             createdAt = localKnowledgeBase.CreatedAt,
             updatedAt = localKnowledgeBase.UpdatedAt,
             isActive = localKnowledgeBase.IsActive,
-            documentCount = localKnowledgeBase.DocumentCount,
-            conversationId = localKnowledgeBase.ConversationId
+            documentCount = localKnowledgeBase.DocumentCount
         )
     }
 
-    private suspend fun upsertLocalDocumentInLocal(localDocument: Document) {
+    suspend fun upsertLocalDocument(localDocument: Document) {
         dbQueries.upsertDocument(
             documentId = localDocument.DocumentId,
             kbId = localDocument.KbId,
@@ -822,7 +863,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         )
     }
 
-    private suspend fun upsertLocalMessageInLocal(localMessage: Message) {
+    private suspend fun upsertLocalMessage(localMessage: Message) {
         dbQueries.upsertMessage(
             messageId = localMessage.MessageId,
             conversationId = localMessage.ConversationId,
@@ -849,16 +890,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         )
     }
 
-    private suspend fun updateConversationIdForKnowledgeBaseInLocal(kbId: String, conversationId: String) {
-        val localKnowledgeBase = dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull() ?: return
-        upsertLocalKnowledgeBaseInLocal(
-            localKnowledgeBase.copy(ConversationId = conversationId)
-        )
-    }
-
-    private suspend fun upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase: NetworkKnowledgeBase) {
-        val conversationId =
-            dbQueries.getKnowledgeBaseWithId(networkKnowledgeBase.id).awaitAsOneOrNull()?.ConversationId
+    suspend fun upsertNetworkKnowledgeBaseInLocal(networkKnowledgeBase: NetworkKnowledgeBase) {
         dbQueries.upsertKnowledgeBase(
             kbId = networkKnowledgeBase.id,
             userId = networkKnowledgeBase.userId,
@@ -867,8 +899,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             createdAt = networkKnowledgeBase.createdAt,
             updatedAt = networkKnowledgeBase.updatedAt,
             isActive = networkKnowledgeBase.isActive,
-            documentCount = networkKnowledgeBase.documentCount,
-            conversationId = conversationId
+            documentCount = networkKnowledgeBase.documentCount
         )
     }
 
@@ -892,15 +923,16 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         )
     }
 
-    private suspend fun upsertNetworkConversationInLocal(networkConversation: NetworkConversation) {
+    suspend fun upsertNetworkConversationInLocal(networkConversation: NetworkConversation) {
         dbQueries.upsertConversation(
             conversationId = networkConversation.conversationId,
+            userId = sessionManager.getUserId() ?: "",
             name = networkConversation.name,
             isActive = networkConversation.isActive
         )
     }
 
-    private suspend fun upsertNetworkMessageInLocal(networkMessage: NetworkMessage) {
+    suspend fun upsertNetworkMessageInLocal(networkMessage: NetworkMessage) {
         dbQueries.upsertMessage(
             messageId = networkMessage.id,
             conversationId = networkMessage.metadata.conversationId,
@@ -913,37 +945,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         )
     }
 
-    private suspend fun deleteKnowledgeBaseInLocal(kbId: String) {
-        val localKnowledgeBase =
-            dbQueries.getKnowledgeBaseWithId(kbId).awaitAsOneOrNull() ?: return
-        // delete conversation and messages
-        if (localKnowledgeBase.ConversationId != null) {
-            dbQueries.deleteConversationWithId(localKnowledgeBase.ConversationId)
-            dbQueries.deleteMessagesWithConversationId(localKnowledgeBase.ConversationId)
-        }
-        // delete documents
+    suspend fun deleteKnowledgeBaseInLocal(kbId: String) {
+        // delete knowledge base and documents
         dbQueries.deleteDocumentsWithKbId(kbId)
-        // delete knowledge base
         dbQueries.deleteKnowledgeBaseWithId(kbId)
     }
 
-    private suspend fun deleteConversationInLocal(conversationId: String) {
+    suspend fun deleteConversationInLocal(conversationId: String) {
         // delete conversation and messages
         dbQueries.deleteConversationWithId(conversationId)
         dbQueries.deleteMessagesWithConversationId(conversationId)
-        // update related kb
-        val localKnowledgeBase =
-            dbQueries.getKnowledgeBaseWithConversationId(conversationId).awaitAsOneOrNull() ?: return
-        dbQueries.upsertKnowledgeBase(
-            kbId = localKnowledgeBase.KbId,
-            userId = localKnowledgeBase.UserId,
-            name = localKnowledgeBase.Name,
-            description = localKnowledgeBase.Description,
-            createdAt = localKnowledgeBase.CreatedAt,
-            updatedAt = localKnowledgeBase.UpdatedAt,
-            isActive = localKnowledgeBase.IsActive,
-            documentCount = localKnowledgeBase.DocumentCount,
-            conversationId = null
-        )
     }
 }

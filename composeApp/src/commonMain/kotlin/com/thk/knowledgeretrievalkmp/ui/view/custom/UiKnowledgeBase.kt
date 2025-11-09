@@ -3,7 +3,7 @@ package com.thk.knowledgeretrievalkmp.ui.view.custom
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
-import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocumentsAndConversation
+import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocuments
 import com.thk.knowledgeretrievalkmp.db.Conversation
 import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
@@ -14,6 +14,7 @@ data class UiConversation(
     val conversation: MutableState<Conversation> = mutableStateOf(
         Conversation(
             ConversationId = "",
+            UserId = "",
             Name = "",
             IsActive = false
         )
@@ -32,12 +33,10 @@ data class UiKnowledgeBase(
             CreatedAt = "",
             UpdatedAt = "",
             IsActive = false,
-            DocumentCount = 0,
-            ConversationId = null
+            DocumentCount = 0
         )
     ),
-    val documents: SnapshotStateList<Document> = mutableStateListOf(),
-    val conversation: MutableState<UiConversation> = mutableStateOf(UiConversation()),
+    val documents: SnapshotStateList<Document> = mutableStateListOf()
 )
 
 fun ConversationWithMessages.toUiConversation() = UiConversation(
@@ -45,12 +44,9 @@ fun ConversationWithMessages.toUiConversation() = UiConversation(
     messages = this.messages.toMutableStateList()
 )
 
-fun KbWithDocumentsAndConversation.toUiKnowledgeBase() = UiKnowledgeBase(
+fun KbWithDocuments.toUiKnowledgeBase() = UiKnowledgeBase(
     kb = mutableStateOf(this.kb),
-    documents = this.documents.toMutableStateList(),
-    conversation = this.conversation?.toUiConversation()?.let {
-        mutableStateOf(it)
-    } ?: mutableStateOf(UiConversation())
+    documents = this.documents.toMutableStateList()
 )
 
 enum class FileExtension(val extension: String) {

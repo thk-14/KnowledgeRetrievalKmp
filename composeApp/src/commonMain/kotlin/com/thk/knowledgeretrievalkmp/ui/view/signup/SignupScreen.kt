@@ -105,7 +105,7 @@ fun SignupMainScreen(
             IconButton(
                 onClick = onBackPressed
             ) {
-                Image(
+                Icon(
                     imageVector = vectorResource(Res.drawable.back),
                     contentDescription = null,
                 )

@@ -1,10 +1,14 @@
 package com.thk.knowledgeretrievalkmp.ui.view.chat
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.createSavedStateHandle
@@ -12,113 +16,87 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
+import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository.upsertNetworkMessageInLocal
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
-import com.thk.knowledgeretrievalkmp.data.network.SseData
-import com.thk.knowledgeretrievalkmp.db.Document
-import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
-import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
-import com.thk.knowledgeretrievalkmp.ui.view.custom.toUiKnowledgeBase
+import com.thk.knowledgeretrievalkmp.data.network.*
+import com.thk.knowledgeretrievalkmp.ui.view.custom.*
+import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
 import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
 
 data class ChatUiState(
     val snackBarHostState: SnackbarHostState = SnackbarHostState(),
-    val knowledgeBase: MutableState<UiKnowledgeBase> = mutableStateOf(UiKnowledgeBase()),
+    val kbs: SnapshotStateList<UiKnowledgeBase> = mutableStateListOf(),
+    val conversations: SnapshotStateList<UiConversation> = mutableStateListOf(),
+    val activeKbId: MutableState<String> = mutableStateOf(""),
+    val activeConversationId: MutableState<String> = mutableStateOf(""),
     val chatInputState: TextFieldState = TextFieldState(),
     val renameInputState: TextFieldState = TextFieldState(),
-    val kbMenuExpanded: MutableState<Boolean> = mutableStateOf(false),
-    val documentMenuExpanded: MutableState<Boolean> = mutableStateOf(false),
-    val showDocumentDeleteOption: MutableState<Boolean> = mutableStateOf(false),
     val webSearch: MutableState<Boolean> = mutableStateOf(false),
-    val showDialogAction: MutableState<ChatShowDialogAction?> = mutableStateOf(null),
-    val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null)
+    val drawerState: DrawerState = DrawerState(initialValue = DrawerValue.Closed),
+    val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null),
+    val showDialogAction: MutableState<ChatShowDialogAction?> = mutableStateOf(null)
 )
 
 sealed class ChatShowDialogAction {
-    object DeleteKbConfirmation : ChatShowDialogAction()
-    object RenameKB : ChatShowDialogAction()
-    data class DeleteDocumentConfirmation(val document: Document) : ChatShowDialogAction()
+    data class DeleteConversationConfirmation(
+        val conversation: UiConversation
+    ) : ChatShowDialogAction()
+
+    data class RenameConversation(
+        val conversation: UiConversation
+    ) : ChatShowDialogAction()
+
+    data class ShowConversationBottomSheet(
+        val conversation: UiConversation
+    ) : ChatShowDialogAction()
+
+    data class ShowMessageBottomSheet(
+        val message: String
+    ) : ChatShowDialogAction()
 }
 
 class ChatViewModel(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    val knowledgeBaseId = checkNotNull(savedStateHandle.get<String>("knowledgeBaseId"))
-    var displayName: MutableState<String> = mutableStateOf("")
     val chatUiState = ChatUiState()
-
+    var displayName: MutableState<String> = mutableStateOf("")
     private val repository: KnowledgeRetrievalRepository = DefaultKnowledgeRetrievalRepository
 
     init {
+        chatUiState.activeKbId.value = checkNotNull(savedStateHandle.get<String>("initialKnowledgeBaseId"))
         viewModelScope.launch {
-            chatUiState.showLoadingAction.value = ShowLoadingAction("Fetching knowledge base ...")
-            fetchKnowledgeBaseWithConversation()
-
-            chatUiState.showLoadingAction.value = ShowLoadingAction("Activating knowledge base ...")
-            toggleKnowledgeBaseActive(true)
-            toggleDocumentsActiveForKnowledgeBase(true)
-            toggleConversationActiveForKnowledgeBase(true)
-
-            chatUiState.showLoadingAction.value = null
             displayName.value = repository.getDisplayName() ?: ""
-            repository.getKnowledgeBaseWithIdInLocalFlow(knowledgeBaseId)
-                .collect { newKb ->
-                    if (newKb != null) {
-                        chatUiState.knowledgeBase.value = newKb.toUiKnowledgeBase()
-                    }
-                }
+            repository.getKnowledgeBasesInLocalFlow().collect { kbsWithDocuments ->
+                log("kbsWithDocuments: $kbsWithDocuments")
+                chatUiState.kbs.clear()
+                chatUiState.kbs.addAll(kbsWithDocuments.map { it.toUiKnowledgeBase() })
+            }
         }
-    }
-
-    fun renameKnowledgeBase(
-        newName: String,
-        onRenameFinish: (Boolean) -> Unit
-    ) = viewModelScope.launch {
-        val succeed = repository.renameKnowledgeBase(knowledgeBaseId, newName)
-        log("renameKnowledgeBase succeed: $succeed")
-        onRenameFinish(succeed)
-    }
-
-    fun deleteKnowledgeBase(onDeleteFinish: (Boolean) -> Unit) = viewModelScope.launch {
-        val succeed = repository.deleteKnowledgeBaseWithConversation(knowledgeBaseId)
-        log("deleteKnowledgeBase succeed: $succeed")
-        onDeleteFinish(succeed)
-    }
-
-    fun uploadDocument(
-        fileName: String,
-        mimeType: String,
-        file: ByteArray,
-        onUploadFinish: () -> Unit,
-        onUploadFailed: () -> Unit
-    ) = viewModelScope.launch {
-        val succeed = repository.uploadDocument(
-            knowledgeBaseId = knowledgeBaseId,
-            fileName = fileName,
-            mimeType = mimeType,
-            file = file,
-            onUploadFinish = onUploadFinish,
-            onUploadFailed = onUploadFailed
-        )
-        log("uploadDocument succeed: $succeed")
-    }
-
-    fun deleteDocument(
-        documentId: String,
-        onDeleteFinish: (Boolean) -> Unit
-    ) = viewModelScope.launch {
-        val succeed = repository.deleteDocument(documentId)
-        log("deleteDocument succeed: $succeed")
-        onDeleteFinish(succeed)
+        viewModelScope.launch {
+            repository.getConversationsInLocalFlow().collect { conversationsWithMessages ->
+                log("conversationsWithMessages: $conversationsWithMessages")
+                chatUiState.conversations.clear()
+                chatUiState.conversations.addAll(conversationsWithMessages.map { it.toUiConversation() })
+            }
+        }
     }
 
     fun sendUserRequest() {
         val userRequest = chatUiState.chatInputState.text.toString()
         if (userRequest.isEmpty()) return
         viewModelScope.launch {
+            if (chatUiState.activeConversationId.value.isEmpty()) {
+                val newConversationId = repository.createConversation(
+                    conversationName = userRequest
+                )
+                if (newConversationId == null) return@launch
+                chatUiState.activeConversationId.value = newConversationId
+            }
             repository.sendUserRequest(
-                kbId = knowledgeBaseId,
-                conversationId = chatUiState.knowledgeBase.value.kb.value.ConversationId ?: "",
+                kbId = chatUiState.activeKbId.value,
+                conversationId = chatUiState.activeConversationId.value,
                 userRequest = userRequest,
                 webSearch = chatUiState.webSearch.value
             )
@@ -131,13 +109,124 @@ class ChatViewModel(
         val userRequest = chatUiState.chatInputState.text.toString()
         if (userRequest.isEmpty()) return
         viewModelScope.launch {
-            repository.collectSSEResponseFlow(
-                kbId = knowledgeBaseId,
-                conversationId = chatUiState.knowledgeBase.value.kb.value.ConversationId ?: "",
-                userRequest = userRequest,
-                webSearch = chatUiState.webSearch.value,
-                onSseData = onSseData
+            // FOR TESTING
+            if (chatUiState.activeConversationId.value.isEmpty()) {
+                val newConversationId = Uuid.generateV7().toString()
+                DefaultKnowledgeRetrievalRepository.upsertNetworkConversationInLocal(
+                    NetworkConversation(
+                        conversationId = newConversationId,
+                        isActive = true,
+                        name = userRequest,
+                        summary = "",
+                        summarizedUpToMessageOrder = null
+                    )
+                )
+                chatUiState.activeConversationId.value = newConversationId
+            }
+            val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
+            val requestNetworkMessage = NetworkMessage(
+                id = Uuid.generateV7().toString(),
+                role = NetworkMessageRole.USER,
+                parts = listOf(
+                    NetworkPartText(
+                        type = "text",
+                        text = userRequest
+                    )
+                ),
+                metadata = NetworkMessageMetadata(
+                    conversationId = chatUiState.activeConversationId.value,
+                    kbId = chatUiState.activeKbId.value,
+                    userId = userId,
+                    appName = ""
+                ),
             )
+            upsertNetworkMessageInLocal(requestNetworkMessage)
+            val responseNetworkMessage = NetworkMessage(
+                id = Uuid.generateV7().toString(),
+                role = NetworkMessageRole.AGENT,
+                parts = listOf(
+                    NetworkPartText(
+                        type = "text",
+                        text = "OK"
+                    )
+                ),
+                metadata = NetworkMessageMetadata(
+                    conversationId = chatUiState.activeConversationId.value,
+                    kbId = chatUiState.activeKbId.value,
+                    userId = userId,
+                    appName = ""
+                ),
+            )
+            upsertNetworkMessageInLocal(responseNetworkMessage)
+            // END TESTING
+
+
+//            if (chatUiState.activeConversationId.value.isEmpty()) {
+//                val newConversationId = repository.createConversation(
+//                    conversationName = userRequest
+//                )
+//                if (newConversationId == null) return@launch
+//                chatUiState.activeConversationId.value = newConversationId
+//            }
+//            repository.collectSSEResponseFlow(
+//                kbId = chatUiState.activeKbId.value,
+//                conversationId = chatUiState.activeConversationId.value,
+//                userRequest = userRequest,
+//                webSearch = chatUiState.webSearch.value,
+//                onSseData = onSseData
+//            )
+        }
+    }
+
+    fun toggleKbActive(kbId: String, active: Boolean) {
+        val loadingText =
+            if (active) "Activating knowledge base ..."
+            else "Deactivating knowledge base ..."
+        viewModelScope.launch {
+            chatUiState.showLoadingAction.value = ShowLoadingAction(loadingText)
+            repository.toggleKnowledgeBaseActive(kbId, active)
+            repository.toggleDocumentsActiveForKnowledgeBase(kbId, active)
+            chatUiState.showLoadingAction.value = null
+        }
+    }
+
+    fun toggleConversationActive(conversationId: String, active: Boolean) {
+        val loadingText =
+            if (active) "Activating conversation ..."
+            else "Deactivating conversation ..."
+        viewModelScope.launch {
+            chatUiState.showLoadingAction.value = ShowLoadingAction(loadingText)
+            repository.toggleConversationActive(conversationId, active)
+            chatUiState.showLoadingAction.value = null
+        }
+    }
+
+    fun deleteConversation(conversationId: String) {
+        viewModelScope.launch {
+            // FOR TESTING
+            DefaultKnowledgeRetrievalRepository.deleteConversationInLocal(conversationId)
+            if (chatUiState.activeConversationId.value == conversationId) {
+                chatUiState.activeConversationId.value = ""
+            }
+            // END TESTING
+
+
+//            chatUiState.showLoadingAction.value = ShowLoadingAction("Deleting conversation ...")
+//            val succeed = repository.deleteConversation(conversationId)
+//            if(succeed) {
+//                if(chatUiState.activeConversationId.value == conversationId) {
+//                    chatUiState.activeConversationId.value = ""
+//                }
+//            }
+//            chatUiState.showLoadingAction.value = null
+        }
+    }
+
+    fun renameConversation(conversationId: String, newName: String) {
+        viewModelScope.launch {
+            chatUiState.showLoadingAction.value = ShowLoadingAction("Renaming conversation ...")
+            val succeed = repository.renameConversation(conversationId, newName)
+            chatUiState.showLoadingAction.value = null
         }
     }
 
@@ -148,35 +237,6 @@ class ChatViewModel(
                 duration = SnackbarDuration.Short
             )
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        viewModelScope.launch {
-            toggleKnowledgeBaseActive(false)
-            toggleDocumentsActiveForKnowledgeBase(false)
-            toggleConversationActiveForKnowledgeBase(false)
-        }
-    }
-
-    private suspend fun fetchKnowledgeBaseWithConversation() {
-        val succeed = repository.fetchKnowledgeBaseWithDocuments(knowledgeBaseId)
-        log("fetchKnowledgeBaseWithConversations succeed: $succeed")
-    }
-
-    private suspend fun toggleKnowledgeBaseActive(active: Boolean) {
-        val succeed = repository.toggleKnowledgeBaseActive(knowledgeBaseId, active)
-        log("setKnowledgeBaseActive $active succeed: $succeed")
-    }
-
-    private suspend fun toggleDocumentsActiveForKnowledgeBase(active: Boolean) {
-        val succeed = repository.toggleDocumentsActiveForKnowledgeBase(knowledgeBaseId, active)
-        log("setDocumentsActiveForKnowledgeBase $active succeed: $succeed")
-    }
-
-    private suspend fun toggleConversationActiveForKnowledgeBase(active: Boolean) {
-        val succeed = repository.toggleConversationActiveForKnowledgeBase(knowledgeBaseId, active)
-        log("setConversationActiveForKnowledgeBase $active succeed: $succeed")
     }
 
     companion object {

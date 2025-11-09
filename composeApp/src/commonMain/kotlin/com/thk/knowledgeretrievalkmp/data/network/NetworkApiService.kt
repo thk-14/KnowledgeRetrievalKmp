@@ -38,10 +38,10 @@ class NetworkApiService {
             bearer {
                 loadTokens {
                     // FOR TESTING
-                    val accessToken = "hapt68"
-                    // END FOR TESTING
+//                    val accessToken = "hapt68"
+                    // END TESTING
 
-//                    val accessToken = AppContainer.sessionManager.getAccessToken()
+                    val accessToken = AppContainer.sessionManager.getAccessToken()
                     val refreshToken = AppContainer.sessionManager.getRefreshToken()
                     if (accessToken != null)
                         BearerTokens(accessToken, refreshToken)

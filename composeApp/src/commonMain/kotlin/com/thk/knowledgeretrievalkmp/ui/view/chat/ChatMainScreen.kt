@@ -1,168 +1,518 @@
 package com.thk.knowledgeretrievalkmp.ui.view.chat
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.Image
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.unit.times
+import com.mikepenz.markdown.m3.Markdown
+import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
+import com.thk.knowledgeretrievalkmp.data.network.SseStartData
+import com.thk.knowledgeretrievalkmp.data.network.SseStopData
+import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.ui.theme.Black
 import com.thk.knowledgeretrievalkmp.ui.theme.Gray50
-import com.thk.knowledgeretrievalkmp.ui.view.chat.navigation.ChatBottomNavBar
-import com.thk.knowledgeretrievalkmp.ui.view.chat.navigation.ChatNavGraph
+import com.thk.knowledgeretrievalkmp.ui.theme.LightGreen
+import com.thk.knowledgeretrievalkmp.ui.theme.White
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
+import com.thk.knowledgeretrievalkmp.ui.view.custom.InfiniteLoadingCircle
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
+import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
 import knowledgeretrievalkmp.composeapp.generated.resources.*
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 
 @Composable
 fun ChatMainScreen(
     modifier: Modifier = Modifier,
-    chatViewModel: ChatViewModel,
-    onBackPressed: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
+    chatViewModel: ChatViewModel
 ) {
-    val navController = rememberNavController()
+    val lazyListState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val activeKb by remember {
+        derivedStateOf {
+            chatViewModel.chatUiState.kbs.firstOrNull {
+                it.kb.value.KbId == chatViewModel.chatUiState.activeKbId.value
+            }
+        }
+    }
+    val activeConversation by remember {
+        derivedStateOf {
+            chatViewModel.chatUiState.conversations.firstOrNull {
+                it.conversation.value.ConversationId == chatViewModel.chatUiState.activeConversationId.value
+            }
+        }
+    }
+
+    fun scrollToLast() {
+        coroutineScope.launch {
+            val numMessages = activeConversation?.messages?.size ?: return@launch
+            val lastIndex = numMessages - 1
+            if (lastIndex >= 0) {
+                lazyListState.animateScrollToItem(lastIndex)
+            }
+        }
+    }
 
     Scaffold(
-        modifier = modifier,
         topBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ) {
-                ChatTopBar(
-                    chatViewModel = chatViewModel,
-                    onBackPressed = onBackPressed,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedContentScope = animatedContentScope,
-                    modifier = Modifier
-                        .padding(horizontal = Dimens.padding_horizontal)
-                        .fillMaxWidth()
-                        .height(Dimens.top_bar_height)
-                )
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = Gray50
-                )
-            }
+            ChatTopBar(
+                modifier = modifier.padding(start = Dimens.padding_horizontal),
+                title = activeConversation?.conversation?.value?.Name ?: "",
+                onDrawerOpen = {
+                    coroutineScope.launch {
+                        chatViewModel.chatUiState.drawerState.open()
+                    }
+                }
+            )
         },
         bottomBar = {
-            ChatBottomNavBar(
-                navController = navController,
+            ChatBottomBar(
+                textFieldState = chatViewModel.chatUiState.chatInputState,
+                numSource = activeKb?.documents?.size ?: 0,
+                webSearch = chatViewModel.chatUiState.webSearch.value,
+                kbs = chatViewModel.chatUiState.kbs,
+                activeKb = activeKb,
+                onActiveKbChange = { kbId ->
+                    chatViewModel.chatUiState.activeKbId.value = kbId
+                },
+                onWebSearchChange = {
+                    chatViewModel.chatUiState.webSearch.value = !chatViewModel.chatUiState.webSearch.value
+                    val webSearchStatusText =
+                        if (chatViewModel.chatUiState.webSearch.value) "On" else "Off"
+                    chatViewModel.showSnackbar(
+                        "Web search: $webSearchStatusText"
+                    )
+                },
+                onSendMessage = {
+                    chatViewModel.sendUserRequestWithSSE { sseData ->
+                        when (sseData) {
+                            SseStartData -> {
+                                scrollToLast()
+                            }
+
+                            SseStopData -> {
+                                scrollToLast()
+                            }
+
+                            else -> {
+                                // do nothing
+                            }
+                        }
+                    }
+                    // clear chat input text
+                    chatViewModel.chatUiState.chatInputState.clearText()
+                    focusManager.clearFocus()
+                    scrollToLast()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
             )
+        },
+        modifier = modifier
+    ) { contentPadding ->
+        if (activeConversation == null || activeConversation!!.messages.isEmpty()) {
+            // Placeholder
+            Row(
+                modifier = Modifier
+                    .padding(contentPadding)
+                    .fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Hello ${chatViewModel.displayName.value}",
+                    fontSize = 40.sp,
+                    lineHeight = 40.sp
+                )
+            }
+        } else {
+            ChatContent(
+                modifier = Modifier
+                    .padding(contentPadding)
+                    .fillMaxSize(),
+                lazyListState = lazyListState,
+                messages = activeConversation!!.messages
+            )
         }
-    ) { paddingValues ->
-        ChatNavGraph(
-            modifier = Modifier
-                .padding(horizontal = Dimens.padding_horizontal)
-                .padding(paddingValues)
-                .fillMaxSize(),
-            navController = navController,
-            chatViewModel = chatViewModel
-        )
     }
 }
 
 @Composable
 fun ChatTopBar(
     modifier: Modifier = Modifier,
-    chatViewModel: ChatViewModel,
-    onBackPressed: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
+    title: String,
+    onDrawerOpen: () -> Unit,
 ) {
+    val screenWidth = LocalWindowSize.current.width
     Row(
-        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(30.dp),
+        modifier = modifier
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        IconButton(
+            onClick = onDrawerOpen
         ) {
-            Image(
-                imageVector = vectorResource(Res.drawable.back),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(Dimens.top_bar_icon_size)
-                    .clickable { onBackPressed() }
-            )
-            with(sharedTransitionScope) {
-                // Title
-                Text(
-                    text = chatViewModel.chatUiState.knowledgeBase.value.kb.value.Name,
-                    color = Black,
-                    fontSize = 20.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedElement(
-                        sharedTransitionScope.rememberSharedContentState(
-                            key = chatViewModel.chatUiState.knowledgeBase.value.kb.value.KbId
-                        ),
-                        animatedVisibilityScope = animatedContentScope
-                    )
-                )
-            }
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Box(modifier = Modifier.offset(x = (-10).dp)) {
             Icon(
                 imageVector = vectorResource(Res.drawable.menu),
                 contentDescription = null,
-                modifier = Modifier
-                    .size(Dimens.top_bar_icon_size)
-                    .clickable {
-                        chatViewModel.chatUiState.apply {
-                            kbMenuExpanded.value = !kbMenuExpanded.value
+                modifier = Modifier.size(Dimens.top_bar_icon_size),
+            )
+        }
+        Text(
+            text = title,
+            fontSize = 40.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.sizeIn(maxWidth = screenWidth * 0.7f)
+        )
+    }
+}
+
+@Composable
+fun ChatBottomBar(
+    modifier: Modifier = Modifier,
+    textFieldState: TextFieldState,
+    numSource: Int,
+    webSearch: Boolean,
+    kbs: SnapshotStateList<UiKnowledgeBase>,
+    activeKb: UiKnowledgeBase?,
+    onActiveKbChange: (String) -> Unit,
+    onSendMessage: () -> Unit,
+    onWebSearchChange: () -> Unit
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ChatTextField(
+            textFieldState = textFieldState,
+            numSource = numSource,
+            webSearch = webSearch,
+            kbs = kbs,
+            activeKb = activeKb,
+            onActiveKbChange = onActiveKbChange,
+            onSendMessage = onSendMessage,
+            onWebSearchChange = onWebSearchChange
+        )
+    }
+}
+
+@Composable
+fun ChatTextField(
+    modifier: Modifier = Modifier,
+    textFieldState: TextFieldState,
+    numSource: Int,
+    webSearch: Boolean,
+    kbs: SnapshotStateList<UiKnowledgeBase>,
+    activeKb: UiKnowledgeBase?,
+    onActiveKbChange: (String) -> Unit,
+    onSendMessage: () -> Unit,
+    onWebSearchChange: () -> Unit
+) {
+    val screenWidth = LocalWindowSize.current.width
+    OutlinedCard(
+        border = BorderStroke(1.dp, Black),
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = White
+        )
+    ) {
+        Column {
+            // Text Field line
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val webSearchColor by animateColorAsState(
+                        if (webSearch) LightGreen else Gray50
+                    )
+                    Icon(
+                        imageVector = vectorResource(Res.drawable.world),
+                        contentDescription = null,
+                        tint = webSearchColor,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable {
+                                onWebSearchChange()
+                            }
+                    )
+                    TextField(
+                        state = textFieldState,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        placeholder = {
+                            Text(stringResource(Res.string.chat_placeholder, numSource))
+                        },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .width(0.5 * screenWidth),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = vectorResource(Res.drawable.document),
+                            contentDescription = null,
+                            tint = Gray50,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Text(
+                            text = numSource.toString(),
+                            fontSize = 15.sp,
+                            color = Gray50
+                        )
+                    }
+
+                    Button(
+                        onClick = onSendMessage,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = LightGreen,
+                            contentColor = White
+                        ),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(end = 5.dp),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = vectorResource(Res.drawable.send),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+            // Kb line
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.padding(
+                    start = 10.dp,
+                    bottom = 10.dp
+                )
+            ) {
+                var isExpanded by remember { mutableStateOf(false) }
+                Text(
+                    text = "Knowledge Base: ",
+                    color = Gray50
+                )
+                ExposedDropdownMenuBox(
+                    expanded = isExpanded,
+                    onExpandedChange = {
+                        isExpanded = it
+                    }
+                ) {
+                    Text(
+                        text = activeKb?.kb?.value?.Name ?: "",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .menuAnchor(
+                                type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                enabled = true
+                            )
+                            .fillMaxWidth(0.5f)
+                            .height(35.dp)
+                            .border(
+                                width = 1.dp,
+                                color = Black,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(
+                                start = 5.dp,
+                                top = 5.dp
+                            )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = isExpanded,
+                        onDismissRequest = { isExpanded = false },
+                        shape = MaterialTheme.shapes.medium,
+                        containerColor = Color.Transparent,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                        matchAnchorWidth = true
+                    ) {
+                        kbs.forEach { kb ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = kb.kb.value.Name
+                                    )
+                                },
+                                onClick = {
+                                    onActiveKbChange(kb.kb.value.KbId)
+                                    isExpanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                                modifier = Modifier.border(
+                                    width = 1.dp,
+                                    color = Black,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                    .fillMaxWidth()
+                                    .background(
+                                        color = White
+                                    )
+                            )
                         }
                     }
-            )
-            DropdownMenu(
-                expanded = chatViewModel.chatUiState.kbMenuExpanded.value,
-                onDismissRequest = {
-                    chatViewModel.chatUiState.kbMenuExpanded.value = false
                 }
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Text(stringResource(Res.string.rename_btn))
-                    },
-                    onClick = {
-                        chatViewModel.chatUiState.kbMenuExpanded.value = false
-                        chatViewModel.chatUiState.renameInputState.clearText()
-                        chatViewModel.chatUiState.showDialogAction.value =
-                            ChatShowDialogAction.RenameKB
-                    }
-                )
-                DropdownMenuItem(
-                    text = {
-                        Text(stringResource(Res.string.delete_btn))
-                    },
-                    onClick = {
-                        chatViewModel.chatUiState.kbMenuExpanded.value = false
-                        chatViewModel.chatUiState.showDialogAction.value =
-                            ChatShowDialogAction.DeleteKbConfirmation
-                    }
-                )
             }
+        }
+    }
+}
+
+@Composable
+fun ChatContent(
+    modifier: Modifier = Modifier,
+    messages: SnapshotStateList<Message>,
+    lazyListState: LazyListState
+) {
+    val screenHeight = LocalWindowSize.current.height
+
+    LazyColumn(
+        modifier = modifier,
+        state = lazyListState,
+        verticalArrangement = Arrangement.spacedBy(0.02 * screenHeight)
+    ) {
+        items(
+            items = messages,
+            key = { it.MessageId })
+        { message ->
+            when (message.Role) {
+                NetworkMessageRole.USER -> UserMessage(
+                    message = message,
+//                    modifier = Modifier.animateItem()
+                )
+
+                NetworkMessageRole.AGENT ->
+                    if (message.Content.isNotEmpty())
+                        ServerMessage(
+                            message = message,
+//                            modifier = Modifier.animateItem()
+                        )
+                    else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+//                            TypingDots(dotSize = 8.dp)
+                            InfiniteLoadingCircle(size = 30.dp, strokeWidth = 3.dp)
+                            Text(
+                                text = message.Status,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+            }
+        }
+    }
+}
+
+@Composable
+fun UserMessage(
+    modifier: Modifier = Modifier,
+    message: Message,
+) {
+    val screenWidth = LocalWindowSize.current.width
+
+    Row(
+        modifier = modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.End
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = LightGreen,
+                contentColor = White
+            ),
+            modifier = Modifier
+                .sizeIn(maxWidth = screenWidth / 2)
+                .wrapContentWidth()
+                .padding(end = 5.dp)
+        ) {
+            Text(
+                text = message.Content,
+//                fontSize = 20.sp,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ServerMessage(
+    modifier: Modifier = Modifier,
+    message: Message
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        if (message.Status == "Response complete" || message.Status == "") {
+            Markdown(
+                content = message.Content,
+                modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp)
+            )
+        } else {
+            Text(
+                text = message.Content,
+//                fontSize = 20.sp,
+//                color = Black,
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }

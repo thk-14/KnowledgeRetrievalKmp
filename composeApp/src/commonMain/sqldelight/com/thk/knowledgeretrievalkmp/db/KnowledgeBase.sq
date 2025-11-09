@@ -10,8 +10,7 @@ CREATE TABLE KnowledgeBase (
     CreatedAt TEXT NOT NULL,
     UpdatedAt TEXT NOT NULL,
     IsActive INTEGER AS Boolean NOT NULL,
-    DocumentCount INTEGER NOT NULL,
-    ConversationId TEXT
+    DocumentCount INTEGER NOT NULL
 );
 
 CREATE TABLE Document (
@@ -34,6 +33,7 @@ CREATE TABLE Document (
 
 CREATE TABLE Conversation (
     ConversationId TEXT NOT NULL PRIMARY KEY,
+    UserId TEXT NOT NULL,
     Name TEXT NOT NULL,
     IsActive INTEGER AS Boolean NOT NULL
 );
@@ -52,16 +52,16 @@ CREATE TABLE Message (
 -- Upsert
 
 upsertKnowledgeBase:
-INSERT OR REPLACE INTO KnowledgeBase(KbId, UserId, Name, Description, CreatedAt, UpdatedAt, IsActive, DocumentCount, ConversationId)
-VALUES (:kbId, :userId, :name, :description, :createdAt, :updatedAt, :isActive, :documentCount, :conversationId);
+INSERT OR REPLACE INTO KnowledgeBase(KbId, UserId, Name, Description, CreatedAt, UpdatedAt, IsActive, DocumentCount)
+VALUES (:kbId, :userId, :name, :description, :createdAt, :updatedAt, :isActive, :documentCount);
 
 upsertDocument:
 INSERT OR REPLACE INTO Document(DocumentId, KbId, FileName, Description, FilePath, FileSize, FileType, MimeType, Status, ProcessingError, CreatedAt, UpdatedAt, UploadedBy, ProcessedAt, IsInactive)
 VALUES (:documentId, :kbId, :fileName, :description, :filePath, :fileSize, :fileType, :mimeType, :status, :processingError, :createdAt, :updatedAt, :uploadedBy, :processedAt, :isInactive);
 
 upsertConversation:
-INSERT OR REPLACE INTO Conversation(ConversationId, Name, IsActive)
-VALUES (:conversationId, :name, :isActive);
+INSERT OR REPLACE INTO Conversation(ConversationId, UserId, Name, IsActive)
+VALUES (:conversationId, :userId, :name, :isActive);
 
 upsertMessage:
 INSERT INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, Status, MessageOrder)
@@ -109,17 +109,25 @@ SELECT * FROM KnowledgeBase WHERE UserId = :userId;
 getKnowledgeBaseWithId:
 SELECT * FROM KnowledgeBase WHERE KbId = :kbId;
 
-getKnowledgeBaseWithConversationId:
-SELECT * FROM KnowledgeBase WHERE ConversationId = :conversationId;
+getConversationsWithuserId:
+SELECT * FROM Conversation WHERE UserId = :userId;
 
 getConversationWithId:
 SELECT * FROM Conversation WHERE ConversationId = :conversationId;
+
+getDocumentsWithUserId:
+SELECT * FROM Document LEFT JOIN KnowledgeBase
+ON Document.KbId = KnowledgeBase.KbId
+WHERE KnowledgeBase.UserId = :userId;
 
 getDocumentWithId:
 SELECT * FROM Document WHERE DocumentId = :documentId;
 
 getDocumentsWithKbId:
 SELECT * FROM Document WHERE KbId = :kbId;
+
+getMessagesWithUserId:
+SELECT * FROM Message WHERE UserId = :userId;
 
 getMessagesWithConversationId:
 SELECT * FROM Message

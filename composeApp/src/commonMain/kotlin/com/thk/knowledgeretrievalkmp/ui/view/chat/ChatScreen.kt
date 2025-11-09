@@ -1,142 +1,105 @@
 package com.thk.knowledgeretrievalkmp.ui.view.chat
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.thk.knowledgeretrievalkmp.ui.theme.White
-import com.thk.knowledgeretrievalkmp.ui.view.custom.FullScreenLoader
-import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
-import knowledgeretrievalkmp.composeapp.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
+import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 
 @Composable
 fun ChatScreen(
     modifier: Modifier = Modifier,
-    chatViewModel: ChatViewModel = viewModel(factory = ChatViewModel.Factory),
-    onBackPressed: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
+    onNavigateToKnowledgeBase: () -> Unit,
+    chatViewModel: ChatViewModel = viewModel(factory = ChatViewModel.Factory)
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val kbRenameSuccess = stringResource(Res.string.kb_rename_success)
-    val kbRenameFailed = stringResource(Res.string.kb_rename_failed)
-    val kbDeleteFailed = stringResource(Res.string.kb_delete_failed)
-    val documentDeleteSuccess = stringResource(Res.string.document_delete_success)
-    val documentDeleteFailed = stringResource(Res.string.document_delete_failed)
-    val renameKbLoadingText = stringResource(Res.string.LS_rename_kb)
-    val deleteKbLoadingText = stringResource(Res.string.LS_delete_kb)
-    val deleteDocumentLoadingText = stringResource(Res.string.LS_delete_document)
-
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = chatViewModel.chatUiState.snackBarHostState)
+    ModalNavigationDrawer(
+        drawerState = chatViewModel.chatUiState.drawerState,
+        gesturesEnabled = false,
+        drawerContent = {
+            ChatDrawer(
+                chatViewModel = chatViewModel,
+                onNavigateToKnowledgeBase = onNavigateToKnowledgeBase
+            )
         }
     ) {
-        ChatMainScreen(
-            modifier = modifier
-                .background(White)
-                .fillMaxSize(),
-            chatViewModel = chatViewModel,
-            onBackPressed = onBackPressed,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedContentScope = animatedContentScope
-        )
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(hostState = chatViewModel.chatUiState.snackBarHostState)
+            }
+        ) {
+            ChatMainScreen(
+                modifier = modifier,
+                chatViewModel = chatViewModel
+            )
+        }
     }
 
     when (chatViewModel.chatUiState.showDialogAction.value) {
+        is ChatShowDialogAction.ShowConversationBottomSheet -> {
+            val conversation =
+                (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.ShowConversationBottomSheet).conversation
+            ConversationBottomSheet(
+                onDismiss = {
+                    chatViewModel.chatUiState.showDialogAction.value = null
+                },
+                onDelete = {
+                    chatViewModel.chatUiState.showDialogAction.value =
+                        ChatShowDialogAction.DeleteConversationConfirmation(conversation)
+                },
+                onRename = {
+                    chatViewModel.chatUiState.renameInputState.clearText()
+                    chatViewModel.chatUiState.showDialogAction.value =
+                        ChatShowDialogAction.RenameConversation(conversation)
+                }
+            )
+        }
 
-        is ChatShowDialogAction.DeleteKbConfirmation -> {
+        is ChatShowDialogAction.ShowMessageBottomSheet -> {
+            val message =
+                (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.ShowMessageBottomSheet).message
+            MessageBottomSheet(
+                message = message,
+                onDismiss = {
+                    chatViewModel.chatUiState.showDialogAction.value = null
+                }
+            )
+        }
+
+        is ChatShowDialogAction.DeleteConversationConfirmation -> {
+            val conversation =
+                (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.DeleteConversationConfirmation).conversation
             DeleteConfirmationDialog(
-                title = "Delete Knowledge Base",
-                content = "Remove this knowledge base and all its contents",
+                title = "Delete Conversation",
+                content = "Remove this conversation and all its contents",
                 onDismiss = {
                     chatViewModel.chatUiState.showDialogAction.value = null
                 },
                 onConfirm = {
                     chatViewModel.chatUiState.showDialogAction.value = null
-                    chatViewModel.chatUiState.showLoadingAction.value = ShowLoadingAction(deleteKbLoadingText)
-                    chatViewModel.deleteKnowledgeBase(
-                        onDeleteFinish = { succeed ->
-                            chatViewModel.chatUiState.showLoadingAction.value = null
-                            if (succeed) {
-                                onBackPressed()
-                            } else {
-                                chatViewModel.showSnackbar(kbDeleteFailed)
-                            }
-                        }
-                    )
+                    chatViewModel.deleteConversation(conversation.conversation.value.ConversationId)
                 }
             )
         }
 
-        is ChatShowDialogAction.DeleteDocumentConfirmation -> {
-            val deleteDocument =
-                (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.DeleteDocumentConfirmation).document
-            DeleteConfirmationDialog(
-                title = stringResource(
-                    Res.string.chat_delete_document_title,
-                    deleteDocument.FileName
-                ),
-                content = stringResource(Res.string.chat_delete_document_content),
-                onDismiss = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
-                },
-                onConfirm = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
-                    chatViewModel.chatUiState.showLoadingAction.value = ShowLoadingAction(deleteDocumentLoadingText)
-                    chatViewModel.deleteDocument(
-                        documentId = deleteDocument.DocumentId,
-                        onDeleteFinish = { succeed ->
-                            chatViewModel.chatUiState.showLoadingAction.value = null
-                            chatViewModel.showSnackbar(
-                                if (succeed) documentDeleteSuccess else documentDeleteFailed
-                            )
-                        }
-                    )
-                }
-            )
-        }
-
-        is ChatShowDialogAction.RenameKB -> {
-            val emptyNameWarning =
-                stringResource(Res.string.kb_name_empty_warning)
-            val sameNameWarning =
-                stringResource(Res.string.kb_rename_with_same_name_warning)
+        is ChatShowDialogAction.RenameConversation -> {
+            val conversation =
+                (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.RenameConversation).conversation
             RenameDialog(
-                title = "Edit name",
+                title = "Edit Name",
                 textFieldLabel = "Name",
-                textFieldPlaceholder = chatViewModel.chatUiState.knowledgeBase.value.kb.value.Name,
+                textFieldPlaceholder = conversation.conversation.value.Name,
                 renameTextState = chatViewModel.chatUiState.renameInputState,
                 onDismiss = {
                     chatViewModel.chatUiState.showDialogAction.value = null
                 },
-                onConfirm = ConfirmRename@{
-                    val newName = chatViewModel.chatUiState.renameInputState.text.toString()
-                    if (newName.isEmpty()) {
-                        chatViewModel.showSnackbar(emptyNameWarning)
-                        return@ConfirmRename
-                    }
-                    if (newName == chatViewModel.chatUiState.knowledgeBase.value.kb.value.Name) {
-                        chatViewModel.showSnackbar(sameNameWarning)
-                        return@ConfirmRename
-                    }
+                onConfirm = {
                     chatViewModel.chatUiState.showDialogAction.value = null
-                    chatViewModel.chatUiState.showLoadingAction.value = ShowLoadingAction(renameKbLoadingText)
-                    chatViewModel.renameKnowledgeBase(
-                        newName = newName,
-                        onRenameFinish = { succeed ->
-                            chatViewModel.chatUiState.showLoadingAction.value = null
-                            chatViewModel.showSnackbar(
-                                if (succeed) kbRenameSuccess else kbRenameFailed
-                            )
-                        }
+                    chatViewModel.renameConversation(
+                        conversation.conversation.value.ConversationId,
+                        chatViewModel.chatUiState.renameInputState.text.toString()
                     )
                 }
             )

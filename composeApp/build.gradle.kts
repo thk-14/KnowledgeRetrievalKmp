@@ -158,6 +158,7 @@ kotlin {
         optIn.add("kotlin.uuid.ExperimentalUuidApi")
         optIn.add("kotlin.time.ExperimentalTime")
         optIn.add("androidx.compose.animation.ExperimentalSharedTransitionApi")
+        optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
     }
 }
 

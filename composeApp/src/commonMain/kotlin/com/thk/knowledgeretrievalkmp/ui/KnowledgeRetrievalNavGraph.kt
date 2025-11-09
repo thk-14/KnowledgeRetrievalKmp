@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.thk.knowledgeretrievalkmp.ui.view.chat.ChatScreen
+import com.thk.knowledgeretrievalkmp.ui.view.detail.DetailScreen
 import com.thk.knowledgeretrievalkmp.ui.view.kb.KbScreen
 import com.thk.knowledgeretrievalkmp.ui.view.login.LoginScreen
 import com.thk.knowledgeretrievalkmp.ui.view.signup.SignupScreen
@@ -28,7 +29,14 @@ fun KnowledgeRetrievalNavGraph(
                 composable<KbDestination.Login> {
                     LoginScreen(
                         onNavigateToSignup = {
-                            navController.navigate(KbDestination.Signup)
+                            navController.navigate(
+                                route = KbDestination.Signup,
+                                builder = {
+                                    popUpTo(KbDestination.Signup) {
+                                        inclusive = true
+                                    }
+                                }
+                            )
                         },
                         onNavigateToKnowledgeBase = {
                             navController.navigate(
@@ -48,7 +56,14 @@ fun KnowledgeRetrievalNavGraph(
                             navController.popBackStack()
                         },
                         onNavigateToLogin = {
-                            navController.navigate(KbDestination.Login)
+                            navController.navigate(
+                                route = KbDestination.Login,
+                                builder = {
+                                    popUpTo(KbDestination.Login) {
+                                        inclusive = true
+                                    }
+                                }
+                            )
                         },
                         onNavigateToKnowledgeBase = {
                             navController.navigate(
@@ -65,11 +80,48 @@ fun KnowledgeRetrievalNavGraph(
             }
             composable<KbDestination.KnowledgeBase> {
                 KbScreen(
-                    onNavigateToChat = { kbId ->
-                        navController.navigate(KbDestination.Chat(kbId))
+                    onNavigateToDetail = { kbId ->
+                        navController.navigate(
+                            route = KbDestination.Detail(kbId),
+                            builder = {
+                                launchSingleTop = true
+                            }
+                        )
                     },
                     onNavigateToAuthentication = {
-                        navController.navigate(KbDestination.Authentication)
+                        navController.navigate(
+                            route = KbDestination.Authentication,
+                            builder = {
+                                popUpTo(KbDestination.Authentication) {
+                                    inclusive = true
+                                }
+                            }
+                        )
+                    },
+                    onNavigateToChat = { kbId ->
+                        navController.navigate(
+                            route = KbDestination.Chat(kbId),
+                            builder = {
+                                launchSingleTop = true
+                            }
+                        )
+                    },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedContentScope = this@composable
+                )
+            }
+            composable<KbDestination.Detail> {
+                DetailScreen(
+                    onBackPressed = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToChat = { kbId ->
+                        navController.navigate(
+                            route = KbDestination.Chat(kbId),
+                            builder = {
+                                launchSingleTop = true
+                            }
+                        )
                     },
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedContentScope = this@composable
@@ -77,11 +129,19 @@ fun KnowledgeRetrievalNavGraph(
             }
             composable<KbDestination.Chat> {
                 ChatScreen(
-                    onBackPressed = {
-                        navController.popBackStack()
-                    },
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedContentScope = this@composable
+                    onNavigateToKnowledgeBase = {
+                        navController.navigate(
+                            route = KbDestination.KnowledgeBase,
+                            builder = {
+                                popUpTo(KbDestination.KnowledgeBase) {
+                                    inclusive = true
+//                                    saveState = true
+                                }
+                                launchSingleTop = true
+//                                restoreState = true
+                            }
+                        )
+                    }
                 )
             }
         }
@@ -103,7 +163,12 @@ sealed class KbDestination {
     object KnowledgeBase : KbDestination()
 
     @Serializable
-    data class Chat(
+    data class Detail(
         val knowledgeBaseId: String
+    ) : KbDestination()
+
+    @Serializable
+    data class Chat(
+        val initialKnowledgeBaseId: String
     ) : KbDestination()
 }

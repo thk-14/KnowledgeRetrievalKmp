@@ -1,8 +1,8 @@
 package com.thk.knowledgeretrievalkmp.data
 
-import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocumentsAndConversation
+import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
+import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocuments
 import com.thk.knowledgeretrievalkmp.data.network.SseData
-import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import kotlinx.coroutines.flow.Flow
 
 interface KnowledgeRetrievalRepository {
@@ -35,9 +35,11 @@ interface KnowledgeRetrievalRepository {
 
     suspend fun fetchKnowledgeBaseWithDocuments(kbId: String): Boolean
 
-    suspend fun createKnowledgeBaseWithConversation(kbName: String, kbDescription: String): Boolean
+    suspend fun fetchConversationsWithMessages(): Boolean
 
-    suspend fun deleteKnowledgeBaseWithConversation(kbId: String): Boolean
+    suspend fun createKnowledgeBase(kbName: String, kbDescription: String): Boolean
+
+    suspend fun deleteKnowledgeBase(kbId: String): Boolean
 
     suspend fun toggleKnowledgeBaseActive(kbId: String, active: Boolean): Boolean
 
@@ -57,7 +59,16 @@ interface KnowledgeRetrievalRepository {
 
     suspend fun toggleDocumentsActiveForKnowledgeBase(kbId: String, active: Boolean): Boolean
 
-    suspend fun toggleConversationActiveForKnowledgeBase(kbId: String, active: Boolean): Boolean
+    /**
+     * @return conversation Id if success, else null
+     */
+    suspend fun createConversation(conversationName: String): String?
+
+    suspend fun deleteConversation(conversationId: String): Boolean
+
+    suspend fun renameConversation(conversationId: String, newName: String): Boolean
+
+    suspend fun toggleConversationActive(conversationId: String, active: Boolean): Boolean
 
     suspend fun sendUserRequest(
         kbId: String,
@@ -75,9 +86,11 @@ interface KnowledgeRetrievalRepository {
     )
 
     // FOR LOCAL DATABASE
-    suspend fun getAllKnowledgeBasesInLocalFlow(): Flow<List<KnowledgeBase>>
+    suspend fun getKnowledgeBasesInLocalFlow(): Flow<List<KbWithDocuments>>
 
-    suspend fun getKnowledgeBaseWithIdInLocalFlow(kbId: String): Flow<KbWithDocumentsAndConversation?>
+    suspend fun getKnowledgeBaseWithIdInLocalFlow(kbId: String): Flow<KbWithDocuments?>
+
+    suspend fun getConversationsInLocalFlow(): Flow<List<ConversationWithMessages>>
 
 }
 

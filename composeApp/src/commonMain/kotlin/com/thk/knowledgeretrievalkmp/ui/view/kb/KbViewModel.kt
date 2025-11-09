@@ -16,16 +16,19 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
+import com.thk.knowledgeretrievalkmp.data.network.NetworkKnowledgeBase
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
+import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
 import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
 
 data class KbUiState(
     val snackBarHostState: SnackbarHostState = SnackbarHostState(),
     val knowledgeBases: SnapshotStateList<KnowledgeBase> = mutableStateListOf(),
-    val createKBNameState: TextFieldState = TextFieldState(),
-    val createKBDescriptionState: TextFieldState = TextFieldState(),
+    val createKbNameState: TextFieldState = TextFieldState(),
+    val createKbDescriptionState: TextFieldState = TextFieldState(),
     val showKBCreateDialog: MutableState<Boolean> = mutableStateOf(false),
     val menuExpanded: MutableState<Boolean> = mutableStateOf(false),
     val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null)
@@ -43,14 +46,14 @@ class KbViewModel(
         viewModelScope.launch {
             profileUri.value = repository.getProfileUri() ?: ""
             log("profileUri: $profileUri")
-            repository.getAllKnowledgeBasesInLocalFlow().collect {
-                log("kb: $it")
+            repository.getKnowledgeBasesInLocalFlow().collect { kbsWithDocuments ->
                 kbUiState.knowledgeBases.clear()
-                kbUiState.knowledgeBases.addAll(it)
+                kbUiState.knowledgeBases.addAll(kbsWithDocuments.map { it.kb })
             }
         }
         viewModelScope.launch {
-            fetchKnowledgeBases()
+            fetchKnowledgeBasesWithDocuments()
+            fetchConversationsWithMessages()
         }
     }
 
@@ -65,20 +68,38 @@ class KbViewModel(
         description: String,
         onCreateKbFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
-        val succeed = repository.createKnowledgeBaseWithConversation(name, description)
+        // TESTING
+        val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
+        DefaultKnowledgeRetrievalRepository.upsertNetworkKnowledgeBaseInLocal(
+            NetworkKnowledgeBase(
+                id = Uuid.generateV7().toString(),
+                name = name,
+                userId = userId,
+                description = description,
+                createdAt = "",
+                updatedAt = "",
+                isActive = true,
+                documentCount = 0
+            )
+        )
+        val succeed = true
+        // END TESTING
+
+
+//        val succeed = repository.createKnowledgeBase(name, description)
         log("createKnowledgeBase succeed: $succeed")
         onCreateKbFinish(succeed)
     }
 
     fun dismissKbCreateDialog() {
-        kbUiState.createKBNameState.clearText()
-        kbUiState.createKBDescriptionState.clearText()
+        kbUiState.createKbNameState.clearText()
+        kbUiState.createKbDescriptionState.clearText()
         kbUiState.showKBCreateDialog.value = false
     }
 
     fun showKbCreateDialog() {
-        kbUiState.createKBNameState.clearText()
-        kbUiState.createKBDescriptionState.clearText()
+        kbUiState.createKbNameState.clearText()
+        kbUiState.createKbDescriptionState.clearText()
         kbUiState.showKBCreateDialog.value = true
     }
 
@@ -91,11 +112,18 @@ class KbViewModel(
         }
     }
 
-    private suspend fun fetchKnowledgeBases() {
+    private suspend fun fetchKnowledgeBasesWithDocuments() {
         kbUiState.showLoadingAction.value = ShowLoadingAction("Fetching knowledge bases ...")
         val succeed = repository.fetchKnowledgeBasesWithDocuments()
         kbUiState.showLoadingAction.value = null
         log("fetch KnowledgeBases succeed: $succeed")
+    }
+
+    private suspend fun fetchConversationsWithMessages() {
+        kbUiState.showLoadingAction.value = ShowLoadingAction("Fetching conversations ...")
+        val succeed = repository.fetchConversationsWithMessages()
+        kbUiState.showLoadingAction.value = null
+        log("fetchConversationsWithMessages succeed: $succeed")
     }
 
     companion object {
