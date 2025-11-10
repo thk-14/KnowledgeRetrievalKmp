@@ -68,25 +68,25 @@ class KbViewModel(
         description: String,
         onCreateKbFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
-        // TESTING
-        val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
-        DefaultKnowledgeRetrievalRepository.upsertNetworkKnowledgeBaseInLocal(
-            NetworkKnowledgeBase(
-                id = Uuid.generateV7().toString(),
-                name = name,
-                userId = userId,
-                description = description,
-                createdAt = "",
-                updatedAt = "",
-                isActive = true,
-                documentCount = 0
-            )
-        )
-        val succeed = true
+        // FOR TESTING
+//        val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
+//        DefaultKnowledgeRetrievalRepository.upsertNetworkKnowledgeBaseInLocal(
+//            NetworkKnowledgeBase(
+//                id = Uuid.generateV7().toString(),
+//                name = name,
+//                userId = userId,
+//                description = description,
+//                createdAt = "",
+//                updatedAt = "",
+//                isActive = true,
+//                documentCount = 0
+//            )
+//        )
+//        val succeed = true
         // END TESTING
 
 
-//        val succeed = repository.createKnowledgeBase(name, description)
+        val succeed = repository.createKnowledgeBase(name, description)
         log("createKnowledgeBase succeed: $succeed")
         onCreateKbFinish(succeed)
     }

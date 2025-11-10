@@ -64,7 +64,7 @@ INSERT OR REPLACE INTO Conversation(ConversationId, UserId, Name, IsActive)
 VALUES (:conversationId, :userId, :name, :isActive);
 
 upsertMessage:
-INSERT INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, Status, MessageOrder)
+INSERT OR REPLACE INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, Status, MessageOrder)
 VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :status, :messageOrder);
 
 -- Update

@@ -2,6 +2,7 @@ package com.thk.knowledgeretrievalkmp.data.network
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 
 // SSE event
 
@@ -17,7 +18,10 @@ enum class SseEvent(val value: String) {
     CONTENT("content_block_delta"),
 
     @SerialName("message_stop")
-    STOP("message_stop")
+    STOP("message_stop"),
+
+    @SerialName("error")
+    ERROR("error")
 }
 
 // SSE data
@@ -25,6 +29,7 @@ enum class SseEvent(val value: String) {
 sealed class SseData
 
 @Serializable
+@JsonIgnoreUnknownKeys
 data class SseStartData(
     val message: String,
     val id: String,
@@ -32,6 +37,7 @@ data class SseStartData(
 ) : SseData()
 
 @Serializable
+@JsonIgnoreUnknownKeys
 data class SseStatusData(
     val phase: String,
     val message: String,
@@ -41,6 +47,7 @@ data class SseStatusData(
 ) : SseData()
 
 @Serializable
+@JsonIgnoreUnknownKeys
 data class SseContentData(
     val delta: SseContentDelta,
     val index: Int,
@@ -49,6 +56,7 @@ data class SseContentData(
 ) : SseData()
 
 @Serializable
+@JsonIgnoreUnknownKeys
 data class SseStopData(
     val metadata: SseStopMetadata,
     val id: String,
@@ -56,14 +64,26 @@ data class SseStopData(
 ) : SseData()
 
 @Serializable
+@JsonIgnoreUnknownKeys
+data class SseErrorData(
+    val type: String,
+    val message: String,
+    val code: Int,
+    val id: String,
+    val timestamp: String
+) : SseData()
+
+@Serializable
+@JsonIgnoreUnknownKeys
 data class SseContentDelta(
     val type: String,
     val text: String
 )
 
 @Serializable
+@JsonIgnoreUnknownKeys
 data class SseStopMetadata(
-    val route: String,
+    val routes: List<String>,
     @SerialName("response_mode")
     val responseMode: String,
     @SerialName("execution_history")
@@ -71,6 +91,7 @@ data class SseStopMetadata(
 )
 
 @Serializable
+@JsonIgnoreUnknownKeys
 data class SseStatusMetadata(
     @SerialName("sources_count")
     val sourcesCount: Int

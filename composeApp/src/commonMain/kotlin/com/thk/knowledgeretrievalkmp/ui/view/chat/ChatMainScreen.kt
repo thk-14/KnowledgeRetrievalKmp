@@ -24,26 +24,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
+import com.mikepenz.markdown.annotator.annotatorSettings
+import com.mikepenz.markdown.annotator.buildMarkdownAnnotatedString
+import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
+import com.mikepenz.markdown.compose.LocalMarkdownTypography
+import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.model.rememberMarkdownState
 import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
+import com.thk.knowledgeretrievalkmp.data.network.SseErrorData
 import com.thk.knowledgeretrievalkmp.data.network.SseStartData
 import com.thk.knowledgeretrievalkmp.data.network.SseStopData
 import com.thk.knowledgeretrievalkmp.db.Message
-import com.thk.knowledgeretrievalkmp.ui.theme.Black
-import com.thk.knowledgeretrievalkmp.ui.theme.Gray50
-import com.thk.knowledgeretrievalkmp.ui.theme.LightGreen
-import com.thk.knowledgeretrievalkmp.ui.theme.White
+import com.thk.knowledgeretrievalkmp.ui.theme.*
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
 import com.thk.knowledgeretrievalkmp.ui.view.custom.InfiniteLoadingCircle
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
+import com.thk.knowledgeretrievalkmp.util.log
 import knowledgeretrievalkmp.composeapp.generated.resources.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -72,7 +80,7 @@ fun ChatMainScreen(
     }
 
     fun scrollToLast() {
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.Main) {
             val numMessages = activeConversation?.messages?.size ?: return@launch
             val lastIndex = numMessages - 1
             if (lastIndex >= 0) {
@@ -102,6 +110,10 @@ fun ChatMainScreen(
                 activeKb = activeKb,
                 onActiveKbChange = { kbId ->
                     chatViewModel.chatUiState.activeKbId.value = kbId
+                    chatViewModel.toggleKbActive(
+                        chatViewModel.chatUiState.activeKbId.value,
+                        true
+                    )
                 },
                 onWebSearchChange = {
                     chatViewModel.chatUiState.webSearch.value = !chatViewModel.chatUiState.webSearch.value
@@ -114,12 +126,16 @@ fun ChatMainScreen(
                 onSendMessage = {
                     chatViewModel.sendUserRequestWithSSE { sseData ->
                         when (sseData) {
-                            SseStartData -> {
+                            is SseStartData -> {
                                 scrollToLast()
                             }
 
-                            SseStopData -> {
+                            is SseStopData -> {
                                 scrollToLast()
+                            }
+
+                            is SseErrorData -> {
+                                chatViewModel.showSnackbar("An error occurred.")
                             }
 
                             else -> {
@@ -502,9 +518,34 @@ fun ServerMessage(
         horizontalArrangement = Arrangement.Start
     ) {
         if (message.Status == "Response complete" || message.Status == "") {
+            val markdownState = rememberMarkdownState(
+                content = message.Content
+            )
             Markdown(
-                content = message.Content,
-                modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp)
+                markdownState = markdownState,
+                colors = markdownColor(
+                    codeBackground = White,
+                    tableBackground = White,
+                    inlineCodeBackground = White
+                ),
+                imageTransformer = Coil3ImageTransformerImpl,
+                modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
+                components = markdownComponents(
+//                    paragraph = { model ->
+//                        val start = model.node.startOffset
+//                        val end = model.node.endOffset
+////                        val content = model.content.substring(start, end)
+//                        val styledText = buildAnnotatedString {
+//                            pushStyle(LocalMarkdownTypography.current.paragraph.toSpanStyle())
+//                            buildMarkdownAnnotatedString(model.content, model.node, annotatorSettings())
+//                            pop()
+//                        }
+//                        Text(
+//                            text = styledText,
+//                            color = DeepBlue
+//                        )
+//                    }
+                )
             )
         } else {
             Text(

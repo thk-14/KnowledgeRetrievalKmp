@@ -38,10 +38,10 @@ class NetworkApiService {
             bearer {
                 loadTokens {
                     // FOR TESTING
-//                    val accessToken = "hapt68"
+                    val accessToken = "hapt68"
                     // END TESTING
 
-                    val accessToken = AppContainer.sessionManager.getAccessToken()
+//                    val accessToken = AppContainer.sessionManager.getAccessToken()
                     val refreshToken = AppContainer.sessionManager.getRefreshToken()
                     if (accessToken != null)
                         BearerTokens(accessToken, refreshToken)
@@ -157,7 +157,7 @@ class NetworkApiService {
         id: String,
         updateKnowledgeBaseRequest: UpdateKnowledgeBaseRequest
     ): NetworkResponse<NetworkKnowledgeBase>? = try {
-        client.put("$baseUrl/kb/$id/update") {
+        client.patch("$baseUrl/kb/$id") {
             contentType(ContentType.Application.Json)
             setBody(updateKnowledgeBaseRequest)
         }.body()
@@ -318,16 +318,11 @@ class NetworkApiService {
     }
 
     suspend fun updateConversation(
-        conversationId: String,
-        userId: String,
-        active: Boolean,
-        name: String
+        updateConversationRequest: UpdateConversationRequest
     ): NetworkResponse<NetworkConversation>? = try {
         client.patch("$baseUrl/conversation/update") {
-            parameter("conversation_id", conversationId)
-            parameter("user_id", userId)
-            parameter("active", active)
-            parameter("name", name)
+            contentType(ContentType.Application.Json)
+            setBody(updateConversationRequest)
         }.body()
     } catch (exception: Exception) {
         log("updateConversation failed: ${exception.message}")

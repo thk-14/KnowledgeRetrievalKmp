@@ -15,19 +15,19 @@ fun ChatScreen(
     onNavigateToKnowledgeBase: () -> Unit,
     chatViewModel: ChatViewModel = viewModel(factory = ChatViewModel.Factory)
 ) {
-    ModalNavigationDrawer(
-        drawerState = chatViewModel.chatUiState.drawerState,
-        gesturesEnabled = false,
-        drawerContent = {
-            ChatDrawer(
-                chatViewModel = chatViewModel,
-                onNavigateToKnowledgeBase = onNavigateToKnowledgeBase
-            )
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = chatViewModel.chatUiState.snackBarHostState)
         }
     ) {
-        Scaffold(
-            snackbarHost = {
-                SnackbarHost(hostState = chatViewModel.chatUiState.snackBarHostState)
+        ModalNavigationDrawer(
+            drawerState = chatViewModel.chatUiState.drawerState,
+            gesturesEnabled = false,
+            drawerContent = {
+                ChatDrawer(
+                    chatViewModel = chatViewModel,
+                    onNavigateToKnowledgeBase = onNavigateToKnowledgeBase
+                )
             }
         ) {
             ChatMainScreen(

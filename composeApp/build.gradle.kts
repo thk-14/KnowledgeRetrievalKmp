@@ -122,6 +122,7 @@ kotlin {
             // Markdown
             implementation(libs.multiplatform.markdown.renderer)
             implementation(libs.multiplatform.markdown.renderer.m3)
+            implementation(libs.multiplatform.markdown.renderer.coil3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -159,6 +160,7 @@ kotlin {
         optIn.add("kotlin.time.ExperimentalTime")
         optIn.add("androidx.compose.animation.ExperimentalSharedTransitionApi")
         optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
+        optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
     }
 }
 

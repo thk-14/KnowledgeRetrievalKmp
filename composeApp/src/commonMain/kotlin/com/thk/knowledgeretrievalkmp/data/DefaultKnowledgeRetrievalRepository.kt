@@ -51,10 +51,10 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             sessionManager.apply {
 
                 // FOR TESTING
-//                setUserId("hafizh")
+                setUserId("hafizh")
                 // END TESTING
 
-                setUserId(userId)
+//                setUserId(userId)
                 setDisplayName(displayName)
                 setProfileUri(profileUri)
             }
@@ -234,7 +234,14 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 dbQueries.deleteMessagesWithConversationId(networkConversation.conversationId)
                 // upsert messages in local
                 networkMessages.forEach { networkMessage ->
-                    upsertNetworkMessageInLocal(networkMessage)
+                    upsertNetworkMessageInLocal(
+                        networkMessage.copy(
+                            metadata = networkMessage.metadata.copy(
+                                userId = userId,
+                                conversationId = networkConversation.conversationId
+                            )
+                        )
+                    )
                 }
             }
             // clean up conversations
@@ -296,7 +303,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         kbId: String,
         active: Boolean
     ): Boolean {
-        val userId = sessionManager.getUserId() ?: return false
         var succeed = false
         withContext(dispatcher) {
             val localKnowledgeBase =
@@ -307,8 +313,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 return@withContext
             }
             val updateKnowledgeBaseRequest = UpdateKnowledgeBaseRequest(
-                id = kbId,
-                userId = userId,
                 name = localKnowledgeBase.Name,
                 description = localKnowledgeBase.Description,
                 isActive = active
@@ -328,7 +332,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         kbId: String,
         newName: String
     ): Boolean {
-        val userId = sessionManager.getUserId() ?: return false
         var succeed = false
         withContext(dispatcher) {
             val localKnowledgeBase =
@@ -339,8 +342,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 return@withContext
             }
             val updateKnowledgeBaseRequest = UpdateKnowledgeBaseRequest(
-                id = kbId,
-                userId = userId,
                 name = newName,
                 description = localKnowledgeBase.Description,
                 isActive = localKnowledgeBase.IsActive
@@ -489,7 +490,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     }
 
     override suspend fun renameConversation(conversationId: String, newName: String): Boolean {
-        val userId = sessionManager.getUserId() ?: return false
         var succeed = false
         withContext(dispatcher) {
             val localConversation =
@@ -499,10 +499,11 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 return@withContext
             }
             val networkConversation = apiService.updateConversation(
-                conversationId = conversationId,
-                userId = userId,
-                active = localConversation.IsActive,
-                name = newName
+                UpdateConversationRequest(
+                    conversationId = conversationId,
+                    isActive = localConversation.IsActive,
+                    name = newName
+                )
             )?.data ?: return@withContext
             upsertNetworkConversationInLocal(networkConversation)
             succeed = true
@@ -512,7 +513,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     }
 
     override suspend fun toggleConversationActive(conversationId: String, active: Boolean): Boolean {
-        val userId = sessionManager.getUserId() ?: return false
         var succeed = false
         withContext(dispatcher) {
             val localConversation =
@@ -522,10 +522,11 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 return@withContext
             }
             val networkConversation = apiService.updateConversation(
-                conversationId = conversationId,
-                userId = userId,
-                active = active,
-                name = localConversation.Name
+                UpdateConversationRequest(
+                    conversationId = conversationId,
+                    name = localConversation.Name,
+                    isActive = active
+                )
             )?.data ?: return@withContext
             upsertNetworkConversationInLocal(networkConversation)
             succeed = true
@@ -675,6 +676,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                     SseEvent.CONTENT -> {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseContentData>(dataString)
+                        log("data: $data")
                         content += data.delta.text
                         updateMessageContentInLocal(
                             messageId = responseLocalMessage.MessageId,
@@ -686,6 +688,13 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                     SseEvent.STOP -> {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseStopData>(dataString)
+                        log("data: $data")
+                        onSseData(data)
+                    }
+
+                    SseEvent.ERROR -> {
+                        val dataString = serverSentEvent.data ?: return@handleSseEvent
+                        val data = Json.decodeFromString<SseErrorData>(dataString)
                         log("data: $data")
                         onSseData(data)
                     }

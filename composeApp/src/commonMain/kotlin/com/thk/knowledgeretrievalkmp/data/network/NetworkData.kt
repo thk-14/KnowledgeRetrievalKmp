@@ -59,11 +59,17 @@ data class DeleteKnowledgeBaseRequest(
 
 @Serializable
 data class UpdateKnowledgeBaseRequest(
-    val id: String,
     val name: String,
-    @SerialName("user_id")
-    val userId: String,
     val description: String,
+    @SerialName("is_active")
+    val isActive: Boolean
+)
+
+@Serializable
+data class UpdateConversationRequest(
+    @SerialName("conversation_id")
+    val conversationId: String,
+    val name: String,
     @SerialName("is_active")
     val isActive: Boolean
 )
