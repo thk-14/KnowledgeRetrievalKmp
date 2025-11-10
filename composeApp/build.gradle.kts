@@ -32,7 +32,13 @@ kotlin {
     jvm()
 
     js {
-        browser()
+        browser() {
+            compilations.named("main") {
+                compilerOptions.configure {
+                    sourceMap.set(false)
+                }
+            }
+        }
         binaries.executable()
     }
 
