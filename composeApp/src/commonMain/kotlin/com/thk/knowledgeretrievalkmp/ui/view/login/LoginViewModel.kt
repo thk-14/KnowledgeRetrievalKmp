@@ -38,7 +38,11 @@ class LoginViewModel(
         viewModelScope.launch {
             AppContainer.db = createDatabase(createDriver())
             log("database created")
-            refreshToken()
+//            refreshToken()
+            val userId = repository.getUserId()
+            if (userId != null) {
+                loginUiState.isLoggedIn.value = true
+            }
         }
     }
 

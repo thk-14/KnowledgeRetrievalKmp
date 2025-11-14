@@ -60,6 +60,11 @@ class NetworkApiService {
         install(DefaultRequest) {
             header("ngrok-skip-browser-warning", true)
         }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30000
+            connectTimeoutMillis = 20000
+            socketTimeoutMillis = 20000
+        }
         install(Logging) {
             level = LogLevel.ALL
         }

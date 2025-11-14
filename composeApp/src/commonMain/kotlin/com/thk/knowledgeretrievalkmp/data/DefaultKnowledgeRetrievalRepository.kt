@@ -25,13 +25,18 @@ import kotlinx.serialization.json.Json
 import kotlin.uuid.Uuid
 
 object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
-
     private val sessionManager = AppContainer.sessionManager
     private val apiService: NetworkApiService = AppContainer.apiService
     private val dbQueries: KnowledgeBaseQueries by lazy {
         AppContainer.db.knowledgeBaseQueries
     }
     private val dispatcher = Dispatchers.Default
+
+    override var isDataFetched: Boolean
+        get() = sessionManager.isDataFetched
+        set(value) {
+            sessionManager.isDataFetched = value
+        }
 
     override suspend fun getProfileUri() = sessionManager.getProfileUri()
     override suspend fun getDisplayName() = sessionManager.getDisplayName()

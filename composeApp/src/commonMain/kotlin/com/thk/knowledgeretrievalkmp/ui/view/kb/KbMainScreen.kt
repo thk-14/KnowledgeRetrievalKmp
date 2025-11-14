@@ -76,6 +76,9 @@ fun KbMainScreen(
                             }
                         }
                     )
+                },
+                onFetchData = {
+                    kbViewModel.fetchData()
                 }
             )
         },
@@ -182,7 +185,8 @@ fun KbTopBar(
     menuExpanded: Boolean,
     onMenuDismissRequest: () -> Unit,
     onProfileClicked: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onFetchData: () -> Unit
 ) {
     Row(
         modifier = modifier,
@@ -191,7 +195,10 @@ fun KbTopBar(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.clickable {
+                onFetchData()
+            }
         ) {
             Icon(
                 imageVector = vectorResource(Res.drawable.book_open),

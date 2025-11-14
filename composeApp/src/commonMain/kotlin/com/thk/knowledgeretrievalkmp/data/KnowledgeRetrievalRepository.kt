@@ -6,6 +6,7 @@ import com.thk.knowledgeretrievalkmp.data.network.SseData
 import kotlinx.coroutines.flow.Flow
 
 interface KnowledgeRetrievalRepository {
+    var isDataFetched: Boolean
     suspend fun getProfileUri(): String?
     suspend fun getDisplayName(): String?
     suspend fun getUserId(): String?

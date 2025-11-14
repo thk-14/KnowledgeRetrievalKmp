@@ -5,6 +5,7 @@ import com.thk.knowledgeretrievalkmp.security.CipherService
 import com.thk.knowledgeretrievalkmp.util.log
 
 class SessionManager(private val dataStore: SuspendSettings) {
+    var isDataFetched = false
     private val cipherService = CipherService()
 
     suspend fun getUserId() = dataStore.getStringOrNull(USER_ID_KEY)
@@ -54,6 +55,7 @@ class SessionManager(private val dataStore: SuspendSettings) {
 
     suspend fun clearSession() {
         dataStore.clear()
+        isDataFetched = false
         log("Clear session")
     }
 
