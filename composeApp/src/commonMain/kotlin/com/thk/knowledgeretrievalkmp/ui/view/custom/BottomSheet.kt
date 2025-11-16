@@ -83,13 +83,14 @@ fun MessageBottomSheet(
         sheetState = sheetState,
         onDismissRequest = {
             onDismiss()
-        },
-        modifier = modifier
-            .wrapContentHeight()
-            .fillMaxWidth(0.5f)
+        }
     ) {
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState())
+            modifier = modifier
+                .verticalScroll(rememberScrollState())
+                .padding(10.dp)
+                .width(50.dp)
+                .height(60.dp)
         ) {
             Text(
                 text = message

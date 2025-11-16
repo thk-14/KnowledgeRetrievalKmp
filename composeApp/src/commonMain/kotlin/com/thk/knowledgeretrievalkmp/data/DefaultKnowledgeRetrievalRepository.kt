@@ -56,10 +56,10 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             sessionManager.apply {
 
                 // FOR TESTING
-                setUserId("hafizh")
+//                setUserId("hafizh")
                 // END TESTING
 
-//                setUserId(userId)
+                setUserId(userId)
                 setDisplayName(displayName)
                 setProfileUri(profileUri)
             }

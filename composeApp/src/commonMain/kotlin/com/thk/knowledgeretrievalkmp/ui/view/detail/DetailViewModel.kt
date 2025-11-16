@@ -73,12 +73,12 @@ class DetailViewModel(
 
     fun deleteKnowledgeBase(onDeleteFinish: (Boolean) -> Unit) = viewModelScope.launch {
         // FOR TESTING
-//        DefaultKnowledgeRetrievalRepository.deleteKnowledgeBaseInLocal(knowledgeBaseId)
-//        val succeed = true
+        DefaultKnowledgeRetrievalRepository.deleteKnowledgeBaseInLocal(knowledgeBaseId)
+        val succeed = true
         // END TESTING
 
 
-        val succeed = repository.deleteKnowledgeBase(knowledgeBaseId)
+//        val succeed = repository.deleteKnowledgeBase(knowledgeBaseId)
         log("deleteKnowledgeBase succeed: $succeed")
         onDeleteFinish(succeed)
     }
@@ -91,37 +91,37 @@ class DetailViewModel(
         onUploadFailed: () -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
-//        val localDocument = Document(
-//            DocumentId = Uuid.generateV7().toString(),
-//            KbId = knowledgeBaseId,
-//            FileName = fileName,
-//            MimeType = mimeType,
-//            Status = NetworkDocumentStatus.FINISHED,
-//            IsInactive = null,
-//            Description = null,
-//            FilePath = null,
-//            FileSize = null,
-//            FileType = null,
-//            ProcessingError = null,
-//            CreatedAt = null,
-//            UpdatedAt = null,
-//            UploadedBy = null,
-//            ProcessedAt = null
-//        )
-//        upsertLocalDocument(localDocument)
-//        val succeed = true
-//        onUploadFinish()
+        val localDocument = Document(
+            DocumentId = Uuid.generateV7().toString(),
+            KbId = knowledgeBaseId,
+            FileName = fileName,
+            MimeType = mimeType,
+            Status = NetworkDocumentStatus.FINISHED,
+            IsInactive = null,
+            Description = null,
+            FilePath = null,
+            FileSize = null,
+            FileType = null,
+            ProcessingError = null,
+            CreatedAt = null,
+            UpdatedAt = null,
+            UploadedBy = null,
+            ProcessedAt = null
+        )
+        upsertLocalDocument(localDocument)
+        val succeed = true
+        onUploadFinish()
         // END TESTING
 
 
-        val succeed = repository.uploadDocument(
-            knowledgeBaseId = knowledgeBaseId,
-            fileName = fileName,
-            mimeType = mimeType,
-            file = file,
-            onUploadFinish = onUploadFinish,
-            onUploadFailed = onUploadFailed
-        )
+//        val succeed = repository.uploadDocument(
+//            knowledgeBaseId = knowledgeBaseId,
+//            fileName = fileName,
+//            mimeType = mimeType,
+//            file = file,
+//            onUploadFinish = onUploadFinish,
+//            onUploadFailed = onUploadFailed
+//        )
         log("uploadDocument succeed: $succeed")
     }
 
@@ -130,12 +130,12 @@ class DetailViewModel(
         onDeleteFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
-//        AppContainer.db.knowledgeBaseQueries.deleteDocumentWithId(documentId)
-//        val succeed = true
+        AppContainer.db.knowledgeBaseQueries.deleteDocumentWithId(documentId)
+        val succeed = true
         // END TESTING
 
 
-        val succeed = repository.deleteDocument(documentId)
+//        val succeed = repository.deleteDocument(documentId)
         log("deleteDocument succeed: $succeed")
         onDeleteFinish(succeed)
     }

@@ -24,17 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
-import com.mikepenz.markdown.annotator.annotatorSettings
-import com.mikepenz.markdown.annotator.buildMarkdownAnnotatedString
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
-import com.mikepenz.markdown.compose.LocalMarkdownTypography
 import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
@@ -49,7 +48,6 @@ import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
 import com.thk.knowledgeretrievalkmp.ui.view.custom.InfiniteLoadingCircle
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
-import com.thk.knowledgeretrievalkmp.util.log
 import knowledgeretrievalkmp.composeapp.generated.resources.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -176,7 +174,11 @@ fun ChatMainScreen(
                     .padding(contentPadding)
                     .fillMaxSize(),
                 lazyListState = lazyListState,
-                messages = activeConversation!!.messages
+                messages = activeConversation!!.messages,
+                onCitationClick = { citation ->
+                    chatViewModel.chatUiState.showDialogAction.value =
+                        ChatShowDialogAction.ShowMessageBottomSheet(citation)
+                }
             )
         }
     }
@@ -432,7 +434,8 @@ fun ChatTextField(
 fun ChatContent(
     modifier: Modifier = Modifier,
     messages: SnapshotStateList<Message>,
-    lazyListState: LazyListState
+    lazyListState: LazyListState,
+    onCitationClick: (String) -> Unit
 ) {
     val screenHeight = LocalWindowSize.current.height
 
@@ -455,6 +458,7 @@ fun ChatContent(
                     if (message.Content.isNotEmpty())
                         ServerMessage(
                             message = message,
+                            onCitationClick = onCitationClick
 //                            modifier = Modifier.animateItem()
                         )
                     else {
@@ -509,7 +513,8 @@ fun UserMessage(
 @Composable
 fun ServerMessage(
     modifier: Modifier = Modifier,
-    message: Message
+    message: Message,
+    onCitationClick: (String) -> Unit
 ) {
     Row(
         modifier = modifier
@@ -517,43 +522,121 @@ fun ServerMessage(
             .wrapContentHeight(),
         horizontalArrangement = Arrangement.Start
     ) {
-        if (message.Status == "Response complete" || message.Status == "") {
-            val markdownState = rememberMarkdownState(
-                content = message.Content
+//        if (message.Status == "Response complete" || message.Status == "") {
+//
+//        } else {
+//            Text(
+//                text = message.Content,
+////                fontSize = 20.sp,
+////                color = Black,
+//                modifier = Modifier.padding(8.dp)
+//            )
+//        }
+
+        val markdownState = rememberMarkdownState(
+            content = message.Content,
+            retainState = true
+        )
+        Markdown(
+            markdownState = markdownState,
+            colors = markdownColor(
+                codeBackground = White,
+                tableBackground = White,
+                inlineCodeBackground = White
+            ),
+            imageTransformer = Coil3ImageTransformerImpl,
+            modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
+            components = markdownComponents(
+                paragraph = { model ->
+                    val regex =
+                        """(\[[^\]]*\])|(\*\*\*(.*?)\*\*\*)|(\*\*(.*?)\*\*)|(\*(.*?)\*)|([^\[\*]+)""".toRegex()
+                    val matches = regex.findAll(
+                        model.content.substring(
+                            model.node.startOffset,
+                            model.node.endOffset
+                        )
+                    )
+                    val text = buildAnnotatedString {
+                        matches.forEach { match ->
+                            when {
+                                match.value.startsWith("[") -> {
+                                    // citation
+                                    val citation = match.value.drop(1).dropLast(1)
+                                    val linkListener = LinkInteractionListener {
+                                        onCitationClick(citation)
+                                    }
+                                    withLink(
+                                        link = LinkAnnotation.Url(
+                                            url = citation,
+                                            // Optional: Apply styles for different states (focused, hovered, pressed)
+                                            styles = TextLinkStyles(
+                                                style = SpanStyle(
+                                                    color = Blue
+                                                ),
+                                                focusedStyle = SpanStyle(
+                                                    color = Blue
+                                                ),
+                                                hoveredStyle = SpanStyle(
+                                                    color = Blue,
+                                                    textDecoration = TextDecoration.Underline
+                                                )
+                                            ),
+                                            linkInteractionListener = linkListener
+                                        )
+                                    ) {
+                                        append(citation)
+                                    }
+                                }
+
+                                match.value.startsWith("***") -> {
+                                    // bold and italic
+                                    val content = match.value.drop(3).dropLast(3)
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold,
+                                            fontStyle = FontStyle.Italic
+                                        )
+                                    ) {
+                                        append(content)
+                                    }
+                                }
+
+                                match.value.startsWith("**") -> {
+                                    // bold
+                                    val content = match.value.drop(2).dropLast(2)
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    ) {
+                                        append(content)
+                                    }
+                                }
+
+                                match.value.startsWith("*") -> {
+                                    // italic
+                                    val content = match.value.drop(1).dropLast(1)
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontStyle = FontStyle.Italic
+                                        )
+                                    ) {
+                                        append(content)
+                                    }
+                                }
+
+                                else -> {
+                                    // normal
+                                    append(match.value)
+                                }
+                            }
+                        }
+                    }
+                    Text(
+                        text = text
+                    )
+                }
             )
-            Markdown(
-                markdownState = markdownState,
-                colors = markdownColor(
-                    codeBackground = White,
-                    tableBackground = White,
-                    inlineCodeBackground = White
-                ),
-                imageTransformer = Coil3ImageTransformerImpl,
-                modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
-                components = markdownComponents(
-//                    paragraph = { model ->
-//                        val start = model.node.startOffset
-//                        val end = model.node.endOffset
-////                        val content = model.content.substring(start, end)
-//                        val styledText = buildAnnotatedString {
-//                            pushStyle(LocalMarkdownTypography.current.paragraph.toSpanStyle())
-//                            buildMarkdownAnnotatedString(model.content, model.node, annotatorSettings())
-//                            pop()
-//                        }
-//                        Text(
-//                            text = styledText,
-//                            color = DeepBlue
-//                        )
-//                    }
-                )
-            )
-        } else {
-            Text(
-                text = message.Content,
-//                fontSize = 20.sp,
-//                color = Black,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
+        )
     }
 }

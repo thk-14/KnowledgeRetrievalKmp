@@ -16,12 +16,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
+import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository.upsertNetworkMessageInLocal
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
-import com.thk.knowledgeretrievalkmp.data.network.SseData
+import com.thk.knowledgeretrievalkmp.data.network.*
 import com.thk.knowledgeretrievalkmp.ui.view.custom.*
+import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
 
 data class ChatUiState(
     val snackBarHostState: SnackbarHostState = SnackbarHostState(),
@@ -109,96 +112,96 @@ class ChatViewModel(
         if (userRequest.isEmpty()) return
         viewModelScope.launch {
             // FOR TESTING
-//            if (chatUiState.activeConversationId.value.isEmpty()) {
-//                val newConversationId = Uuid.generateV7().toString()
-//                DefaultKnowledgeRetrievalRepository.upsertNetworkConversationInLocal(
-//                    NetworkConversation(
-//                        conversationId = newConversationId,
-//                        isActive = true,
-//                        name = userRequest,
-//                        summary = "",
-//                        summarizedUpToMessageOrder = null
-//                    )
-//                )
-//                chatUiState.activeConversationId.value = newConversationId
-//            }
-//            val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
-//            val requestNetworkMessage = NetworkMessage(
-//                id = Uuid.generateV7().toString(),
-//                role = NetworkMessageRole.USER,
-//                parts = listOf(
-//                    NetworkPartText(
-//                        type = "text",
-//                        text = userRequest
-//                    )
-//                ),
-//                metadata = NetworkMessageMetadata(
-//                    conversationId = chatUiState.activeConversationId.value,
-//                    kbId = chatUiState.activeKbId.value,
-//                    userId = userId,
-//                    appName = ""
-//                ),
-//            )
-//            upsertNetworkMessageInLocal(requestNetworkMessage)
-//            val responseNetworkMessage = NetworkMessage(
-//                id = Uuid.generateV7().toString(),
-//                role = NetworkMessageRole.AGENT,
-//                parts = listOf(
-//                    NetworkPartText(
-//                        type = "text",
-//                        text =
-//                            """
-//## Markdown Formatting Examples
-//
-//This text demonstrates various formatting options available in Markdown. You can use **bold text** to emphasize key words, or *italic text* for adding a different kindt of emphasis. You can also combine them to create ***bold and italic text***.
-//
-//---
-//
-//### Data Table
-//
-//Tables are useful for organizing data.
-//
-//| Item | Quantity | Status |
-//| :--- | :---: | ---: |
-//| Widget A | 150 | In Stock |
-//| Gadget B | 0 | Out of Stock |
-//| Thing C | 42 | Low Stock |
-//
-//---
-//
-//### Using Footnotes
-//
-//You can add footnotes[test] to provide extra information or citations. This helps keep the main text clean while offering additional context.
-//
-//[test]: This is the text that will appear in the footnote section at the bottom.
-//    """.trimMargin()
-//                    )
-//                ),
-//                metadata = NetworkMessageMetadata(
-//                    conversationId = chatUiState.activeConversationId.value,
-//                    kbId = chatUiState.activeKbId.value,
-//                    userId = userId,
-//                    appName = ""
-//                ),
-//            )
-//            upsertNetworkMessageInLocal(responseNetworkMessage)
+            if (chatUiState.activeConversationId.value.isEmpty()) {
+                val newConversationId = Uuid.generateV7().toString()
+                DefaultKnowledgeRetrievalRepository.upsertNetworkConversationInLocal(
+                    NetworkConversation(
+                        conversationId = newConversationId,
+                        isActive = true,
+                        name = userRequest,
+                        summary = "",
+                        summarizedUpToMessageOrder = null
+                    )
+                )
+                chatUiState.activeConversationId.value = newConversationId
+            }
+            val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
+            val requestNetworkMessage = NetworkMessage(
+                id = Uuid.generateV7().toString(),
+                role = NetworkMessageRole.USER,
+                parts = listOf(
+                    NetworkPartText(
+                        type = "text",
+                        text = userRequest
+                    )
+                ),
+                metadata = NetworkMessageMetadata(
+                    conversationId = chatUiState.activeConversationId.value,
+                    kbId = chatUiState.activeKbId.value,
+                    userId = userId,
+                    appName = ""
+                ),
+            )
+            upsertNetworkMessageInLocal(requestNetworkMessage)
+            val responseNetworkMessage = NetworkMessage(
+                id = Uuid.generateV7().toString(),
+                role = NetworkMessageRole.AGENT,
+                parts = listOf(
+                    NetworkPartText(
+                        type = "text",
+                        text =
+                            """
+## Markdown Formatting Examples
+
+This text demonstrates various formatting options available in Markdown. You can use **bold text** to emphasize key words, or *italic text* for adding a different kindt of emphasis. You can also combine them to create ***bold and italic text***.
+
+---
+
+### Data Table
+
+Tables are useful for organizing data.
+
+| Item | Quantity | Status |
+| :--- | :---: | ---: |
+| Widget A | 150 | In Stock |
+| Gadget B | 0 | Out of Stock |
+| Thing C | 42 | Low Stock |
+
+---
+
+### Using Footnotes
+
+You can add footnotes[test] to provide extra information or citations. This helps keep the main text clean while offering additional context.
+
+[test]: This is the text that will appear in the footnote section at the bottom.
+    """.trimMargin()
+                    )
+                ),
+                metadata = NetworkMessageMetadata(
+                    conversationId = chatUiState.activeConversationId.value,
+                    kbId = chatUiState.activeKbId.value,
+                    userId = userId,
+                    appName = ""
+                ),
+            )
+            upsertNetworkMessageInLocal(responseNetworkMessage)
             // END TESTING
 
 
-            if (chatUiState.activeConversationId.value.isEmpty()) {
-                val newConversationId = repository.createConversation(
-                    conversationName = userRequest
-                )
-                if (newConversationId == null) return@launch
-                chatUiState.activeConversationId.value = newConversationId
-            }
-            repository.collectSSEResponseFlow(
-                kbId = chatUiState.activeKbId.value,
-                conversationId = chatUiState.activeConversationId.value,
-                userRequest = userRequest,
-                webSearch = chatUiState.webSearch.value,
-                onSseData = onSseData
-            )
+//            if (chatUiState.activeConversationId.value.isEmpty()) {
+//                val newConversationId = repository.createConversation(
+//                    conversationName = userRequest
+//                )
+//                if (newConversationId == null) return@launch
+//                chatUiState.activeConversationId.value = newConversationId
+//            }
+//            repository.collectSSEResponseFlow(
+//                kbId = chatUiState.activeKbId.value,
+//                conversationId = chatUiState.activeConversationId.value,
+//                userRequest = userRequest,
+//                webSearch = chatUiState.webSearch.value,
+//                onSseData = onSseData
+//            )
         }
     }
 
@@ -228,21 +231,21 @@ class ChatViewModel(
     fun deleteConversation(conversationId: String) {
         viewModelScope.launch {
             // FOR TESTING
-//            DefaultKnowledgeRetrievalRepository.deleteConversationInLocal(conversationId)
-//            if (chatUiState.activeConversationId.value == conversationId) {
-//                chatUiState.activeConversationId.value = ""
-//            }
+            DefaultKnowledgeRetrievalRepository.deleteConversationInLocal(conversationId)
+            if (chatUiState.activeConversationId.value == conversationId) {
+                chatUiState.activeConversationId.value = ""
+            }
             // END TESTING
 
 
-            chatUiState.showLoadingAction.value = ShowLoadingAction("Deleting conversation ...")
-            val succeed = repository.deleteConversation(conversationId)
-            if (succeed) {
-                if (chatUiState.activeConversationId.value == conversationId) {
-                    chatUiState.activeConversationId.value = ""
-                }
-            }
-            chatUiState.showLoadingAction.value = null
+//            chatUiState.showLoadingAction.value = ShowLoadingAction("Deleting conversation ...")
+//            val succeed = repository.deleteConversation(conversationId)
+//            if (succeed) {
+//                if (chatUiState.activeConversationId.value == conversationId) {
+//                    chatUiState.activeConversationId.value = ""
+//                }
+//            }
+//            chatUiState.showLoadingAction.value = null
         }
     }
 
