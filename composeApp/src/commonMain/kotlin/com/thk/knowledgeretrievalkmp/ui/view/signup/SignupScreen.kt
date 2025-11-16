@@ -1,6 +1,5 @@
 package com.thk.knowledgeretrievalkmp.ui.view.signup
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,7 +25,6 @@ import com.thk.knowledgeretrievalkmp.util.checkValidPasswordError
 import com.thk.knowledgeretrievalkmp.util.isValidEmail
 import com.thk.knowledgeretrievalkmp.util.log
 import knowledgeretrievalkmp.composeapp.generated.resources.*
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 
@@ -67,7 +65,8 @@ fun SignupScreen(
 
     FullScreenLoader(
         visible = signupViewModel.signupUiState.showLoadingAction.value != null,
-        text = signupViewModel.signupUiState.showLoadingAction.value?.loadingText ?: ""
+        loadingText = signupViewModel.signupUiState.showLoadingAction.value?.loadingText,
+        loadingAnimation = signupViewModel.signupUiState.showLoadingAction.value?.loadingAnimation
     )
 }
 
@@ -131,13 +130,17 @@ fun SignupMainScreen(
                     if (googleUser == null) {
                         return@SignInResult
                     }
-                    signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(loginLoadingText)
+                    signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(
+                        loadingText = loginLoadingText,
+                        loadingAnimation = LoadingAnimation.LOADING
+                    )
                     signupViewModel.loginWithGoogle(
                         userId = googleUser.email ?: "",
                         displayName = googleUser.displayName,
                         profileUri = googleUser.profilePicUrl ?: "",
                         idToken = googleUser.idToken,
                         onLoginFinish = { succeed ->
+                            signupViewModel.signupUiState.showLoadingAction.value = null
                             if (succeed) {
                                 signupViewModel.signupUiState.isLoggedIn.value = true
                             } else {
@@ -145,7 +148,6 @@ fun SignupMainScreen(
                             }
                         }
                     )
-                    signupViewModel.signupUiState.showLoadingAction.value = null
                 },
                 iconSize = 20.dp
             )
@@ -206,7 +208,10 @@ fun SignupMainScreen(
                     signupViewModel.showSnackbar(passwordError)
                     return@onSignupClick
                 }
-                signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(signupLoadingText)
+                signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(
+                    loadingText = signupLoadingText,
+                    loadingAnimation = LoadingAnimation.LOADING
+                )
                 signupViewModel.signupUser(
                     onSignupFinish = { succeed ->
                         signupViewModel.signupUiState.showLoadingAction.value = null

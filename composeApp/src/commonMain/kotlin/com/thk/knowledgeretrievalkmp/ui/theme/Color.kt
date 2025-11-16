@@ -16,6 +16,7 @@ val Blue = Color(0xFF3461FD)
 val DeepBlue = Color(0xFF2A4ECA)
 
 val White = Color(0xFFFFFFFF)
+val White80 = Color(0xCCFFFFFF)
 val Black = Color(0xFF000000)
 val LightGreen = Color(0xFF20A090)
 val Gray = Color(0xFF888888)

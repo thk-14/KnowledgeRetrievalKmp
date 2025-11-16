@@ -17,11 +17,13 @@ import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository.up
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.network.NetworkDocumentStatus
 import com.thk.knowledgeretrievalkmp.db.Document
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
 import com.thk.knowledgeretrievalkmp.ui.view.custom.toUiKnowledgeBase
 import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.uuid.Uuid
 
@@ -73,6 +75,7 @@ class DetailViewModel(
 
     fun deleteKnowledgeBase(onDeleteFinish: (Boolean) -> Unit) = viewModelScope.launch {
         // FOR TESTING
+        delay(5000)
         DefaultKnowledgeRetrievalRepository.deleteKnowledgeBaseInLocal(knowledgeBaseId)
         val succeed = true
         // END TESTING
@@ -91,6 +94,7 @@ class DetailViewModel(
         onUploadFailed: () -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
+        delay(5000)
         val localDocument = Document(
             DocumentId = Uuid.generateV7().toString(),
             KbId = knowledgeBaseId,
@@ -130,6 +134,7 @@ class DetailViewModel(
         onDeleteFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
+        delay(5000)
         AppContainer.db.knowledgeBaseQueries.deleteDocumentWithId(documentId)
         val succeed = true
         // END TESTING
@@ -150,7 +155,10 @@ class DetailViewModel(
     }
 
     private suspend fun fetchKnowledgeBaseWithDocuments() {
-        detailUiState.showLoadingAction.value = ShowLoadingAction("Fetching knowledge base ...")
+        detailUiState.showLoadingAction.value = ShowLoadingAction(
+            loadingText = "Fetching knowledge base ...",
+            loadingAnimation = LoadingAnimation.FETCHING
+        )
         val succeed = repository.fetchKnowledgeBaseWithDocuments(knowledgeBaseId)
         detailUiState.showLoadingAction.value = null
         log("fetchKnowledgeBaseWithDocuments succeed: $succeed")

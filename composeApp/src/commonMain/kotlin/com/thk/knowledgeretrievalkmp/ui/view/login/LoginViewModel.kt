@@ -16,8 +16,10 @@ import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.local.db.createDatabase
 import com.thk.knowledgeretrievalkmp.data.local.db.createDriver
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 data class LoginUiState(
@@ -53,6 +55,11 @@ class LoginViewModel(
         idToken: String,
         onLoginFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
+
+        // FOR TESTING
+        delay(5000)
+        // END TESTING
+
         val succeed = repository.loginWithGoogle(
             userId = userId,
             displayName = displayName,
@@ -84,7 +91,10 @@ class LoginViewModel(
     }
 
     private suspend fun refreshToken() {
-        loginUiState.showLoadingAction.value = ShowLoadingAction()
+        loginUiState.showLoadingAction.value = ShowLoadingAction(
+            loadingText = "Checking ...",
+            loadingAnimation = LoadingAnimation.LOADING
+        )
         val succeed = repository.refreshToken()
         loginUiState.showLoadingAction.value = null
         if (succeed) {

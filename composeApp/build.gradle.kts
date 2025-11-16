@@ -129,6 +129,10 @@ kotlin {
             implementation(libs.multiplatform.markdown.renderer)
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.multiplatform.markdown.renderer.coil3)
+
+            // Compottie
+            implementation(libs.compottie)
+            implementation(libs.compottie.resources)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -23,6 +23,7 @@ import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.uuid.Uuid
 
@@ -112,6 +113,7 @@ class ChatViewModel(
         if (userRequest.isEmpty()) return
         viewModelScope.launch {
             // FOR TESTING
+            delay(5000)
             if (chatUiState.activeConversationId.value.isEmpty()) {
                 val newConversationId = Uuid.generateV7().toString()
                 DefaultKnowledgeRetrievalRepository.upsertNetworkConversationInLocal(
@@ -210,7 +212,10 @@ You can add footnotes[test] to provide extra information or citations. This help
             if (active) "Activating knowledge base ..."
             else "Deactivating knowledge base ..."
         viewModelScope.launch {
-            chatUiState.showLoadingAction.value = ShowLoadingAction(loadingText)
+            chatUiState.showLoadingAction.value = ShowLoadingAction(
+                loadingText = loadingText,
+                loadingAnimation = LoadingAnimation.ACTIVATING
+            )
             repository.toggleKnowledgeBaseActive(kbId, active)
             repository.toggleDocumentsActiveForKnowledgeBase(kbId, active)
             chatUiState.showLoadingAction.value = null
@@ -222,7 +227,10 @@ You can add footnotes[test] to provide extra information or citations. This help
             if (active) "Activating conversation ..."
             else "Deactivating conversation ..."
         viewModelScope.launch {
-            chatUiState.showLoadingAction.value = ShowLoadingAction(loadingText)
+            chatUiState.showLoadingAction.value = ShowLoadingAction(
+                loadingText = loadingText,
+                loadingAnimation = LoadingAnimation.ACTIVATING
+            )
             repository.toggleConversationActive(conversationId, active)
             chatUiState.showLoadingAction.value = null
         }
@@ -231,6 +239,7 @@ You can add footnotes[test] to provide extra information or citations. This help
     fun deleteConversation(conversationId: String) {
         viewModelScope.launch {
             // FOR TESTING
+            delay(5000)
             DefaultKnowledgeRetrievalRepository.deleteConversationInLocal(conversationId)
             if (chatUiState.activeConversationId.value == conversationId) {
                 chatUiState.activeConversationId.value = ""
@@ -238,7 +247,10 @@ You can add footnotes[test] to provide extra information or citations. This help
             // END TESTING
 
 
-//            chatUiState.showLoadingAction.value = ShowLoadingAction("Deleting conversation ...")
+//            chatUiState.showLoadingAction.value = ShowLoadingAction(
+//                loadingText = "Deleting conversation ...",
+//                loadingAnimation = LoadingAnimation.DELETING
+//            )
 //            val succeed = repository.deleteConversation(conversationId)
 //            if (succeed) {
 //                if (chatUiState.activeConversationId.value == conversationId) {
@@ -251,7 +263,10 @@ You can add footnotes[test] to provide extra information or citations. This help
 
     fun renameConversation(conversationId: String, newName: String) {
         viewModelScope.launch {
-            chatUiState.showLoadingAction.value = ShowLoadingAction("Renaming conversation ...")
+            chatUiState.showLoadingAction.value = ShowLoadingAction(
+                loadingText = "Renaming conversation ...",
+                loadingAnimation = LoadingAnimation.CHANGING
+            )
             val succeed = repository.renameConversation(conversationId, newName)
             chatUiState.showLoadingAction.value = null
             val message =

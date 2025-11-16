@@ -18,9 +18,11 @@ import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.network.NetworkKnowledgeBase
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.uuid.Uuid
 
@@ -69,6 +71,7 @@ class KbViewModel(
         onCreateKbFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
+        delay(5000)
         val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
         DefaultKnowledgeRetrievalRepository.upsertNetworkKnowledgeBaseInLocal(
             NetworkKnowledgeBase(
@@ -120,14 +123,25 @@ class KbViewModel(
     }
 
     private suspend fun fetchKnowledgeBasesWithDocuments() {
-        kbUiState.showLoadingAction.value = ShowLoadingAction("Fetching knowledge bases ...")
+        kbUiState.showLoadingAction.value = ShowLoadingAction(
+            loadingText = "Fetching knowledge bases ...",
+            loadingAnimation = LoadingAnimation.FETCHING
+        )
+
+        // FOR TESTING
+        delay(5000)
+        // END TESTING
+
         val succeed = repository.fetchKnowledgeBasesWithDocuments()
         kbUiState.showLoadingAction.value = null
         log("fetch KnowledgeBases succeed: $succeed")
     }
 
     private suspend fun fetchConversationsWithMessages() {
-        kbUiState.showLoadingAction.value = ShowLoadingAction("Fetching conversations ...")
+        kbUiState.showLoadingAction.value = ShowLoadingAction(
+            loadingText = "Fetching conversations ...",
+            loadingAnimation = LoadingAnimation.FETCHING
+        )
         val succeed = repository.fetchConversationsWithMessages()
         kbUiState.showLoadingAction.value = null
         log("fetchConversationsWithMessages succeed: $succeed")

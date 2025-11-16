@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.mmk.kmpauth.google.GoogleButtonUiContainer
 import com.mmk.kmpauth.google.GoogleUser
 import com.thk.knowledgeretrievalkmp.ui.theme.*
+import io.github.alexzhirkevich.compottie.*
 import knowledgeretrievalkmp.composeapp.generated.resources.Res
 import knowledgeretrievalkmp.composeapp.generated.resources.google
 import knowledgeretrievalkmp.composeapp.generated.resources.google_btn
@@ -117,11 +118,12 @@ fun InfiniteLoadingCircle(
 fun FullScreenLoader(
     modifier: Modifier = Modifier,
     visible: Boolean,
-    bgColor: Color = Gray80,
+    bgColor: Color = White80,
     indicatorColor: Color = White,
     indicatorSize: Dp = 140.dp,
     indicatorStrokeWidth: Dp = 20.dp,
-    text: String = "",
+    loadingText: String?,
+    loadingAnimation: LoadingAnimation?,
     textColor: Color = Black,
     textFontSize: TextUnit = 30.sp
 ) {
@@ -148,25 +150,46 @@ fun FullScreenLoader(
                 verticalArrangement = Arrangement.spacedBy(5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InfiniteLoadingCircle(
-                    size = indicatorSize,
-                    color = indicatorColor,
-                    strokeWidth = indicatorStrokeWidth,
-                )
-                Text(
-                    text = text,
-                    color = textColor,
-                    fontSize = textFontSize,
-                    fontWeight = FontWeight.Bold
-                )
+//                InfiniteLoadingCircle(
+//                    size = indicatorSize,
+//                    color = indicatorColor,
+//                    strokeWidth = indicatorStrokeWidth,
+//                )
+                if (loadingAnimation != null) {
+                    LottieAnimation(
+                        lottieFilePath = loadingAnimation.lottieFilePath,
+                        modifier = Modifier.height(200.dp).width(300.dp)
+                    )
+                }
+                if (loadingText != null) {
+                    Text(
+                        text = loadingText,
+                        color = textColor,
+                        fontSize = textFontSize,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
 }
 
 data class ShowLoadingAction(
-    val loadingText: String = ""
+    val loadingText: String,
+    val loadingAnimation: LoadingAnimation
 )
+
+enum class LoadingAnimation(
+    val lottieFilePath: String
+) {
+    LOADING("files/loading.json"),
+    FETCHING("files/fetching.json"),
+    UPLOADING("files/uploading.json"),
+    ACTIVATING("files/activating.json"),
+    DELETING("files/deleting.json"),
+    CHANGING("files/changing.json"),
+    CREATING("files/creating.json")
+}
 
 @Composable
 fun TypingDots(
@@ -221,4 +244,29 @@ fun TypingDots(
         Spacer(Modifier.width(spaceSize))
         Dot(offset3)
     }
+}
+
+@Composable
+fun LottieAnimation(
+    modifier: Modifier = Modifier,
+    lottieFilePath: String
+) {
+    val composition by rememberLottieComposition {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes(lottieFilePath).decodeToString()
+        )
+    }
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = Compottie.IterateForever,
+        speed = 1.0f
+    )
+    Image(
+        painter = rememberLottiePainter(
+            composition = composition,
+            progress = { progress },
+        ),
+        contentDescription = null,
+        modifier = modifier
+    )
 }

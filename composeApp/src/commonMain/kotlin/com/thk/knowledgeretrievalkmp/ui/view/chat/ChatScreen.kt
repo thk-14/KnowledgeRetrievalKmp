@@ -112,6 +112,7 @@ fun ChatScreen(
 
     FullScreenLoader(
         visible = chatViewModel.chatUiState.showLoadingAction.value != null,
-        text = chatViewModel.chatUiState.showLoadingAction.value?.loadingText ?: ""
+        loadingText = chatViewModel.chatUiState.showLoadingAction.value?.loadingText,
+        loadingAnimation = chatViewModel.chatUiState.showLoadingAction.value?.loadingAnimation
     )
 }

@@ -11,10 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.thk.knowledgeretrievalkmp.ui.theme.White
-import com.thk.knowledgeretrievalkmp.ui.view.custom.CreateKbDialog
-import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
-import com.thk.knowledgeretrievalkmp.ui.view.custom.FullScreenLoader
-import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
+import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 import knowledgeretrievalkmp.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -76,7 +73,10 @@ fun KbScreen(
                     return@onConfirmButtonClick
                 }
                 kbViewModel.dismissKbCreateDialog()
-                kbViewModel.kbUiState.showLoadingAction.value = ShowLoadingAction(createKbLoadingText)
+                kbViewModel.kbUiState.showLoadingAction.value = ShowLoadingAction(
+                    loadingText = createKbLoadingText,
+                    loadingAnimation = LoadingAnimation.CREATING
+                )
                 kbViewModel.createKnowledgeBase(
                     name = name,
                     description = description,
@@ -95,6 +95,7 @@ fun KbScreen(
 
     FullScreenLoader(
         visible = kbViewModel.kbUiState.showLoadingAction.value != null,
-        text = kbViewModel.kbUiState.showLoadingAction.value?.loadingText ?: ""
+        loadingText = kbViewModel.kbUiState.showLoadingAction.value?.loadingText,
+        loadingAnimation = kbViewModel.kbUiState.showLoadingAction.value?.loadingAnimation
     )
 }

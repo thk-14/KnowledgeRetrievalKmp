@@ -82,7 +82,10 @@ fun DocumentSection(
                                                 val file = state.result
                                                 log("File selected: $file")
                                                 detailViewModel.detailUiState.showLoadingAction.value =
-                                                    ShowLoadingAction(uploadDocumentLoadingText)
+                                                    ShowLoadingAction(
+                                                        loadingText = uploadDocumentLoadingText,
+                                                        loadingAnimation = LoadingAnimation.UPLOADING
+                                                    )
                                                 detailViewModel.uploadDocument(
                                                     fileName = file.name,
                                                     mimeType = file.mimeType().toString(),

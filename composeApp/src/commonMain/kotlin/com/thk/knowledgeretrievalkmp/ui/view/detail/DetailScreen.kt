@@ -10,10 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.thk.knowledgeretrievalkmp.ui.theme.White
-import com.thk.knowledgeretrievalkmp.ui.view.custom.DeleteConfirmationDialog
-import com.thk.knowledgeretrievalkmp.ui.view.custom.FullScreenLoader
-import com.thk.knowledgeretrievalkmp.ui.view.custom.RenameDialog
-import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
+import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 import knowledgeretrievalkmp.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -63,7 +60,11 @@ fun DetailScreen(
                 },
                 onConfirm = {
                     detailViewModel.detailUiState.showDialogAction.value = null
-                    detailViewModel.detailUiState.showLoadingAction.value = ShowLoadingAction(deleteKbLoadingText)
+                    detailViewModel.detailUiState.showLoadingAction.value =
+                        ShowLoadingAction(
+                            loadingText = deleteKbLoadingText,
+                            loadingAnimation = LoadingAnimation.DELETING
+                        )
                     detailViewModel.deleteKnowledgeBase(
                         onDeleteFinish = { succeed ->
                             detailViewModel.detailUiState.showLoadingAction.value = null
@@ -92,7 +93,11 @@ fun DetailScreen(
                 },
                 onConfirm = {
                     detailViewModel.detailUiState.showDialogAction.value = null
-                    detailViewModel.detailUiState.showLoadingAction.value = ShowLoadingAction(deleteDocumentLoadingText)
+                    detailViewModel.detailUiState.showLoadingAction.value =
+                        ShowLoadingAction(
+                            loadingText = deleteDocumentLoadingText,
+                            loadingAnimation = LoadingAnimation.DELETING
+                        )
                     detailViewModel.deleteDocument(
                         documentId = deleteDocument.DocumentId,
                         onDeleteFinish = { succeed ->
@@ -130,7 +135,11 @@ fun DetailScreen(
                         return@ConfirmRename
                     }
                     detailViewModel.detailUiState.showDialogAction.value = null
-                    detailViewModel.detailUiState.showLoadingAction.value = ShowLoadingAction(renameKbLoadingText)
+                    detailViewModel.detailUiState.showLoadingAction.value =
+                        ShowLoadingAction(
+                            loadingText = renameKbLoadingText,
+                            loadingAnimation = LoadingAnimation.CHANGING
+                        )
                     detailViewModel.renameKnowledgeBase(
                         newName = newName,
                         onRenameFinish = { succeed ->
@@ -151,6 +160,7 @@ fun DetailScreen(
 
     FullScreenLoader(
         visible = detailViewModel.detailUiState.showLoadingAction.value != null,
-        text = detailViewModel.detailUiState.showLoadingAction.value?.loadingText ?: ""
+        loadingText = detailViewModel.detailUiState.showLoadingAction.value?.loadingText,
+        loadingAnimation = detailViewModel.detailUiState.showLoadingAction.value?.loadingAnimation
     )
 }

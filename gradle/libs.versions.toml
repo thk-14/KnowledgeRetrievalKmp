@@ -32,8 +32,11 @@ timber = "5.0.1"
 sqldelight = "2.1.0"
 credentialsPlayServicesAuth = "1.6.0-beta03"
 googleid = "1.1.1"
+compottie = "2.0.2"
 
 [libraries]
+compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
+compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsPlayServicesAuth" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }

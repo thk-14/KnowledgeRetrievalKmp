@@ -22,6 +22,7 @@ import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import com.thk.knowledgeretrievalkmp.ui.theme.Black
 import com.thk.knowledgeretrievalkmp.ui.theme.White
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
@@ -64,8 +65,10 @@ fun KbMainScreen(
                 },
                 onLogout = {
                     kbViewModel.kbUiState.menuExpanded.value = false
-                    kbViewModel.kbUiState.showLoadingAction.value =
-                        ShowLoadingAction(logoutLoadingText)
+                    kbViewModel.kbUiState.showLoadingAction.value = ShowLoadingAction(
+                        loadingText = logoutLoadingText,
+                        loadingAnimation = LoadingAnimation.LOADING
+                    )
                     kbViewModel.logout(
                         onLogoutFinish = { succeed ->
                             kbViewModel.kbUiState.showLoadingAction.value = null

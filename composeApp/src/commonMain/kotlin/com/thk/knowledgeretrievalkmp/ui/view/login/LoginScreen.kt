@@ -25,7 +25,6 @@ import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 import com.thk.knowledgeretrievalkmp.util.isValidEmail
 import com.thk.knowledgeretrievalkmp.util.log
 import knowledgeretrievalkmp.composeapp.generated.resources.*
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -60,7 +59,8 @@ fun LoginScreen(
 
     FullScreenLoader(
         visible = loginViewModel.loginUiState.showLoadingAction.value != null,
-        text = loginViewModel.loginUiState.showLoadingAction.value?.loadingText ?: ""
+        loadingText = loginViewModel.loginUiState.showLoadingAction.value?.loadingText,
+        loadingAnimation = loginViewModel.loginUiState.showLoadingAction.value?.loadingAnimation
     )
 }
 
@@ -105,13 +105,17 @@ fun LoginMainScreen(
                     if (googleUser == null) {
                         return@SignInResult
                     }
-                    loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(logInLoadingText)
+                    loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(
+                        loadingText = logInLoadingText,
+                        loadingAnimation = LoadingAnimation.LOADING
+                    )
                     loginViewModel.loginWithGoogle(
                         userId = googleUser.email ?: "",
                         displayName = googleUser.displayName,
                         profileUri = googleUser.profilePicUrl ?: "",
                         idToken = googleUser.idToken,
                         onLoginFinish = { succeed ->
+                            loginViewModel.loginUiState.showLoadingAction.value = null
                             if (succeed) {
                                 loginViewModel.loginUiState.isLoggedIn.value = true
                             } else {
@@ -119,7 +123,6 @@ fun LoginMainScreen(
                             }
                         }
                     )
-                    loginViewModel.loginUiState.showLoadingAction.value = null
                 },
                 iconSize = 20.dp
             )
@@ -183,7 +186,10 @@ fun LoginMainScreen(
                         return@OnLoginClick
                     }
 
-                    loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(logInLoadingText)
+                    loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(
+                        loadingText = logInLoadingText,
+                        loadingAnimation = LoadingAnimation.LOADING
+                    )
                     loginViewModel.authenticateUser(
                         onLoginFinish = { succeed ->
                             loginViewModel.loginUiState.showLoadingAction.value = null
