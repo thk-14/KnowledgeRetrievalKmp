@@ -4,10 +4,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocuments
+import com.thk.knowledgeretrievalkmp.data.local.db.MessageWithCitations
 import com.thk.knowledgeretrievalkmp.db.Conversation
 import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
-import com.thk.knowledgeretrievalkmp.db.Message
 
 @Stable
 data class UiConversation(
@@ -19,7 +19,7 @@ data class UiConversation(
             IsActive = false
         )
     ),
-    val messages: SnapshotStateList<Message> = mutableStateListOf()
+    val messagesWithCitations: SnapshotStateList<MessageWithCitations> = mutableStateListOf()
 )
 
 @Stable
@@ -41,7 +41,7 @@ data class UiKnowledgeBase(
 
 fun ConversationWithMessages.toUiConversation() = UiConversation(
     conversation = mutableStateOf(this.conversation),
-    messages = this.messages.toMutableStateList()
+    messagesWithCitations = this.messagesWithCitations.toMutableStateList()
 )
 
 fun KbWithDocuments.toUiKnowledgeBase() = UiKnowledgeBase(
@@ -52,5 +52,17 @@ fun KbWithDocuments.toUiKnowledgeBase() = UiKnowledgeBase(
 enum class FileExtension(val extension: String) {
     PDF("pdf"),
     DOCX("docx"),
-    TXT("txt")
+    TXT("txt"),
+    JPG("jpg"),
+    JPEG("jpeg"),
+    PNG("png"),
+    DOC("doc"),
+    MD("md"),
+    PPTX("pptx"),
+    PPT("ppt"),
+    XLSX("xlsx"),
+    XLS("xls"),
+    RST("rst"),
+    XML("xml"),
+    CSV("csv")
 }

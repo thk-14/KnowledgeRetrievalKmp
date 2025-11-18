@@ -49,6 +49,20 @@ CREATE TABLE Message (
     MessageOrder INTEGER NOT NULL
 );
 
+CREATE TABLE Citation (
+    MessageId TEXT NOT NULL,
+    OriginalIndex INTEGER NOT NULL,
+    KbId TEXT NOT NULL,
+    DocumentId TEXT NOT NULL,
+    FileName TEXT NOT NULL,
+    OriginalFileName TEXT NOT NULL,
+    ChunkIndex INTEGER NOT NULL,
+    StartIndex INTEGER NOT NULL,
+    EndIndex INTEGER NOT NULL,
+    PageContent TEXT NOT NULL,
+    PRIMARY KEY (MessageId, OriginalIndex)
+);
+
 -- Upsert
 
 upsertKnowledgeBase:
@@ -66,6 +80,10 @@ VALUES (:conversationId, :userId, :name, :isActive);
 upsertMessage:
 INSERT OR REPLACE INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, Status, MessageOrder)
 VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :status, :messageOrder);
+
+upsertCitation:
+INSERT OR REPLACE INTO Citation(MessageId, OriginalIndex, KbId, DocumentId, FileName, OriginalFileName, ChunkIndex, StartIndex, EndIndex, PageContent)
+VALUES (:messageId, :originalIndex, :kbId, :doucmentId, :fileName, :originalFileName, :chunkIndex, :startIndex, :endIndex, :pageContent);
 
 -- Update
 
@@ -101,6 +119,9 @@ DELETE FROM Message WHERE MessageId = :messageId;
 deleteMessagesWithConversationId:
 DELETE FROM Message WHERE ConversationId = :conversationId;
 
+deleteCitationsWithConversationId:
+DELETE FROM Citation WHERE MessageId IN (SELECT MessageId FROM Message WHERE ConversationId = :conversationId);
+
 -- Select
 
 getKnowledgeBasesWithUserId:
@@ -116,9 +137,8 @@ getConversationWithId:
 SELECT * FROM Conversation WHERE ConversationId = :conversationId;
 
 getDocumentsWithUserId:
-SELECT * FROM Document LEFT JOIN KnowledgeBase
-ON Document.KbId = KnowledgeBase.KbId
-WHERE KnowledgeBase.UserId = :userId;
+SELECT * FROM Document
+WHERE KbId IN (SELECT KbId FROM KnowledgeBase WHERE UserId = :userId);
 
 getDocumentWithId:
 SELECT * FROM Document WHERE DocumentId = :documentId;
@@ -139,3 +159,7 @@ SELECT * FROM Message
 WHERE ConversationId = :conversationId
 ORDER BY MessageOrder DESC
 LIMIT 1;
+
+getCitationsWithUserId:
+SELECT * FROM Citation
+WHERE MessageId IN (SELECT MessageId FROM Message WHERE UserId = :userId);

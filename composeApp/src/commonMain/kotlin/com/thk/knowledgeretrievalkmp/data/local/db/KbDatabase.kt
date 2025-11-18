@@ -13,9 +13,14 @@ fun createDatabase(driver: SqlDriver) = KbDatabase(
     )
 )
 
+data class MessageWithCitations(
+    val message: Message,
+    val citations: List<Citation>
+)
+
 data class ConversationWithMessages(
     val conversation: Conversation,
-    val messages: List<Message>
+    val messagesWithCitations: List<MessageWithCitations>
 )
 
 data class KbWithDocuments(

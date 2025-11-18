@@ -8,6 +8,7 @@ import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.thk.knowledgeretrievalkmp.Configs
 import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocuments
+import com.thk.knowledgeretrievalkmp.data.local.db.MessageWithCitations
 import com.thk.knowledgeretrievalkmp.data.network.*
 import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
@@ -18,7 +19,10 @@ import com.thk.knowledgeretrievalkmp.util.log
 import com.thk.knowledgeretrievalkmp.util.toSseEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -56,10 +60,10 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             sessionManager.apply {
 
                 // FOR TESTING
-//                setUserId("hafizh")
+                setUserId("hafizh")
                 // END TESTING
 
-                setUserId(userId)
+//                setUserId(userId)
                 setDisplayName(displayName)
                 setProfileUri(profileUri)
             }
@@ -236,7 +240,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         ?: return@forEach
                 log("get networkMessages: $networkMessages")
                 // clear messages in local
-                dbQueries.deleteMessagesWithConversationId(networkConversation.conversationId)
+                clearConversationInLocal(networkConversation.conversationId)
                 // upsert messages in local
                 networkMessages.forEach { networkMessage ->
                     upsertNetworkMessageInLocal(
@@ -565,8 +569,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                     kbId = kbId,
                     userId = userId,
                     appName = APP_NAME
-                ),
-//                retrievalContext = null
+                )
             )
             upsertNetworkMessageInLocal(
                 requestNetworkMessage.copy(
@@ -613,8 +616,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 kbId = kbId,
                 userId = userId,
                 appName = APP_NAME
-            ),
-//            retrievalContext = null
+            )
         )
         withContext(dispatcher) {
             upsertNetworkMessageInLocal(
@@ -694,6 +696,20 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseStopData>(dataString)
                         log("data: $data")
+                        data.references?.forEach { reference ->
+                            dbQueries.upsertCitation(
+                                messageId = responseLocalMessage.MessageId,
+                                originalIndex = reference.metadata.originalIndex.toLong(),
+                                kbId = reference.metadata.kbId,
+                                doucmentId = reference.metadata.documentId,
+                                fileName = reference.metadata.filename,
+                                originalFileName = reference.metadata.originalFileName,
+                                chunkIndex = reference.metadata.chunkIndex.toLong(),
+                                startIndex = reference.metadata.startIndex.toLong(),
+                                endIndex = reference.metadata.endIndex.toLong(),
+                                pageContent = reference.pageContent
+                            )
+                        }
                         onSseData(data)
                     }
 
@@ -774,27 +790,6 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         val userId = sessionManager.getUserId() ?: return emptyFlow()
         val kbsFlow = dbQueries.getKnowledgeBasesWithUserId(userId).asFlow().mapToList(dispatcher)
         val documentsFlow = dbQueries.getDocumentsWithUserId(userId).asFlow().mapToList(dispatcher)
-            .map { documentsWithKbInfo ->
-                documentsWithKbInfo.map {
-                    Document(
-                        DocumentId = it.DocumentId,
-                        KbId = it.KbId,
-                        FileName = it.FileName,
-                        Description = it.Description,
-                        FilePath = it.FilePath,
-                        FileSize = it.FileSize,
-                        FileType = it.FileType,
-                        MimeType = it.MimeType,
-                        Status = it.Status,
-                        ProcessingError = it.ProcessingError,
-                        CreatedAt = it.CreatedAt,
-                        UpdatedAt = it.UpdatedAt,
-                        UploadedBy = it.UploadedBy,
-                        ProcessedAt = it.ProcessedAt,
-                        IsInactive = it.IsInactive
-                    )
-                }
-            }
         return combine(kbsFlow, documentsFlow) { kbs, documents ->
             val kbsWithDocuments = mutableListOf<KbWithDocuments>()
             kbs.forEach { kb ->
@@ -828,15 +823,23 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         val userId = sessionManager.getUserId() ?: return emptyFlow()
         val conversationsFlow = dbQueries.getConversationsWithuserId(userId).asFlow().mapToList(dispatcher)
         val messagesFlow = dbQueries.getMessagesWithUserId(userId).asFlow().mapToList(dispatcher)
-        return combine(conversationsFlow, messagesFlow) { conversations, messages ->
+        val citationsFlow = dbQueries.getCitationsWithUserId(userId).asFlow().mapToList(dispatcher)
+        return combine(conversationsFlow, messagesFlow, citationsFlow) { conversations, messages, citations ->
             val conversationsWithMessages = mutableListOf<ConversationWithMessages>()
             conversations.forEach { conversation ->
                 conversationsWithMessages.add(
                     ConversationWithMessages(
                         conversation = conversation,
-                        messages = messages
+                        messagesWithCitations = messages
                             .filter { it.ConversationId == conversation.ConversationId }
                             .sortedBy { it.MessageOrder }
+                            .map { message ->
+                                MessageWithCitations(
+                                    message = message,
+                                    citations = citations
+                                        .filter { it.MessageId == message.MessageId }
+                                )
+                            }
                     )
                 )
             }
@@ -921,7 +924,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         dbQueries.upsertDocument(
             documentId = networkDocument.id,
             kbId = networkDocument.knowledgeBaseId,
-            fileName = networkDocument.originalFilename,
+            fileName = networkDocument.originalFileName,
             description = networkDocument.description,
             filePath = networkDocument.filePath,
             fileSize = networkDocument.fileSize,
@@ -957,17 +960,35 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             status = "",
             messageOrder = networkMessage.metadata.messageOrder ?: 0
         )
+        networkMessage.retrievalContext?.citedChunks?.forEach { citedChunk ->
+            dbQueries.upsertCitation(
+                messageId = networkMessage.id,
+                originalIndex = citedChunk.metadata.originalIndex.toLong(),
+                kbId = citedChunk.metadata.kbId,
+                doucmentId = citedChunk.metadata.documentId,
+                fileName = citedChunk.metadata.fileName,
+                originalFileName = citedChunk.metadata.originalFileName,
+                chunkIndex = citedChunk.metadata.chunkIndex.toLong(),
+                startIndex = citedChunk.metadata.startIndex.toLong(),
+                endIndex = citedChunk.metadata.endIndex.toLong(),
+                pageContent = citedChunk.pageContent
+            )
+        }
     }
 
     suspend fun deleteKnowledgeBaseInLocal(kbId: String) {
-        // delete knowledge base and documents
         dbQueries.deleteDocumentsWithKbId(kbId)
         dbQueries.deleteKnowledgeBaseWithId(kbId)
     }
 
     suspend fun deleteConversationInLocal(conversationId: String) {
-        // delete conversation and messages
+        dbQueries.deleteCitationsWithConversationId(conversationId)
+        dbQueries.deleteMessagesWithConversationId(conversationId)
         dbQueries.deleteConversationWithId(conversationId)
+    }
+
+    suspend fun clearConversationInLocal(conversationId: String) {
+        dbQueries.deleteCitationsWithConversationId(conversationId)
         dbQueries.deleteMessagesWithConversationId(conversationId)
     }
 }

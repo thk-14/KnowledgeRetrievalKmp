@@ -16,15 +16,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
-import com.thk.knowledgeretrievalkmp.data.network.NetworkKnowledgeBase
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
-import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.uuid.Uuid
 
 data class KbUiState(
     val snackBarHostState: SnackbarHostState = SnackbarHostState(),
@@ -71,25 +67,25 @@ class KbViewModel(
         onCreateKbFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
-        delay(5000)
-        val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
-        DefaultKnowledgeRetrievalRepository.upsertNetworkKnowledgeBaseInLocal(
-            NetworkKnowledgeBase(
-                id = Uuid.generateV7().toString(),
-                name = name,
-                userId = userId,
-                description = description,
-                createdAt = "",
-                updatedAt = "",
-                isActive = true,
-                documentCount = 0
-            )
-        )
-        val succeed = true
+//        delay(5000)
+//        val userId = DefaultKnowledgeRetrievalRepository.getUserId() ?: ""
+//        DefaultKnowledgeRetrievalRepository.upsertNetworkKnowledgeBaseInLocal(
+//            NetworkKnowledgeBase(
+//                id = Uuid.generateV7().toString(),
+//                name = name,
+//                userId = userId,
+//                description = description,
+//                createdAt = "",
+//                updatedAt = "",
+//                isActive = true,
+//                documentCount = 0
+//            )
+//        )
+//        val succeed = true
         // END TESTING
 
 
-//        val succeed = repository.createKnowledgeBase(name, description)
+        val succeed = repository.createKnowledgeBase(name, description)
         log("createKnowledgeBase succeed: $succeed")
         onCreateKbFinish(succeed)
     }
@@ -129,7 +125,7 @@ class KbViewModel(
         )
 
         // FOR TESTING
-        delay(5000)
+//        delay(5000)
         // END TESTING
 
         val succeed = repository.fetchKnowledgeBasesWithDocuments()

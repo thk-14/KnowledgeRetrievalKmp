@@ -137,7 +137,7 @@ data class NetworkDocument(
     val filename: String,
     val description: String?,
     @SerialName("original_filename")
-    val originalFilename: String,
+    val originalFileName: String,
     @SerialName("file_path")
     val filePath: String,
     @SerialName("file_size")
@@ -199,7 +199,8 @@ data class NetworkMessage(
     val role: NetworkMessageRole,
     val parts: List<NetworkPartText>,
     val metadata: NetworkMessageMetadata,
-//    val retrievalContext: RetrievalContext?
+    @SerialName("retrieval_context")
+    val retrievalContext: RetrievalContext? = null
 )
 
 @Serializable
@@ -228,11 +229,29 @@ data class RetrievalContext(
 
 @Serializable
 data class CitedChunk(
-    val id: String,
-    val metadata: String,
+    val metadata: CitedChunkMetadata,
     @SerialName("page_content")
-    val pageContent: String,
-    val type: String
+    val pageContent: String
+)
+
+@Serializable
+data class CitedChunkMetadata(
+    @SerialName("kb_id")
+    val kbId: String,
+    @SerialName("document_id")
+    val documentId: String,
+    @SerialName("filename")
+    val fileName: String,
+    @SerialName("original_filename")
+    val originalFileName: String,
+    @SerialName("start_index")
+    val startIndex: Int,
+    @SerialName("end_index")
+    val endIndex: Int,
+    @SerialName("chunk_index")
+    val chunkIndex: Int,
+    @SerialName("original_index")
+    val originalIndex: Int
 )
 
 @Serializable
@@ -245,6 +264,10 @@ data class NetworkMessageMetadata(
     val userId: String = "",
     @SerialName("app_name")
     val appName: String = "",
+    @SerialName("finish_reason")
+    val finishReason: String? = null,
+    @SerialName("search_method")
+    val searchMethod: String? = null,
     @SerialName("message_order")
     val messageOrder: Long? = null
 )

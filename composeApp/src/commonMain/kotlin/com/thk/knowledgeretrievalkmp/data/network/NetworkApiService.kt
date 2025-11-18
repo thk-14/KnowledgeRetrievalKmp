@@ -38,10 +38,10 @@ class NetworkApiService {
             bearer {
                 loadTokens {
                     // FOR TESTING
-//                    val accessToken = "hapt68"
+                    val accessToken = "hapt68"
                     // END TESTING
 
-                    val accessToken = AppContainer.sessionManager.getAccessToken()
+//                    val accessToken = AppContainer.sessionManager.getAccessToken()
                     val refreshToken = AppContainer.sessionManager.getRefreshToken()
                     if (accessToken != null)
                         BearerTokens(accessToken, refreshToken)
@@ -60,11 +60,11 @@ class NetworkApiService {
         install(DefaultRequest) {
             header("ngrok-skip-browser-warning", true)
         }
-        install(HttpTimeout) {
-            requestTimeoutMillis = 30000
-            connectTimeoutMillis = 20000
-            socketTimeoutMillis = 20000
-        }
+//        install(HttpTimeout) {
+//            requestTimeoutMillis = 30000
+//            connectTimeoutMillis = 20000
+//            socketTimeoutMillis = 20000
+//        }
         install(Logging) {
             level = LogLevel.ALL
         }

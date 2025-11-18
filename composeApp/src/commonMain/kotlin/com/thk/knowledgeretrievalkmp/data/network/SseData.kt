@@ -58,7 +58,8 @@ data class SseContentData(
 @Serializable
 @JsonIgnoreUnknownKeys
 data class SseStopData(
-    val metadata: SseStopMetadata,
+    val references: List<SseStopReference>? = null,
+    val metadata: SseStopMetadata? = null,
     val id: String,
     val timestamp: String
 ) : SseData()
@@ -83,11 +84,50 @@ data class SseContentDelta(
 @Serializable
 @JsonIgnoreUnknownKeys
 data class SseStopMetadata(
-    val routes: List<String>,
-    @SerialName("response_mode")
-    val responseMode: String,
-    @SerialName("execution_history")
-    val executionHistory: List<String>
+    @SerialName("search_method")
+    val searchMethod: String,
+    @SerialName("conversation_id")
+    val conversationId: String,
+    @SerialName("kb_id")
+    val kbId: String,
+    @SerialName("user_id")
+    val userId: String,
+    @SerialName("app_name")
+    val appName: String,
+    @SerialName("finish_reason")
+    val finishReason: String,
+    @SerialName("model_name")
+    val modelName: String,
+)
+
+@Serializable
+@JsonIgnoreUnknownKeys
+data class SseStopReference(
+    val id: String?,
+    val metadata: SseStopReferenceMetadata,
+    @SerialName("page_content")
+    val pageContent: String,
+    val type: String,
+)
+
+@Serializable
+@JsonIgnoreUnknownKeys
+data class SseStopReferenceMetadata(
+    @SerialName("chunk_index")
+    val chunkIndex: Int,
+    val filename: String,
+    @SerialName("kb_id")
+    val kbId: String,
+    @SerialName("document_id")
+    val documentId: String,
+    @SerialName("original_filename")
+    val originalFileName: String,
+    @SerialName("start_index")
+    val startIndex: Int,
+    @SerialName("end_index")
+    val endIndex: Int,
+    @SerialName("original_index")
+    val originalIndex: Int
 )
 
 @Serializable

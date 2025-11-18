@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -38,10 +39,12 @@ import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.model.rememberMarkdownState
+import com.thk.knowledgeretrievalkmp.data.local.db.MessageWithCitations
 import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
 import com.thk.knowledgeretrievalkmp.data.network.SseErrorData
 import com.thk.knowledgeretrievalkmp.data.network.SseStartData
 import com.thk.knowledgeretrievalkmp.data.network.SseStopData
+import com.thk.knowledgeretrievalkmp.db.Citation
 import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.ui.theme.*
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
@@ -79,7 +82,7 @@ fun ChatMainScreen(
 
     fun scrollToLast() {
         coroutineScope.launch(Dispatchers.Main) {
-            val numMessages = activeConversation?.messages?.size ?: return@launch
+            val numMessages = activeConversation?.messagesWithCitations?.size ?: return@launch
             val lastIndex = numMessages - 1
             if (lastIndex >= 0) {
                 lazyListState.animateScrollToItem(lastIndex)
@@ -153,7 +156,7 @@ fun ChatMainScreen(
         },
         modifier = modifier
     ) { contentPadding ->
-        if (activeConversation == null || activeConversation!!.messages.isEmpty()) {
+        if (activeConversation == null || activeConversation!!.messagesWithCitations.isEmpty()) {
             // Placeholder
             Row(
                 modifier = Modifier
@@ -169,17 +172,22 @@ fun ChatMainScreen(
                 )
             }
         } else {
-            ChatContent(
-                modifier = Modifier
-                    .padding(contentPadding)
-                    .fillMaxSize(),
-                lazyListState = lazyListState,
-                messages = activeConversation!!.messages,
-                onCitationClick = { citation ->
-                    chatViewModel.chatUiState.showDialogAction.value =
-                        ChatShowDialogAction.ShowMessageBottomSheet(citation)
-                }
-            )
+            SelectionContainer {
+                ChatContent(
+                    modifier = Modifier
+                        .padding(contentPadding)
+                        .fillMaxSize(),
+                    lazyListState = lazyListState,
+                    messagesWithCitations = activeConversation!!.messagesWithCitations,
+                    onCitationClick = { citation ->
+                        chatViewModel.chatUiState.showDialogAction.value =
+                            ChatShowDialogAction.ShowMessageBottomSheet(
+                                header = citation.OriginalFileName,
+                                body = citation.PageContent
+                            )
+                    }
+                )
+            }
         }
     }
 }
@@ -433,9 +441,9 @@ fun ChatTextField(
 @Composable
 fun ChatContent(
     modifier: Modifier = Modifier,
-    messages: SnapshotStateList<Message>,
+    messagesWithCitations: SnapshotStateList<MessageWithCitations>,
     lazyListState: LazyListState,
-    onCitationClick: (String) -> Unit
+    onCitationClick: (Citation) -> Unit
 ) {
     val screenHeight = LocalWindowSize.current.height
 
@@ -445,9 +453,10 @@ fun ChatContent(
         verticalArrangement = Arrangement.spacedBy(0.02 * screenHeight)
     ) {
         items(
-            items = messages,
-            key = { it.MessageId })
-        { message ->
+            items = messagesWithCitations,
+            key = { it.message.MessageId })
+        { messageWithCitations ->
+            val message = messageWithCitations.message
             when (message.Role) {
                 NetworkMessageRole.USER -> UserMessage(
                     message = message,
@@ -458,7 +467,14 @@ fun ChatContent(
                     if (message.Content.isNotEmpty())
                         ServerMessage(
                             message = message,
-                            onCitationClick = onCitationClick
+                            onCitationClick = { citationIndex ->
+                                val citation = messageWithCitations.citations.firstOrNull {
+                                    it.OriginalIndex == citationIndex.toLong()
+                                }
+                                if (citation != null) {
+                                    onCitationClick(citation)
+                                }
+                            }
 //                            modifier = Modifier.animateItem()
                         )
                     else {
@@ -514,7 +530,7 @@ fun UserMessage(
 fun ServerMessage(
     modifier: Modifier = Modifier,
     message: Message,
-    onCitationClick: (String) -> Unit
+    onCitationClick: (Int) -> Unit
 ) {
     Row(
         modifier = modifier
@@ -522,17 +538,6 @@ fun ServerMessage(
             .wrapContentHeight(),
         horizontalArrangement = Arrangement.Start
     ) {
-//        if (message.Status == "Response complete" || message.Status == "") {
-//
-//        } else {
-//            Text(
-//                text = message.Content,
-////                fontSize = 20.sp,
-////                color = Black,
-//                modifier = Modifier.padding(8.dp)
-//            )
-//        }
-
         val markdownState = rememberMarkdownState(
             content = message.Content,
             retainState = true
@@ -561,13 +566,13 @@ fun ServerMessage(
                             when {
                                 match.value.startsWith("[") -> {
                                     // citation
-                                    val citation = match.value.drop(1).dropLast(1)
                                     val linkListener = LinkInteractionListener {
-                                        onCitationClick(citation)
+                                        val citationIndex = match.value.drop(1).dropLast(1).toIntOrNull()
+                                        if (citationIndex != null) onCitationClick(citationIndex)
                                     }
                                     withLink(
                                         link = LinkAnnotation.Url(
-                                            url = citation,
+                                            url = match.value,
                                             // Optional: Apply styles for different states (focused, hovered, pressed)
                                             styles = TextLinkStyles(
                                                 style = SpanStyle(
@@ -584,7 +589,7 @@ fun ServerMessage(
                                             linkInteractionListener = linkListener
                                         )
                                     ) {
-                                        append(citation)
+                                        append(match.value)
                                     }
                                 }
 

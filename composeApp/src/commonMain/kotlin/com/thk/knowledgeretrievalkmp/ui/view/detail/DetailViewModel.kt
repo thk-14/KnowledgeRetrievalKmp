@@ -11,21 +11,15 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.thk.knowledgeretrievalkmp.data.AppContainer
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
-import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository.upsertLocalDocument
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
-import com.thk.knowledgeretrievalkmp.data.network.NetworkDocumentStatus
 import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
 import com.thk.knowledgeretrievalkmp.ui.view.custom.toUiKnowledgeBase
-import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.uuid.Uuid
 
 data class DetailUiState(
     val snackBarHostState: SnackbarHostState = SnackbarHostState(),
@@ -75,13 +69,13 @@ class DetailViewModel(
 
     fun deleteKnowledgeBase(onDeleteFinish: (Boolean) -> Unit) = viewModelScope.launch {
         // FOR TESTING
-        delay(5000)
-        DefaultKnowledgeRetrievalRepository.deleteKnowledgeBaseInLocal(knowledgeBaseId)
-        val succeed = true
+//        delay(5000)
+//        DefaultKnowledgeRetrievalRepository.deleteKnowledgeBaseInLocal(knowledgeBaseId)
+//        val succeed = true
         // END TESTING
 
 
-//        val succeed = repository.deleteKnowledgeBase(knowledgeBaseId)
+        val succeed = repository.deleteKnowledgeBase(knowledgeBaseId)
         log("deleteKnowledgeBase succeed: $succeed")
         onDeleteFinish(succeed)
     }
@@ -94,38 +88,38 @@ class DetailViewModel(
         onUploadFailed: () -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
-        delay(5000)
-        val localDocument = Document(
-            DocumentId = Uuid.generateV7().toString(),
-            KbId = knowledgeBaseId,
-            FileName = fileName,
-            MimeType = mimeType,
-            Status = NetworkDocumentStatus.FINISHED,
-            IsInactive = null,
-            Description = null,
-            FilePath = null,
-            FileSize = null,
-            FileType = null,
-            ProcessingError = null,
-            CreatedAt = null,
-            UpdatedAt = null,
-            UploadedBy = null,
-            ProcessedAt = null
-        )
-        upsertLocalDocument(localDocument)
-        val succeed = true
-        onUploadFinish()
+//        delay(5000)
+//        val localDocument = Document(
+//            DocumentId = Uuid.generateV7().toString(),
+//            KbId = knowledgeBaseId,
+//            FileName = fileName,
+//            MimeType = mimeType,
+//            Status = NetworkDocumentStatus.FINISHED,
+//            IsInactive = null,
+//            Description = null,
+//            FilePath = null,
+//            FileSize = null,
+//            FileType = null,
+//            ProcessingError = null,
+//            CreatedAt = null,
+//            UpdatedAt = null,
+//            UploadedBy = null,
+//            ProcessedAt = null
+//        )
+//        upsertLocalDocument(localDocument)
+//        val succeed = true
+//        onUploadFinish()
         // END TESTING
 
 
-//        val succeed = repository.uploadDocument(
-//            knowledgeBaseId = knowledgeBaseId,
-//            fileName = fileName,
-//            mimeType = mimeType,
-//            file = file,
-//            onUploadFinish = onUploadFinish,
-//            onUploadFailed = onUploadFailed
-//        )
+        val succeed = repository.uploadDocument(
+            knowledgeBaseId = knowledgeBaseId,
+            fileName = fileName,
+            mimeType = mimeType,
+            file = file,
+            onUploadFinish = onUploadFinish,
+            onUploadFailed = onUploadFailed
+        )
         log("uploadDocument succeed: $succeed")
     }
 
@@ -134,13 +128,13 @@ class DetailViewModel(
         onDeleteFinish: (Boolean) -> Unit
     ) = viewModelScope.launch {
         // FOR TESTING
-        delay(5000)
-        AppContainer.db.knowledgeBaseQueries.deleteDocumentWithId(documentId)
-        val succeed = true
+//        delay(5000)
+//        AppContainer.db.knowledgeBaseQueries.deleteDocumentWithId(documentId)
+//        val succeed = true
         // END TESTING
 
 
-//        val succeed = repository.deleteDocument(documentId)
+        val succeed = repository.deleteDocument(documentId)
         log("deleteDocument succeed: $succeed")
         onDeleteFinish(succeed)
     }

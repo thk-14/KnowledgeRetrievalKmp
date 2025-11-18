@@ -58,10 +58,11 @@ fun ChatScreen(
         }
 
         is ChatShowDialogAction.ShowMessageBottomSheet -> {
-            val message =
-                (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.ShowMessageBottomSheet).message
+            val sheetContent =
+                (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.ShowMessageBottomSheet)
             MessageBottomSheet(
-                message = message,
+                header = sheetContent.header,
+                body = sheetContent.body,
                 onDismiss = {
                     chatViewModel.chatUiState.showDialogAction.value = null
                 }

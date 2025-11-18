@@ -19,7 +19,6 @@ import com.thk.knowledgeretrievalkmp.data.local.db.createDriver
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 data class LoginUiState(
@@ -57,7 +56,7 @@ class LoginViewModel(
     ) = viewModelScope.launch {
 
         // FOR TESTING
-        delay(5000)
+//        delay(5000)
         // END TESTING
 
         val succeed = repository.loginWithGoogle(
