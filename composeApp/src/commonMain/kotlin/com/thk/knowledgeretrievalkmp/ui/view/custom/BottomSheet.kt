@@ -35,20 +35,21 @@ fun ConversationBottomSheet(
         onDismissRequest = {
             onDismiss()
         },
-        modifier = modifier
-            .wrapContentHeight()
-            .fillMaxWidth(0.5f)
+        sheetGesturesEnabled = true
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             horizontalAlignment = Alignment.Start,
-            modifier = Modifier.padding(20.dp)
+            modifier = modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(20.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier
-                    .fillMaxWidth(0.4f)
+                    .fillMaxWidth()
                     .clickable {
                         onRename()
                     }
@@ -64,7 +65,7 @@ fun ConversationBottomSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier
-                    .fillMaxWidth(0.4f)
+                    .fillMaxWidth()
                     .clickable {
                         onDelete()
                     }
@@ -93,12 +94,12 @@ fun MessageBottomSheet(
         onDismissRequest = {
             onDismiss()
         },
-        sheetGesturesEnabled = false
+        sheetGesturesEnabled = true
     ) {
         SelectionContainer {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxHeight(0.5f)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
@@ -109,7 +110,7 @@ fun MessageBottomSheet(
                     overflow = TextOverflow.Ellipsis
                 )
                 Column(
-                    modifier = modifier
+                    modifier = Modifier
                         .verticalScroll(rememberScrollState())
                         .padding(10.dp)
                 ) {

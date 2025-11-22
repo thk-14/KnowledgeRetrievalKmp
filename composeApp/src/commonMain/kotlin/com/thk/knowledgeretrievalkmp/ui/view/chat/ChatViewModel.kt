@@ -30,7 +30,7 @@ data class ChatUiState(
     val activeConversationId: MutableState<String> = mutableStateOf(""),
     val chatInputState: TextFieldState = TextFieldState(),
     val renameInputState: TextFieldState = TextFieldState(),
-    val webSearch: MutableState<Boolean> = mutableStateOf(false),
+    val agentic: MutableState<Boolean> = mutableStateOf(false),
     val drawerState: DrawerState = DrawerState(initialValue = DrawerValue.Closed),
     val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null),
     val showDialogAction: MutableState<ChatShowDialogAction?> = mutableStateOf(null)
@@ -97,7 +97,7 @@ class ChatViewModel(
                 kbId = chatUiState.activeKbId.value,
                 conversationId = chatUiState.activeConversationId.value,
                 userRequest = userRequest,
-                webSearch = chatUiState.webSearch.value
+                agentic = chatUiState.agentic.value
             )
         }
     }
@@ -197,7 +197,7 @@ class ChatViewModel(
                 kbId = chatUiState.activeKbId.value,
                 conversationId = chatUiState.activeConversationId.value,
                 userRequest = userRequest,
-                webSearch = chatUiState.webSearch.value,
+                agentic = chatUiState.agentic.value,
                 onSseData = onSseData
             )
         }

@@ -106,7 +106,7 @@ fun ChatMainScreen(
             ChatBottomBar(
                 textFieldState = chatViewModel.chatUiState.chatInputState,
                 numSource = activeKb?.documents?.size ?: 0,
-                webSearch = chatViewModel.chatUiState.webSearch.value,
+                agentic = chatViewModel.chatUiState.agentic.value,
                 kbs = chatViewModel.chatUiState.kbs,
                 activeKb = activeKb,
                 onActiveKbChange = { kbId ->
@@ -116,12 +116,12 @@ fun ChatMainScreen(
                         true
                     )
                 },
-                onWebSearchChange = {
-                    chatViewModel.chatUiState.webSearch.value = !chatViewModel.chatUiState.webSearch.value
-                    val webSearchStatusText =
-                        if (chatViewModel.chatUiState.webSearch.value) "On" else "Off"
+                onAgenticChange = {
+                    chatViewModel.chatUiState.agentic.value = !chatViewModel.chatUiState.agentic.value
+                    val agenticStatusText =
+                        if (chatViewModel.chatUiState.agentic.value) "On" else "Off"
                     chatViewModel.showSnackbar(
-                        "Web search: $webSearchStatusText"
+                        "Agentic: $agenticStatusText"
                     )
                 },
                 onSendMessage = {
@@ -229,12 +229,12 @@ fun ChatBottomBar(
     modifier: Modifier = Modifier,
     textFieldState: TextFieldState,
     numSource: Int,
-    webSearch: Boolean,
+    agentic: Boolean,
     kbs: SnapshotStateList<UiKnowledgeBase>,
     activeKb: UiKnowledgeBase?,
     onActiveKbChange: (String) -> Unit,
     onSendMessage: () -> Unit,
-    onWebSearchChange: () -> Unit
+    onAgenticChange: () -> Unit
 ) {
     Row(
         modifier = modifier,
@@ -244,12 +244,12 @@ fun ChatBottomBar(
         ChatTextField(
             textFieldState = textFieldState,
             numSource = numSource,
-            webSearch = webSearch,
+            agentic = agentic,
             kbs = kbs,
             activeKb = activeKb,
             onActiveKbChange = onActiveKbChange,
             onSendMessage = onSendMessage,
-            onWebSearchChange = onWebSearchChange
+            onAgenticChange = onAgenticChange
         )
     }
 }
@@ -259,12 +259,12 @@ fun ChatTextField(
     modifier: Modifier = Modifier,
     textFieldState: TextFieldState,
     numSource: Int,
-    webSearch: Boolean,
+    agentic: Boolean,
     kbs: SnapshotStateList<UiKnowledgeBase>,
     activeKb: UiKnowledgeBase?,
     onActiveKbChange: (String) -> Unit,
     onSendMessage: () -> Unit,
-    onWebSearchChange: () -> Unit
+    onAgenticChange: () -> Unit
 ) {
     val screenWidth = LocalWindowSize.current.width
     OutlinedCard(
@@ -284,17 +284,17 @@ fun ChatTextField(
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val webSearchColor by animateColorAsState(
-                        if (webSearch) LightGreen else Gray50
+                    val agenticColor by animateColorAsState(
+                        if (agentic) LightGreen else Gray50
                     )
                     Icon(
-                        imageVector = vectorResource(Res.drawable.world),
+                        imageVector = vectorResource(Res.drawable.agent),
                         contentDescription = null,
-                        tint = webSearchColor,
+                        tint = agenticColor,
                         modifier = Modifier
                             .size(40.dp)
                             .clickable {
-                                onWebSearchChange()
+                                onAgenticChange()
                             }
                     )
                     TextField(

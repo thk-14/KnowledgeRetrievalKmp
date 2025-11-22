@@ -75,14 +75,14 @@ interface KnowledgeRetrievalRepository {
         kbId: String,
         conversationId: String,
         userRequest: String,
-        webSearch: Boolean
+        agentic: Boolean
     ): Boolean
 
     suspend fun collectSSEResponseFlow(
         kbId: String,
         conversationId: String,
         userRequest: String,
-        webSearch: Boolean,
+        agentic: Boolean,
         onSseData: (SseData) -> Unit
     )
 

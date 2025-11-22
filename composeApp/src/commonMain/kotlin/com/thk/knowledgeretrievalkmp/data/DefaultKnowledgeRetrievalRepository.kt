@@ -548,7 +548,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         kbId: String,
         conversationId: String,
         userRequest: String,
-        webSearch: Boolean
+        agentic: Boolean
     ): Boolean {
         val userId = sessionManager.getUserId() ?: return false
         var succeed = false
@@ -580,8 +580,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             )
             val askRequest = AskRequest(
                 message = requestNetworkMessage,
-                agentic = true,
-                webSearch = webSearch
+                agentic = agentic,
+                webSearch = false
             )
             val networkMessage = apiService.ask(askRequest)?.data ?: return@withContext
             upsertNetworkMessageInLocal(networkMessage)
@@ -596,7 +596,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         kbId: String,
         conversationId: String,
         userRequest: String,
-        webSearch: Boolean,
+        agentic: Boolean,
         onSseData: (SseData) -> Unit
     ) {
         val userId = sessionManager.getUserId() ?: return
@@ -645,8 +645,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         apiService.askSse(
             askRequest = AskRequest(
                 message = requestNetworkMessage,
-                agentic = true,
-                webSearch = webSearch
+                agentic = agentic,
+                webSearch = false
             ),
             dispatcher = dispatcher,
             onCompletion = {
