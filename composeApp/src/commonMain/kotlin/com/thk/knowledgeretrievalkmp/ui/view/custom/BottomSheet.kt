@@ -9,13 +9,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.model.rememberMarkdownState
+import com.thk.knowledgeretrievalkmp.ui.theme.Blue
 import com.thk.knowledgeretrievalkmp.ui.theme.White
 import knowledgeretrievalkmp.composeapp.generated.resources.Res
 import knowledgeretrievalkmp.composeapp.generated.resources.delete
@@ -102,9 +105,35 @@ fun MessageBottomSheet(
                 modifier = modifier
                     .fillMaxHeight(0.5f)
                     .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(horizontal = 10.dp)
             ) {
+                val headerText = buildAnnotatedString {
+                    if (header.startsWith("http")) {
+                        withLink(
+                            link = LinkAnnotation.Url(
+                                url = header,
+                                styles = TextLinkStyles(
+                                    style = SpanStyle(
+                                        color = Blue
+                                    ),
+                                    focusedStyle = SpanStyle(
+                                        color = Blue
+                                    ),
+                                    hoveredStyle = SpanStyle(
+                                        color = Blue,
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                )
+                            )
+                        ) {
+                            append(header)
+                        }
+                    } else {
+                        append(header)
+                    }
+                }
                 Text(
-                    text = header,
+                    text = headerText,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -112,7 +141,6 @@ fun MessageBottomSheet(
                 Column(
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
-                        .padding(10.dp)
                 ) {
                     val markdownState = rememberMarkdownState(
                         content = body,

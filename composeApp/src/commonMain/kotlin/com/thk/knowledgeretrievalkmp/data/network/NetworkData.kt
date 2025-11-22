@@ -212,19 +212,19 @@ data class NetworkPartText(
 @Serializable
 data class RetrievalContext(
     @SerialName("original_query")
-    val originalQuery: String,
+    val originalQuery: String? = null,
     @SerialName("contextualized_query")
-    val contextualizedQuery: String,
+    val contextualizedQuery: String? = null,
     @SerialName("retrieved_at")
-    val retrievedAt: String,
+    val retrievedAt: String? = null,
     @SerialName("total_retrieved")
-    val totalRetrieved: Int,
+    val totalRetrieved: Int? = null,
     @SerialName("total_cited")
-    val totalCited: Int,
+    val totalCited: Int? = null,
     @SerialName("cited_chunks")
     val citedChunks: List<CitedChunk>,
     @SerialName("search_method")
-    val searchMethod: String
+    val searchMethod: String? = null
 )
 
 @Serializable
@@ -237,21 +237,22 @@ data class CitedChunk(
 @Serializable
 data class CitedChunkMetadata(
     @SerialName("kb_id")
-    val kbId: String,
+    val kbId: String? = null,
     @SerialName("document_id")
-    val documentId: String,
+    val documentId: String? = null,
     @SerialName("filename")
-    val fileName: String,
+    val fileName: String? = null,
     @SerialName("original_filename")
     val originalFileName: String,
     @SerialName("start_index")
-    val startIndex: Int,
+    val startIndex: Int? = null,
     @SerialName("end_index")
-    val endIndex: Int,
+    val endIndex: Int? = null,
     @SerialName("chunk_index")
-    val chunkIndex: Int,
+    val chunkIndex: Int? = null,
     @SerialName("original_index")
-    val originalIndex: Int
+    val originalIndex: Int,
+    val favicon: String? = null
 )
 
 @Serializable

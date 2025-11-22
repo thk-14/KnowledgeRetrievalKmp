@@ -262,6 +262,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             }
             succeed = true
         }
+        log("Fetch conversations succeed: $succeed")
         return succeed
     }
 
@@ -701,12 +702,12 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                                 messageId = responseLocalMessage.MessageId,
                                 originalIndex = reference.metadata.originalIndex.toLong(),
                                 kbId = reference.metadata.kbId,
-                                doucmentId = reference.metadata.documentId,
+                                documentId = reference.metadata.documentId,
                                 fileName = reference.metadata.filename,
                                 originalFileName = reference.metadata.originalFileName,
-                                chunkIndex = reference.metadata.chunkIndex.toLong(),
-                                startIndex = reference.metadata.startIndex.toLong(),
-                                endIndex = reference.metadata.endIndex.toLong(),
+                                chunkIndex = reference.metadata.chunkIndex?.toLong(),
+                                startIndex = reference.metadata.startIndex?.toLong(),
+                                endIndex = reference.metadata.endIndex?.toLong(),
                                 pageContent = reference.pageContent
                             )
                         }
@@ -965,12 +966,12 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 messageId = networkMessage.id,
                 originalIndex = citedChunk.metadata.originalIndex.toLong(),
                 kbId = citedChunk.metadata.kbId,
-                doucmentId = citedChunk.metadata.documentId,
+                documentId = citedChunk.metadata.documentId,
                 fileName = citedChunk.metadata.fileName,
                 originalFileName = citedChunk.metadata.originalFileName,
-                chunkIndex = citedChunk.metadata.chunkIndex.toLong(),
-                startIndex = citedChunk.metadata.startIndex.toLong(),
-                endIndex = citedChunk.metadata.endIndex.toLong(),
+                chunkIndex = citedChunk.metadata.chunkIndex?.toLong(),
+                startIndex = citedChunk.metadata.startIndex?.toLong(),
+                endIndex = citedChunk.metadata.endIndex?.toLong(),
                 pageContent = citedChunk.pageContent
             )
         }

@@ -22,7 +22,7 @@ fun ChatScreen(
     ) {
         ModalNavigationDrawer(
             drawerState = chatViewModel.chatUiState.drawerState,
-            gesturesEnabled = false,
+            gesturesEnabled = true,
             drawerContent = {
                 ChatDrawer(
                     chatViewModel = chatViewModel,

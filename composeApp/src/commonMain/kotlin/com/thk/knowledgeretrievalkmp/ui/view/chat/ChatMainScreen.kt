@@ -554,7 +554,7 @@ fun ServerMessage(
             components = markdownComponents(
                 paragraph = { model ->
                     val regex =
-                        """(\[[^\]]*\])|(\*\*\*(.*?)\*\*\*)|(\*\*(.*?)\*\*)|(\*(.*?)\*)|([^\[\*]+)""".toRegex()
+                        """(\[([^\]]*)\]\[(\d+)\])|(\[[^\]]*\])|(\*\*\*(.*?)\*\*\*)|(\*\*(.*?)\*\*)|(\*(.*?)\*)|([^\[\*]+)""".toRegex()
                     val matches = regex.findAll(
                         model.content.substring(
                             model.node.startOffset,
@@ -563,17 +563,19 @@ fun ServerMessage(
                     )
                     val text = buildAnnotatedString {
                         matches.forEach { match ->
+                            val value = match.value
+                            val groups = match.groupValues
                             when {
-                                match.value.startsWith("[") -> {
-                                    // citation
+                                groups[1].isNotEmpty() -> {
+                                    // link reference
+                                    val label = groups[2]
+                                    val citationIndex = groups[3].toIntOrNull()
                                     val linkListener = LinkInteractionListener {
-                                        val citationIndex = match.value.drop(1).dropLast(1).toIntOrNull()
                                         if (citationIndex != null) onCitationClick(citationIndex)
                                     }
                                     withLink(
                                         link = LinkAnnotation.Url(
-                                            url = match.value,
-                                            // Optional: Apply styles for different states (focused, hovered, pressed)
+                                            url = label,
                                             styles = TextLinkStyles(
                                                 style = SpanStyle(
                                                     color = Blue
@@ -589,13 +591,41 @@ fun ServerMessage(
                                             linkInteractionListener = linkListener
                                         )
                                     ) {
-                                        append(match.value)
+                                        append(label)
                                     }
                                 }
 
-                                match.value.startsWith("***") -> {
+                                groups[4].isNotEmpty() -> {
+                                    // document reference
+                                    val citationIndex = groups[4].toIntOrNull()
+                                    val linkListener = LinkInteractionListener {
+                                        if (citationIndex != null) onCitationClick(citationIndex)
+                                    }
+                                    withLink(
+                                        link = LinkAnnotation.Url(
+                                            url = value,
+                                            styles = TextLinkStyles(
+                                                style = SpanStyle(
+                                                    color = Blue
+                                                ),
+                                                focusedStyle = SpanStyle(
+                                                    color = Blue
+                                                ),
+                                                hoveredStyle = SpanStyle(
+                                                    color = Blue,
+                                                    textDecoration = TextDecoration.Underline
+                                                )
+                                            ),
+                                            linkInteractionListener = linkListener
+                                        )
+                                    ) {
+                                        append(value)
+                                    }
+                                }
+
+                                groups[5].isNotEmpty() -> {
                                     // bold and italic
-                                    val content = match.value.drop(3).dropLast(3)
+                                    val content = groups[6]
                                     withStyle(
                                         style = SpanStyle(
                                             fontWeight = FontWeight.Bold,
@@ -606,9 +636,9 @@ fun ServerMessage(
                                     }
                                 }
 
-                                match.value.startsWith("**") -> {
+                                groups[7].isNotEmpty() -> {
                                     // bold
-                                    val content = match.value.drop(2).dropLast(2)
+                                    val content = groups[8]
                                     withStyle(
                                         style = SpanStyle(
                                             fontWeight = FontWeight.Bold
@@ -618,9 +648,9 @@ fun ServerMessage(
                                     }
                                 }
 
-                                match.value.startsWith("*") -> {
+                                groups[9].isNotEmpty() -> {
                                     // italic
-                                    val content = match.value.drop(1).dropLast(1)
+                                    val content = groups[10]
                                     withStyle(
                                         style = SpanStyle(
                                             fontStyle = FontStyle.Italic
@@ -632,7 +662,7 @@ fun ServerMessage(
 
                                 else -> {
                                     // normal
-                                    append(match.value)
+                                    append(value)
                                 }
                             }
                         }

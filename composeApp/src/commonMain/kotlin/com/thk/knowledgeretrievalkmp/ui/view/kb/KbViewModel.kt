@@ -130,7 +130,6 @@ class KbViewModel(
 
         val succeed = repository.fetchKnowledgeBasesWithDocuments()
         kbUiState.showLoadingAction.value = null
-        log("fetch KnowledgeBases succeed: $succeed")
     }
 
     private suspend fun fetchConversationsWithMessages() {
@@ -140,7 +139,6 @@ class KbViewModel(
         )
         val succeed = repository.fetchConversationsWithMessages()
         kbUiState.showLoadingAction.value = null
-        log("fetchConversationsWithMessages succeed: $succeed")
     }
 
     companion object {

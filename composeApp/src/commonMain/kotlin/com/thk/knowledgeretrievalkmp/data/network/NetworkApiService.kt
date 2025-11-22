@@ -60,11 +60,11 @@ class NetworkApiService {
         install(DefaultRequest) {
             header("ngrok-skip-browser-warning", true)
         }
-//        install(HttpTimeout) {
-//            requestTimeoutMillis = 30000
-//            connectTimeoutMillis = 20000
-//            socketTimeoutMillis = 20000
-//        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = Long.MAX_VALUE
+            connectTimeoutMillis = Long.MAX_VALUE
+            socketTimeoutMillis = Long.MAX_VALUE
+        }
         install(Logging) {
             level = LogLevel.ALL
         }
@@ -370,7 +370,7 @@ class NetworkApiService {
                     onCompletion()
                 }
                 .onEach {
-                    delay(50)
+                    delay(10)
                 }
                 .collect { event ->
                     handleEvent(event)

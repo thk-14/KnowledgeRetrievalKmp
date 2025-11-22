@@ -30,7 +30,7 @@ data class ChatUiState(
     val activeConversationId: MutableState<String> = mutableStateOf(""),
     val chatInputState: TextFieldState = TextFieldState(),
     val renameInputState: TextFieldState = TextFieldState(),
-    val agentic: MutableState<Boolean> = mutableStateOf(false),
+    val agentic: MutableState<Boolean> = mutableStateOf(true),
     val drawerState: DrawerState = DrawerState(initialValue = DrawerValue.Closed),
     val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null),
     val showDialogAction: MutableState<ChatShowDialogAction?> = mutableStateOf(null)
