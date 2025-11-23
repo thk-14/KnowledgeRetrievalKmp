@@ -132,7 +132,7 @@ fun SignupMainScreen(
                     }
                     signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(
                         loadingText = loginLoadingText,
-                        loadingAnimation = LoadingAnimation.LOADING
+                        loadingAnimation = LottieAnimation.LOADING
                     )
                     signupViewModel.loginWithGoogle(
                         userId = googleUser.email ?: "",
@@ -210,7 +210,7 @@ fun SignupMainScreen(
                 }
                 signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(
                     loadingText = signupLoadingText,
-                    loadingAnimation = LoadingAnimation.LOADING
+                    loadingAnimation = LottieAnimation.LOADING
                 )
                 signupViewModel.signupUser(
                     onSignupFinish = { succeed ->

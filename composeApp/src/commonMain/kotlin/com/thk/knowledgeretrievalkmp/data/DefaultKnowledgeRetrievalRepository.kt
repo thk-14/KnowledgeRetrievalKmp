@@ -16,6 +16,7 @@ import com.thk.knowledgeretrievalkmp.db.KnowledgeBaseQueries
 import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
+import com.thk.knowledgeretrievalkmp.util.titlecase
 import com.thk.knowledgeretrievalkmp.util.toSseEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -629,7 +630,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             )
         }
         var content = ""
-        var status = ""
+        var statusPhase: String? = null
+        var statusMessage: String? = null
         val responseLocalMessage = Message(
             MessageId = Uuid.generateV7().toString(),
             ConversationId = conversationId,
@@ -637,8 +639,9 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             UserId = userId,
             Role = NetworkMessageRole.AGENT,
             Content = content,
-            Status = status,
-            MessageOrder = latestMessageOrder + 2
+            MessageOrder = latestMessageOrder + 2,
+            StatusPhase = statusPhase,
+            StatusMessage = statusMessage
         )
         withContext(dispatcher) {
             upsertLocalMessage(responseLocalMessage)
@@ -662,6 +665,13 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseStartData>(dataString)
                         log("data: $data")
+                        statusPhase = "Initiating"
+                        statusMessage = ""
+                        updateMessageStatusInLocal(
+                            messageId = responseLocalMessage.MessageId,
+                            statusPhase = statusPhase,
+                            statusMessage = statusMessage
+                        )
                         onSseData(data)
                     }
 
@@ -669,14 +679,18 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseStatusData>(dataString)
                         log("data: $data")
-                        if (data.phase == "analysis") {
-                            status = "Analyzing ..."
+                        if (data.phase == statusPhase) {
+                            // same phase
+                            statusMessage += data.message
                         } else {
-                            status = data.message
+                            // different phase
+                            statusMessage = data.message
                         }
+                        statusPhase = data.phase
                         updateMessageStatusInLocal(
                             messageId = responseLocalMessage.MessageId,
-                            status = status
+                            statusPhase = statusPhase?.titlecase(),
+                            statusMessage = statusMessage?.trimMargin()
                         )
                         onSseData(data)
                     }
@@ -690,6 +704,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                             messageId = responseLocalMessage.MessageId,
                             content = content
                         )
+                        if (statusPhase != "") {
+                            statusPhase = "Answering"
+                            statusMessage = ""
+                            updateMessageStatusInLocal(
+                                messageId = responseLocalMessage.MessageId,
+                                statusPhase = statusPhase,
+                                statusMessage = statusMessage
+                            )
+                        }
                         onSseData(data)
                     }
 
@@ -711,6 +734,13 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                                 pageContent = reference.pageContent
                             )
                         }
+                        statusPhase = null
+                        statusMessage = null
+                        updateMessageStatusInLocal(
+                            messageId = responseLocalMessage.MessageId,
+                            statusPhase = statusPhase,
+                            statusMessage = statusMessage
+                        )
                         onSseData(data)
                     }
 
@@ -718,6 +748,13 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         val dataString = serverSentEvent.data ?: return@handleSseEvent
                         val data = Json.decodeFromString<SseErrorData>(dataString)
                         log("data: $data")
+                        statusPhase = null
+                        statusMessage = null
+                        updateMessageStatusInLocal(
+                            messageId = responseLocalMessage.MessageId,
+                            statusPhase = statusPhase,
+                            statusMessage = statusMessage
+                        )
                         onSseData(data)
                     }
 
@@ -889,8 +926,9 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             userId = localMessage.UserId,
             role = localMessage.Role,
             content = localMessage.Content,
-            status = localMessage.Status,
-            messageOrder = localMessage.MessageOrder
+            messageOrder = localMessage.MessageOrder,
+            statusPhase = localMessage.StatusPhase,
+            statusMessage = localMessage.StatusMessage
         )
     }
 
@@ -901,10 +939,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         )
     }
 
-    private suspend fun updateMessageStatusInLocal(messageId: String, status: String) {
+    private suspend fun updateMessageStatusInLocal(
+        messageId: String,
+        statusPhase: String?,
+        statusMessage: String?
+    ) {
         dbQueries.updateMessageStatus(
             messageId = messageId,
-            status = status
+            statusPhase = statusPhase,
+            statusMessage = statusMessage
         )
     }
 
@@ -958,8 +1001,9 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             userId = networkMessage.metadata.userId,
             role = networkMessage.role,
             content = networkMessage.parts.firstOrNull()?.text ?: "",
-            status = "",
-            messageOrder = networkMessage.metadata.messageOrder ?: 0
+            messageOrder = networkMessage.metadata.messageOrder ?: 0,
+            statusPhase = null,
+            statusMessage = null
         )
         networkMessage.retrievalContext?.citedChunks?.forEach { citedChunk ->
             dbQueries.upsertCitation(

@@ -45,8 +45,9 @@ CREATE TABLE Message (
     UserId TEXT NOT NULL,
     Role TEXT AS NetworkMessageRole NOT NULL,
     Content TEXT NOT NULL,
-    Status TEXT NOT NULL,
-    MessageOrder INTEGER NOT NULL
+    MessageOrder INTEGER NOT NULL,
+    StatusPhase TEXT,
+    StatusMessage TEXT
 );
 
 CREATE TABLE Citation (
@@ -78,8 +79,8 @@ INSERT OR REPLACE INTO Conversation(ConversationId, UserId, Name, IsActive)
 VALUES (:conversationId, :userId, :name, :isActive);
 
 upsertMessage:
-INSERT OR REPLACE INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, Status, MessageOrder)
-VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :status, :messageOrder);
+INSERT OR REPLACE INTO Message(MessageId, ConversationId, KbId, UserId, Role, Content, MessageOrder, StatusPhase, StatusMessage)
+VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :messageOrder, :statusPhase, :statusMessage);
 
 upsertCitation:
 INSERT OR REPLACE INTO Citation(MessageId, OriginalIndex, KbId, DocumentId, FileName, OriginalFileName, ChunkIndex, StartIndex, EndIndex, PageContent)
@@ -96,7 +97,8 @@ WHERE MessageId = :messageId;
 updateMessageStatus:
 UPDATE Message
 SET
-Status = :status
+StatusPhase = :statusPhase,
+StatusMessage = :statusMessage
 WHERE MessageId = :messageId;
 
 -- Delete

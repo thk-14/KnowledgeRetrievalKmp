@@ -123,7 +123,7 @@ fun FullScreenLoader(
     indicatorSize: Dp = 140.dp,
     indicatorStrokeWidth: Dp = 20.dp,
     loadingText: String?,
-    loadingAnimation: LoadingAnimation?,
+    loadingAnimation: LottieAnimation?,
     textColor: Color = Black,
     textFontSize: TextUnit = 30.sp
 ) {
@@ -176,10 +176,10 @@ fun FullScreenLoader(
 
 data class ShowLoadingAction(
     val loadingText: String,
-    val loadingAnimation: LoadingAnimation
+    val loadingAnimation: LottieAnimation
 )
 
-enum class LoadingAnimation(
+enum class LottieAnimation(
     val lottieFilePath: String
 ) {
     LOADING("files/loading.json"),
@@ -188,7 +188,8 @@ enum class LoadingAnimation(
     ACTIVATING("files/activating.json"),
     DELETING("files/deleting.json"),
     CHANGING("files/changing.json"),
-    CREATING("files/creating.json")
+    CREATING("files/creating.json"),
+    THINKING("files/thinking.json")
 }
 
 @Composable
@@ -249,7 +250,8 @@ fun TypingDots(
 @Composable
 fun LottieAnimation(
     modifier: Modifier = Modifier,
-    lottieFilePath: String
+    lottieFilePath: String,
+    speed: Float = 1.0f
 ) {
     val composition by rememberLottieComposition {
         LottieCompositionSpec.JsonString(
@@ -259,7 +261,7 @@ fun LottieAnimation(
     val progress by animateLottieCompositionAsState(
         composition = composition,
         iterations = Compottie.IterateForever,
-        speed = 1.0f
+        speed = speed
     )
     Image(
         painter = rememberLottiePainter(

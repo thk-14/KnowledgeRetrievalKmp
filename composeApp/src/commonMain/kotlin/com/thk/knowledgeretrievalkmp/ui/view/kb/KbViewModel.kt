@@ -17,7 +17,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
-import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
 import kotlinx.coroutines.launch
@@ -121,7 +121,7 @@ class KbViewModel(
     private suspend fun fetchKnowledgeBasesWithDocuments() {
         kbUiState.showLoadingAction.value = ShowLoadingAction(
             loadingText = "Fetching knowledge bases ...",
-            loadingAnimation = LoadingAnimation.FETCHING
+            loadingAnimation = LottieAnimation.FETCHING
         )
 
         // FOR TESTING
@@ -135,7 +135,7 @@ class KbViewModel(
     private suspend fun fetchConversationsWithMessages() {
         kbUiState.showLoadingAction.value = ShowLoadingAction(
             loadingText = "Fetching conversations ...",
-            loadingAnimation = LoadingAnimation.FETCHING
+            loadingAnimation = LottieAnimation.FETCHING
         )
         val succeed = repository.fetchConversationsWithMessages()
         kbUiState.showLoadingAction.value = null

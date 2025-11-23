@@ -107,7 +107,7 @@ fun LoginMainScreen(
                     }
                     loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(
                         loadingText = logInLoadingText,
-                        loadingAnimation = LoadingAnimation.LOADING
+                        loadingAnimation = LottieAnimation.LOADING
                     )
                     loginViewModel.loginWithGoogle(
                         userId = googleUser.email ?: "",
@@ -188,7 +188,7 @@ fun LoginMainScreen(
 
                     loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(
                         loadingText = logInLoadingText,
-                        loadingAnimation = LoadingAnimation.LOADING
+                        loadingAnimation = LottieAnimation.LOADING
                     )
                     loginViewModel.authenticateUser(
                         onLoginFinish = { succeed ->

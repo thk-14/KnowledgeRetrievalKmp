@@ -19,6 +19,7 @@ import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.network.SseData
 import com.thk.knowledgeretrievalkmp.ui.view.custom.*
+import com.thk.knowledgeretrievalkmp.util.titlecase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -88,7 +89,7 @@ class ChatViewModel(
         viewModelScope.launch {
             if (chatUiState.activeConversationId.value.isEmpty()) {
                 val newConversationId = repository.createConversation(
-                    conversationName = userRequest
+                    conversationName = userRequest.titlecase()
                 )
                 if (newConversationId == null) return@launch
                 chatUiState.activeConversationId.value = newConversationId
@@ -188,7 +189,7 @@ class ChatViewModel(
 
             if (chatUiState.activeConversationId.value.isEmpty()) {
                 val newConversationId = repository.createConversation(
-                    conversationName = userRequest
+                    conversationName = userRequest.titlecase()
                 )
                 if (newConversationId == null) return@launch
                 chatUiState.activeConversationId.value = newConversationId
@@ -210,7 +211,7 @@ class ChatViewModel(
         viewModelScope.launch {
             chatUiState.showLoadingAction.value = ShowLoadingAction(
                 loadingText = loadingText,
-                loadingAnimation = LoadingAnimation.ACTIVATING
+                loadingAnimation = LottieAnimation.ACTIVATING
             )
             repository.toggleKnowledgeBaseActive(kbId, active)
             repository.toggleDocumentsActiveForKnowledgeBase(kbId, active)
@@ -225,7 +226,7 @@ class ChatViewModel(
         viewModelScope.launch {
             chatUiState.showLoadingAction.value = ShowLoadingAction(
                 loadingText = loadingText,
-                loadingAnimation = LoadingAnimation.ACTIVATING
+                loadingAnimation = LottieAnimation.ACTIVATING
             )
             repository.toggleConversationActive(conversationId, active)
             chatUiState.showLoadingAction.value = null
@@ -245,7 +246,7 @@ class ChatViewModel(
 
             chatUiState.showLoadingAction.value = ShowLoadingAction(
                 loadingText = "Deleting conversation ...",
-                loadingAnimation = LoadingAnimation.DELETING
+                loadingAnimation = LottieAnimation.DELETING
             )
             val succeed = repository.deleteConversation(conversationId)
             if (succeed) {
@@ -261,7 +262,7 @@ class ChatViewModel(
         viewModelScope.launch {
             chatUiState.showLoadingAction.value = ShowLoadingAction(
                 loadingText = "Renaming conversation ...",
-                loadingAnimation = LoadingAnimation.CHANGING
+                loadingAnimation = LottieAnimation.CHANGING
             )
             val succeed = repository.renameConversation(conversationId, newName)
             chatUiState.showLoadingAction.value = null

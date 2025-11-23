@@ -1,15 +1,9 @@
 package com.thk.knowledgeretrievalkmp.ui.view.chat
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,8 +42,8 @@ import com.thk.knowledgeretrievalkmp.db.Citation
 import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.ui.theme.*
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
-import com.thk.knowledgeretrievalkmp.ui.view.custom.InfiniteLoadingCircle
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
 import knowledgeretrievalkmp.composeapp.generated.resources.*
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +56,7 @@ fun ChatMainScreen(
     modifier: Modifier = Modifier,
     chatViewModel: ChatViewModel
 ) {
-    val lazyListState = rememberLazyListState()
+    val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val activeKb by remember {
@@ -82,18 +76,14 @@ fun ChatMainScreen(
 
     fun scrollToLast() {
         coroutineScope.launch(Dispatchers.Main) {
-            val numMessages = activeConversation?.messagesWithCitations?.size ?: return@launch
-            val lastIndex = numMessages - 1
-            if (lastIndex >= 0) {
-                lazyListState.animateScrollToItem(lastIndex)
-            }
+            scrollState.animateScrollTo(scrollState.maxValue)
         }
     }
 
     Scaffold(
         topBar = {
             ChatTopBar(
-                modifier = modifier.padding(start = Dimens.padding_horizontal),
+                modifier = modifier.padding(horizontal = Dimens.padding_horizontal),
                 title = activeConversation?.conversation?.value?.Name ?: "",
                 onDrawerOpen = {
                     coroutineScope.launch {
@@ -136,6 +126,7 @@ fun ChatMainScreen(
                             }
 
                             is SseErrorData -> {
+                                scrollToLast()
                                 chatViewModel.showSnackbar("An error occurred.")
                             }
 
@@ -147,11 +138,11 @@ fun ChatMainScreen(
                     // clear chat input text
                     chatViewModel.chatUiState.chatInputState.clearText()
                     focusManager.clearFocus()
-                    scrollToLast()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
+                    .padding(horizontal = Dimens.padding_horizontal),
             )
         },
         modifier = modifier
@@ -161,6 +152,7 @@ fun ChatMainScreen(
             Row(
                 modifier = Modifier
                     .padding(contentPadding)
+                    .padding(horizontal = Dimens.padding_horizontal)
                     .fillMaxSize(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
@@ -176,8 +168,9 @@ fun ChatMainScreen(
                 ChatContent(
                     modifier = Modifier
                         .padding(contentPadding)
+                        .padding(horizontal = Dimens.padding_horizontal)
                         .fillMaxSize(),
-                    lazyListState = lazyListState,
+                    scrollState = scrollState,
                     messagesWithCitations = activeConversation!!.messagesWithCitations,
                     onCitationClick = { citation ->
                         chatViewModel.chatUiState.showDialogAction.value =
@@ -441,32 +434,32 @@ fun ChatTextField(
 @Composable
 fun ChatContent(
     modifier: Modifier = Modifier,
+    scrollState: ScrollState,
     messagesWithCitations: SnapshotStateList<MessageWithCitations>,
-    lazyListState: LazyListState,
     onCitationClick: (Citation) -> Unit
 ) {
-    val screenHeight = LocalWindowSize.current.height
-
-    LazyColumn(
-        modifier = modifier,
-        state = lazyListState,
-        verticalArrangement = Arrangement.spacedBy(0.02 * screenHeight)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier.verticalScroll(scrollState)
     ) {
-        items(
-            items = messagesWithCitations,
-            key = { it.message.MessageId })
-        { messageWithCitations ->
+        messagesWithCitations.forEach { messageWithCitations ->
             val message = messageWithCitations.message
             when (message.Role) {
-                NetworkMessageRole.USER -> UserMessage(
-                    message = message,
-//                    modifier = Modifier.animateItem()
-                )
+                NetworkMessageRole.USER ->
+                    UserMessage(
+                        message = message
+                    )
 
                 NetworkMessageRole.AGENT ->
-                    if (message.Content.isNotEmpty())
-                        ServerMessage(
-                            message = message,
+                    Column {
+                        if (message.StatusPhase != null) {
+                            ServerMessageStatusHeader(
+                                statusPhase = message.StatusPhase,
+                                statusMessage = message.StatusMessage ?: ""
+                            )
+                        }
+                        ServerMessageBody(
+                            content = message.Content,
                             onCitationClick = { citationIndex ->
                                 val citation = messageWithCitations.citations.firstOrNull {
                                     it.OriginalIndex == citationIndex.toLong()
@@ -475,25 +468,61 @@ fun ChatContent(
                                     onCitationClick(citation)
                                 }
                             }
-//                            modifier = Modifier.animateItem()
                         )
-                    else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
-                        ) {
-//                            TypingDots(dotSize = 8.dp)
-                            InfiniteLoadingCircle(size = 30.dp, strokeWidth = 3.dp)
-                            Text(
-                                text = message.Status,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
                     }
             }
         }
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
     }
+
+//    LazyColumn(
+//        modifier = modifier,
+//        state = lazyListState,
+//        verticalArrangement = Arrangement.spacedBy(0.02 * screenHeight)
+//    ) {
+//        items(
+//            items = messagesWithCitations,
+//            key = { it.message.MessageId })
+//        { messageWithCitations ->
+//            val message = messageWithCitations.message
+//            when (message.Role) {
+//                NetworkMessageRole.USER ->
+//                    UserMessage(
+//                        message = message
+//                    )
+//
+//                NetworkMessageRole.AGENT ->
+//                    Column {
+//                        if (message.StatusPhase != null) {
+//                            ServerMessageStatusHeader(
+//                                statusPhase = message.StatusPhase,
+//                                statusMessage = message.StatusMessage ?: ""
+//                            )
+//                        }
+//                        ServerMessageBody(
+//                            content = message.Content,
+//                            onCitationClick = { citationIndex ->
+//                                val citation = messageWithCitations.citations.firstOrNull {
+//                                    it.OriginalIndex == citationIndex.toLong()
+//                                }
+//                                if (citation != null) {
+//                                    onCitationClick(citation)
+//                                }
+//                            }
+//                        )
+//                    }
+//            }
+//        }
+//
+//        item {
+//            Spacer(
+//                modifier = Modifier.height(20.dp)
+//            )
+//        }
+//    }
 }
 
 @Composable
@@ -527,9 +556,67 @@ fun UserMessage(
 }
 
 @Composable
-fun ServerMessage(
+fun ServerMessageStatusHeader(
     modifier: Modifier = Modifier,
-    message: Message,
+    statusPhase: String,
+    statusMessage: String
+) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+//        TypingDots(dotSize = 8.dp)
+//        InfiniteLoadingCircle(size = 30.dp, strokeWidth = 3.dp)
+        LottieAnimation(
+            lottieFilePath = LottieAnimation.THINKING.lottieFilePath,
+            speed = 3f,
+            modifier = Modifier.size(40.dp)
+        )
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = statusPhase,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            AnimatedVisibility(
+                visible = statusMessage.isNotEmpty()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.height(IntrinsicSize.Min)
+                ) {
+                    VerticalDivider(
+                        thickness = 1.dp,
+                        color = Gray50
+                    )
+                    val markdownState = rememberMarkdownState(
+                        content = statusMessage,
+                        retainState = true
+                    )
+                    Markdown(
+                        markdownState = markdownState,
+                        colors = markdownColor(
+                            codeBackground = White,
+                            tableBackground = White,
+                            inlineCodeBackground = White
+                        ),
+                        imageTransformer = Coil3ImageTransformerImpl
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ServerMessageBody(
+    modifier: Modifier = Modifier,
+    content: String,
     onCitationClick: (Int) -> Unit
 ) {
     Row(
@@ -539,7 +626,7 @@ fun ServerMessage(
         horizontalArrangement = Arrangement.Start
     ) {
         val markdownState = rememberMarkdownState(
-            content = message.Content,
+            content = content,
             retainState = true
         )
         Markdown(

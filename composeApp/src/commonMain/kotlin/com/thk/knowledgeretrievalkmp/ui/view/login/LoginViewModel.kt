@@ -16,7 +16,7 @@ import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.local.db.createDatabase
 import com.thk.knowledgeretrievalkmp.data.local.db.createDriver
-import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
 import kotlinx.coroutines.launch
@@ -92,7 +92,7 @@ class LoginViewModel(
     private suspend fun refreshToken() {
         loginUiState.showLoadingAction.value = ShowLoadingAction(
             loadingText = "Checking ...",
-            loadingAnimation = LoadingAnimation.LOADING
+            loadingAnimation = LottieAnimation.LOADING
         )
         val succeed = repository.refreshToken()
         loginUiState.showLoadingAction.value = null

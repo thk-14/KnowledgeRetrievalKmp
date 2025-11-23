@@ -75,7 +75,7 @@ fun KbScreen(
                 kbViewModel.dismissKbCreateDialog()
                 kbViewModel.kbUiState.showLoadingAction.value = ShowLoadingAction(
                     loadingText = createKbLoadingText,
-                    loadingAnimation = LoadingAnimation.CREATING
+                    loadingAnimation = LottieAnimation.CREATING
                 )
                 kbViewModel.createKnowledgeBase(
                     name = name,

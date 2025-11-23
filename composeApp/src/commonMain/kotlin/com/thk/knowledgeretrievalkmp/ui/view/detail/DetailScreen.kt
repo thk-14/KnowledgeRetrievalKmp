@@ -63,7 +63,7 @@ fun DetailScreen(
                     detailViewModel.detailUiState.showLoadingAction.value =
                         ShowLoadingAction(
                             loadingText = deleteKbLoadingText,
-                            loadingAnimation = LoadingAnimation.DELETING
+                            loadingAnimation = LottieAnimation.DELETING
                         )
                     detailViewModel.deleteKnowledgeBase(
                         onDeleteFinish = { succeed ->
@@ -96,7 +96,7 @@ fun DetailScreen(
                     detailViewModel.detailUiState.showLoadingAction.value =
                         ShowLoadingAction(
                             loadingText = deleteDocumentLoadingText,
-                            loadingAnimation = LoadingAnimation.DELETING
+                            loadingAnimation = LottieAnimation.DELETING
                         )
                     detailViewModel.deleteDocument(
                         documentId = deleteDocument.DocumentId,
@@ -138,7 +138,7 @@ fun DetailScreen(
                     detailViewModel.detailUiState.showLoadingAction.value =
                         ShowLoadingAction(
                             loadingText = renameKbLoadingText,
-                            loadingAnimation = LoadingAnimation.CHANGING
+                            loadingAnimation = LottieAnimation.CHANGING
                         )
                     detailViewModel.renameKnowledgeBase(
                         newName = newName,

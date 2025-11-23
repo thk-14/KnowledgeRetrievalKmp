@@ -84,7 +84,7 @@ fun DocumentSection(
                                                 detailViewModel.detailUiState.showLoadingAction.value =
                                                     ShowLoadingAction(
                                                         loadingText = uploadDocumentLoadingText,
-                                                        loadingAnimation = LoadingAnimation.UPLOADING
+                                                        loadingAnimation = LottieAnimation.UPLOADING
                                                     )
                                                 detailViewModel.uploadDocument(
                                                     fileName = file.name,
@@ -256,15 +256,8 @@ fun DocumentItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.clickable {
-                    // Open document
-//                    val viewIntent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-//                        .setDataAndType(document.uri, document.mimeType)
-//                        .apply {
-//                            putExtra(DocumentsContract.EXTRA_INITIAL_URI, document.uri)
-//                        }
-//                    context.startActivity(viewIntent)
-                }
+                modifier = Modifier
+//                    .clickable {}
             ) {
                 Icon(
                     imageVector = vectorResource(Res.drawable.document),

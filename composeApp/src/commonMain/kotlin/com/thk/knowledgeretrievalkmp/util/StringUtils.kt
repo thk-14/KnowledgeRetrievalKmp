@@ -35,6 +35,8 @@ fun checkValidPasswordError(password: String): String? {
     }
 }
 
+fun String.titlecase() = this.replaceFirstChar { it.uppercase() }
+
 fun String.toSseEvent(): SseEvent? {
     SseEvent.entries.forEach { sseEvent ->
         if (this == sseEvent.value) {

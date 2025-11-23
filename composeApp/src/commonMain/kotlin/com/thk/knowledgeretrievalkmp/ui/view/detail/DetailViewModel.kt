@@ -14,7 +14,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.thk.knowledgeretrievalkmp.data.DefaultKnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.data.KnowledgeRetrievalRepository
 import com.thk.knowledgeretrievalkmp.db.Document
-import com.thk.knowledgeretrievalkmp.ui.view.custom.LoadingAnimation
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
 import com.thk.knowledgeretrievalkmp.ui.view.custom.toUiKnowledgeBase
@@ -151,7 +151,7 @@ class DetailViewModel(
     private suspend fun fetchKnowledgeBaseWithDocuments() {
         detailUiState.showLoadingAction.value = ShowLoadingAction(
             loadingText = "Fetching knowledge base ...",
-            loadingAnimation = LoadingAnimation.FETCHING
+            loadingAnimation = LottieAnimation.FETCHING
         )
         val succeed = repository.fetchKnowledgeBaseWithDocuments(knowledgeBaseId)
         detailUiState.showLoadingAction.value = null
