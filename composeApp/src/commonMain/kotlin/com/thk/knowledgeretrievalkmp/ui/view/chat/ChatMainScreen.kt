@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
@@ -292,20 +293,34 @@ fun ChatTextField(
                     )
                     TextField(
                         state = textFieldState,
-                        lineLimits = TextFieldLineLimits.SingleLine,
+                        lineLimits = TextFieldLineLimits.MultiLine(),
                         placeholder = {
                             Text(stringResource(Res.string.chat_placeholder, numSource))
                         },
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .width(0.5 * screenWidth),
+                            .width(0.5 * screenWidth)
+                            .onPreviewKeyEvent { event ->
+                                if (event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
+                                    if (event.isShiftPressed) {
+                                        textFieldState.edit {
+                                            append("\n")
+                                        }
+                                    } else {
+                                        onSendMessage()
+                                    }
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send)
                     )
                 }
 
