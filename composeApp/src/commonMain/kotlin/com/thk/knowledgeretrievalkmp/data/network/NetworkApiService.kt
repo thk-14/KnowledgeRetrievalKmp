@@ -198,7 +198,8 @@ class NetworkApiService {
         fileName: String,
         mimeType: String,
         key: String = "file",
-        file: ByteArray
+        file: ByteArray,
+        onUpload: (Float) -> Unit
     ): NetworkResponse<UploadDocumentData>? = try {
         client.submitFormWithBinaryData(
             url = "$baseUrl/documents/upload_and_process",
@@ -216,6 +217,12 @@ class NetworkApiService {
             url {
                 parameter("knowledge_base_id", knowledgeBaseId)
                 parameter("tenant_id", tenantId)
+            }
+            onUpload { bytesSentTotal, contentLength ->
+                if (contentLength != null && contentLength > 0) {
+                    val progress = bytesSentTotal.toFloat() / contentLength.toFloat()
+                    onUpload(progress)
+                }
             }
         }.body()
     } catch (exception: Exception) {

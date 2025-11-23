@@ -60,7 +60,7 @@
     <string name="LS_create_kb">Creating Knowledge Base ...</string>
     <string name="LS_rename_kb">Rename Knowledge Base ...</string>
     <string name="LS_delete_kb">Deleting Knowledge Base ...</string>
-    <string name="LS_upload_document">Uploading document ...</string>
+    <string name="LS_upload_document">Uploading document</string>
     <string name="LS_delete_document">Deleting document ...</string>
 
 </resources>

@@ -52,6 +52,7 @@ interface KnowledgeRetrievalRepository {
         fileName: String,
         mimeType: String,
         file: ByteArray,
+        onUpload: (Float) -> Unit,
         onUploadFinish: () -> Unit,
         onUploadFailed: () -> Unit
     ): Boolean

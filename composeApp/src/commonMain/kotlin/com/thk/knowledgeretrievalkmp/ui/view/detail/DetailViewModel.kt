@@ -84,6 +84,7 @@ class DetailViewModel(
         fileName: String,
         mimeType: String,
         file: ByteArray,
+        onUpload: (Float) -> Unit,
         onUploadFinish: () -> Unit,
         onUploadFailed: () -> Unit
     ) = viewModelScope.launch {
@@ -117,6 +118,7 @@ class DetailViewModel(
             fileName = fileName,
             mimeType = mimeType,
             file = file,
+            onUpload = onUpload,
             onUploadFinish = onUploadFinish,
             onUploadFailed = onUploadFailed
         )

@@ -408,6 +408,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         fileName: String,
         mimeType: String,
         file: ByteArray,
+        onUpload: (Float) -> Unit,
         onUploadFinish: () -> Unit,
         onUploadFailed: () -> Unit
     ): Boolean {
@@ -417,7 +418,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 tenantId = tenantId,
                 fileName = fileName,
                 mimeType = mimeType,
-                file = file
+                file = file,
+                onUpload = onUpload
             )?.data
             if (newDocumentData == null) {
                 withContext(Dispatchers.Main) {

@@ -31,6 +31,7 @@ import knowledgeretrievalkmp.composeapp.generated.resources.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
+import kotlin.math.floor
 
 @Composable
 fun DocumentSection(
@@ -90,6 +91,14 @@ fun DocumentSection(
                                                     fileName = file.name,
                                                     mimeType = file.mimeType().toString(),
                                                     file = file.readBytes(),
+                                                    onUpload = { progress ->
+                                                        val percentage = floor(progress * 10000) / 100
+                                                        detailViewModel.detailUiState.showLoadingAction.value =
+                                                            ShowLoadingAction(
+                                                                loadingText = "$uploadDocumentLoadingText ${percentage}%",
+                                                                loadingAnimation = LottieAnimation.UPLOADING
+                                                            )
+                                                    },
                                                     onUploadFinish = {
                                                         detailViewModel.detailUiState.showLoadingAction.value = null
                                                         detailViewModel.showSnackbar(documentUploadFinish)
