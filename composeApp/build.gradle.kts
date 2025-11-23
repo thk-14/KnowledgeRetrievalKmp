@@ -54,6 +54,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
 
             implementation(libs.timber)
+            implementation(libs.androidx.browser)
 
             // ktor
             implementation(libs.ktor.client.okhttp)
@@ -144,6 +145,8 @@ kotlin {
             // ktor
             implementation(libs.ktor.client.cio)
             implementation(libs.logback.classic)
+            implementation(libs.ktor.server.netty)
+            implementation(libs.ktor.server.core)
 
             // Data Store
             implementation(libs.androidx.datastore.preferences)
@@ -153,6 +156,7 @@ kotlin {
             implementation(libs.sqldelight.jvm.driver)
         }
         webMain.dependencies {
+            // ktor
             implementation(libs.ktor.client.js)
 
             // SqlDelight

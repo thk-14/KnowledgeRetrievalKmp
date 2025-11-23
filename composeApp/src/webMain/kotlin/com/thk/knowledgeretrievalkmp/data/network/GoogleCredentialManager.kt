@@ -1,5 +1,7 @@
 package com.thk.knowledgeretrievalkmp.data.network
 
+import kotlinx.browser.window
+
 
 class WebGoogleCredentialManager : GoogleCredentialManager {
     var initialized = false
@@ -30,6 +32,14 @@ class WebGoogleCredentialManager : GoogleCredentialManager {
 
 actual fun getGoogleCredentialManager(): GoogleCredentialManager {
     return WebGoogleCredentialManager()
+}
+
+actual suspend fun initiateLogin() {
+    val redirectUri = "http://localhost:8080/"
+    val serverUrl = "https://smart-kind-macaque.ngrok-free.app"
+    val loginUrl = "$serverUrl/auth/google/login?redirect_uri=$redirectUri"
+
+    window.location.href = loginUrl
 }
 
 external fun setGoogleSignInFinishCallback(callback: (GoogleCredentialPayload?) -> Unit)

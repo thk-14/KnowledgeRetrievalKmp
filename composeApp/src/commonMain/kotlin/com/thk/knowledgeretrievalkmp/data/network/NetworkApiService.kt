@@ -105,6 +105,17 @@ class NetworkApiService {
             null
         }
 
+    suspend fun exchangeGoogleAuthCode(exchangeGoogleAuthCodeRequest: ExchangeGoogleAuthCodeRequest): NetworkResponse<AuthenticationData>? =
+        try {
+            client.post("$baseUrl/auth/exchange-code") {
+                contentType(ContentType.Application.Json)
+                setBody(exchangeGoogleAuthCodeRequest)
+            }.body()
+        } catch (exception: Exception) {
+            log("exchangeGoogleAuthCode failed: ${exception.message}")
+            null
+        }
+
     suspend fun logoutUser(logoutRequest: LogoutRequest): NetworkResponse<String>? = try {
         client.post("$baseUrl/auth/logout") {
             contentType(ContentType.Application.Json)

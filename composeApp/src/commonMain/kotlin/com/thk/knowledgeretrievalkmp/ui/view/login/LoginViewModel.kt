@@ -32,6 +32,7 @@ data class LoginUiState(
 class LoginViewModel(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    val exchangeCode = savedStateHandle.get<String>("exchangeCode")
     val loginUiState = LoginUiState()
     private val repository: KnowledgeRetrievalRepository = DefaultKnowledgeRetrievalRepository
 
@@ -40,6 +41,11 @@ class LoginViewModel(
             AppContainer.db = createDatabase(createDriver())
             log("database created")
 //            refreshToken()
+
+            log("exchangeCode: $exchangeCode")
+            repository.exchangeGoogleAuthCode(exchangeCode)
+            log("exchangeGoogleAuthCode finish")
+
             val userId = repository.getUserId()
             if (userId != null) {
                 loginUiState.isLoggedIn.value = true
@@ -48,25 +54,24 @@ class LoginViewModel(
     }
 
     fun loginWithGoogle(
-        userId: String,
-        displayName: String,
-        profileUri: String,
-        idToken: String,
+        userId: String = "",
+        displayName: String = "",
+        profileUri: String = "",
+        idToken: String = "",
         onLoginFinish: (Boolean) -> Unit
-    ) = viewModelScope.launch {
+    ) {
+//        val succeed = repository.loginGoogleWithServer(onLoginFinish)
 
-        // FOR TESTING
-//        delay(5000)
-        // END TESTING
-
-        val succeed = repository.loginWithGoogle(
-            userId = userId,
-            displayName = displayName,
-            profileUri = profileUri,
-            idToken = idToken
-        )
-        log("loginWithGoogle succeed: $succeed")
-        onLoginFinish(succeed)
+        viewModelScope.launch {
+            val succeed = repository.loginWithGoogle(
+                userId = userId,
+                displayName = displayName,
+                profileUri = profileUri,
+                idToken = idToken
+            )
+            log("loginWithGoogle succeed: $succeed")
+            onLoginFinish(succeed)
+        }
     }
 
     fun authenticateUser(

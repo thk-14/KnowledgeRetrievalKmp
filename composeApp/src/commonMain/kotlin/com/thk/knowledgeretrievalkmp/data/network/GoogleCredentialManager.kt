@@ -12,6 +12,8 @@ interface GoogleCredentialManager {
 
 internal expect fun getGoogleCredentialManager(): GoogleCredentialManager
 
+internal expect suspend fun initiateLogin()
+
 data class GoogleCredentialResponse(
     val displayName: String = "",
     val familyName: String = "",

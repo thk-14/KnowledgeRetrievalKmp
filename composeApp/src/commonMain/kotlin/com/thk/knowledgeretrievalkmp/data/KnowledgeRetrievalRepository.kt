@@ -28,6 +28,10 @@ interface KnowledgeRetrievalRepository {
         idToken: String
     ): Boolean
 
+    fun loginGoogleWithServer(onLoginFinish: (Boolean) -> Unit)
+
+    suspend fun exchangeGoogleAuthCode(code: String?)
+
     suspend fun logout(): Boolean
 
     suspend fun refreshToken(): Boolean

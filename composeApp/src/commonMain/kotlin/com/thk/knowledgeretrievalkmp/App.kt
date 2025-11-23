@@ -17,7 +17,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
-fun App() {
+fun App(
+    exchangeCode: String? = null
+) {
     KnowledgeRetrievalTheme {
         BoxWithConstraints(
             contentAlignment = Alignment.Center,
@@ -28,7 +30,9 @@ fun App() {
                 height = this.maxHeight
             )
             CompositionLocalProvider(LocalWindowSize provides windowSize) {
-                KnowledgeRetrievalNavGraph()
+                KnowledgeRetrievalNavGraph(
+                    exchangeCode = exchangeCode
+                )
             }
         }
     }

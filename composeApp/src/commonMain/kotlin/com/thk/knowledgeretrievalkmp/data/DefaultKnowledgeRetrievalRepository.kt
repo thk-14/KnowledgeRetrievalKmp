@@ -18,14 +18,12 @@ import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
 import com.thk.knowledgeretrievalkmp.util.titlecase
 import com.thk.knowledgeretrievalkmp.util.toSseEvent
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlin.uuid.Uuid
 
@@ -36,6 +34,12 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         AppContainer.db.knowledgeBaseQueries
     }
     private val dispatcher = Dispatchers.Default
+    private val coroutineScope = CoroutineScope(
+        dispatcher + SupervisorJob() + CoroutineName("KbCoroutine")
+    )
+    private var initLoginJob: Job? = null
+    private var codeExchangeJob: Job? = null
+    private var codeExchangeChannel = Channel<String?>().apply { close() }
 
     override var isDataFetched: Boolean
         get() = sessionManager.isDataFetched
@@ -47,7 +51,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     override suspend fun getDisplayName() = sessionManager.getDisplayName()
     override suspend fun getUserId(): String? = sessionManager.getUserId()
 
-    private const val APP_NAME = "KnowledgeRetrievalApp"
+    private const val APP_NAME = "KMS"
 
     // FOR NETWORK
 
@@ -77,6 +81,59 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         }
         log("loginWithGoogle success")
         return true
+    }
+
+    override fun loginGoogleWithServer(onLoginFinish: (Boolean) -> Unit) {
+        if (!codeExchangeChannel.isClosedForSend) {
+            // channel is waiting for code exchange
+            log("codeExchangeChannel is not closed")
+            return
+        }
+        initLoginJob = coroutineScope.launch {
+            initiateLogin()
+        }
+        codeExchangeJob = coroutineScope.launch {
+            var succeed = false
+            codeExchangeChannel = Channel()
+            val code = codeExchangeChannel.receive()
+            log("Google Auth code received: $code")
+            codeExchangeChannel.close()
+            if (code != null) {
+                succeed = handelCodeExchange(code)
+            }
+            onLoginFinish(succeed)
+            log("loginGoogleWithServer succeed: $succeed")
+        }
+    }
+
+    private suspend fun handelCodeExchange(code: String): Boolean {
+        log("handelCodeExchange code: $code")
+        val authenticationData = apiService.exchangeGoogleAuthCode(
+            ExchangeGoogleAuthCodeRequest(code)
+        )?.data ?: return false
+        sessionManager.setAccessToken(authenticationData.accessToken)
+        sessionManager.setRefreshToken(authenticationData.refreshToken)
+        sessionManager.setUserId(authenticationData.userId ?: "")
+        log("handelCodeExchange success")
+        return true
+    }
+
+    override suspend fun exchangeGoogleAuthCode(code: String?) {
+        log("is channel closed: ${codeExchangeChannel.isClosedForSend}")
+        withContext(dispatcher) {
+            if (!codeExchangeChannel.isClosedForSend) {
+                // channel is waiting for code exchange
+                codeExchangeChannel.send(code)
+                log("Google Auth code sent")
+                codeExchangeJob?.join()
+                initLoginJob?.cancel()
+            } else {
+                // channel is closed, self-handle
+                if (code != null) {
+                    handelCodeExchange(code)
+                }
+            }
+        }
     }
 
     override suspend fun registerUser(

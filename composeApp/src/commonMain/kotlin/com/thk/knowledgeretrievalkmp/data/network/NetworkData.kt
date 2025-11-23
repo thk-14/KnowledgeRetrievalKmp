@@ -29,6 +29,11 @@ data class LoginUserWithGoogleRequest(
 )
 
 @Serializable
+data class ExchangeGoogleAuthCodeRequest(
+    val code: String
+)
+
+@Serializable
 data class LogoutRequest(
     @SerialName("refresh_token")
     val refreshToken: String
@@ -345,5 +350,7 @@ data class AuthenticationData(
     @SerialName("access_token")
     val accessToken: String,
     @SerialName("refresh_token")
-    val refreshToken: String
+    val refreshToken: String,
+    @SerialName("user_id")
+    val userId: String? = null
 )

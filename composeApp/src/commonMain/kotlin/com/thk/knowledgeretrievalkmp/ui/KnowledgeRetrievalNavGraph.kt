@@ -16,7 +16,8 @@ import kotlinx.serialization.Serializable
 
 @Composable
 fun KnowledgeRetrievalNavGraph(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    exchangeCode: String? = null
 ) {
     SharedTransitionLayout {
         NavHost(
@@ -24,7 +25,7 @@ fun KnowledgeRetrievalNavGraph(
             startDestination = KbDestination.Authentication
         ) {
             navigation<KbDestination.Authentication>(
-                startDestination = KbDestination.Login,
+                startDestination = KbDestination.Login(exchangeCode),
             ) {
                 composable<KbDestination.Login> {
                     LoginScreen(
@@ -57,9 +58,9 @@ fun KnowledgeRetrievalNavGraph(
                         },
                         onNavigateToLogin = {
                             navController.navigate(
-                                route = KbDestination.Login,
+                                route = KbDestination.Login(null),
                                 builder = {
-                                    popUpTo(KbDestination.Login) {
+                                    popUpTo(KbDestination.Authentication) {
                                         inclusive = true
                                     }
                                 }
@@ -154,7 +155,9 @@ sealed class KbDestination {
     object Authentication : KbDestination()
 
     @Serializable
-    object Login : KbDestination()
+    data class Login(
+        val exchangeCode: String?
+    ) : KbDestination()
 
     @Serializable
     object Signup : KbDestination()

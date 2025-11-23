@@ -57,7 +57,12 @@ fun GoogleButton(
 ) {
     GoogleButtonUiContainer(onGoogleSignInResult = onGoogleSignInResult) {
         Button(
-            onClick = { this.onClick() },
+            onClick = {
+
+//                onGoogleSignInResult(null)
+
+                this.onClick()
+            },
             colors = ButtonDefaults.buttonColors(
                 containerColor = White, contentColor = Black
             ),

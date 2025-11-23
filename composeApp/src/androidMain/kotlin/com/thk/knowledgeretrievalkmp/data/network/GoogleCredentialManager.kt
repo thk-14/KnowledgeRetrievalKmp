@@ -1,5 +1,7 @@
 package com.thk.knowledgeretrievalkmp.data.network
 
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 import androidx.credentials.*
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -92,4 +94,15 @@ fun GoogleIdTokenCredential.toGoogleCredentialResponse() = GoogleCredentialRespo
 
 actual fun getGoogleCredentialManager(): GoogleCredentialManager {
     return AndroidGoogleCredentialManager()
+}
+
+actual suspend fun initiateLogin() {
+    val redirectUri = "kms://auth/callback"
+    val serverUrl = "https://smart-kind-macaque.ngrok-free.app"
+    val loginUrl = "$serverUrl/auth/google/login?redirect_uri=$redirectUri"
+
+    val activityContext = AndroidAppContainer.activityContext?.get() ?: return
+
+    val customTabsIntent = CustomTabsIntent.Builder().build()
+    customTabsIntent.launchUrl(activityContext, loginUrl.toUri())
 }

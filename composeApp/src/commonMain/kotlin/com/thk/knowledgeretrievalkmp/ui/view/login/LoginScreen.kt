@@ -101,6 +101,14 @@ fun LoginMainScreen(
         ) {
             GoogleButton(
                 onGoogleSignInResult = SignInResult@{ googleUser ->
+//                    loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(
+//                        loadingText = logInLoadingText,
+//                        loadingAnimation = LottieAnimation.LOADING
+//                    )
+//                    loginViewModel.loginWithGoogle {
+//                        loginViewModel.loginUiState.showLoadingAction.value = null
+//                    }
+
                     log("googleUser: $googleUser")
                     if (googleUser == null) {
                         return@SignInResult
