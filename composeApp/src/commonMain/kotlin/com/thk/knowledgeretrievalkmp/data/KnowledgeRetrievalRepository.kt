@@ -4,6 +4,7 @@ import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocuments
 import com.thk.knowledgeretrievalkmp.data.network.SseData
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Duration
 
 interface KnowledgeRetrievalRepository {
     var isDataFetched: Boolean
@@ -89,7 +90,7 @@ interface KnowledgeRetrievalRepository {
         userRequest: String,
         agentic: Boolean,
         onSseData: (SseData) -> Unit
-    )
+    ): Duration
 
     // FOR LOCAL DATABASE
     suspend fun getKnowledgeBasesInLocalFlow(): Flow<List<KbWithDocuments>>

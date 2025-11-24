@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration
+import kotlin.time.measureTime
 import kotlin.uuid.Uuid
 
 object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
@@ -659,8 +661,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         userRequest: String,
         agentic: Boolean,
         onSseData: (SseData) -> Unit
-    ) {
-        val userId = sessionManager.getUserId() ?: return
+    ): Duration {
+        val userId = sessionManager.getUserId() ?: return Duration.ZERO
         val latestMessageOrder =
             dbQueries.getLatestMessageInConversation(conversationId).awaitAsOneOrNull()?.MessageOrder ?: 0
         val requestNetworkMessage = NetworkMessage(
@@ -705,124 +707,120 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         withContext(dispatcher) {
             upsertLocalMessage(responseLocalMessage)
         }
-        apiService.askSse(
-            askRequest = AskRequest(
-                message = requestNetworkMessage,
-                agentic = agentic,
-                webSearch = false
-            ),
-            dispatcher = dispatcher,
-            onCompletion = {
-                if (content.isEmpty()) {
-                    dbQueries.deleteMessageWithId(responseLocalMessage.MessageId)
-                }
-            },
-            handleEvent = handleSseEvent@{ serverSentEvent ->
-                log("serverSentEvent: $serverSentEvent")
-                when (serverSentEvent.event?.toSseEvent()) {
-                    SseEvent.START -> {
-                        val dataString = serverSentEvent.data ?: return@handleSseEvent
-                        val data = Json.decodeFromString<SseStartData>(dataString)
-                        log("data: $data")
-                        statusPhase = "Initiating"
-                        statusMessage = ""
-                        updateMessageStatusInLocal(
-                            messageId = responseLocalMessage.MessageId,
-                            statusPhase = statusPhase,
-                            statusMessage = statusMessage
-                        )
-                        onSseData(data)
+        val processDuration = measureTime {
+            apiService.askSse(
+                askRequest = AskRequest(
+                    message = requestNetworkMessage,
+                    agentic = agentic,
+                    webSearch = false
+                ),
+                dispatcher = dispatcher,
+                onCompletion = {
+                    statusPhase = null
+                    statusMessage = null
+                    updateMessageStatusInLocal(
+                        messageId = responseLocalMessage.MessageId,
+                        statusPhase = statusPhase,
+                        statusMessage = statusMessage
+                    )
+                    if (content.isEmpty()) {
+                        dbQueries.deleteMessageWithId(responseLocalMessage.MessageId)
                     }
-
-                    SseEvent.STATUS -> {
-                        val dataString = serverSentEvent.data ?: return@handleSseEvent
-                        val data = Json.decodeFromString<SseStatusData>(dataString)
-                        log("data: $data")
-                        if (data.phase == statusPhase) {
-                            // same phase
-                            statusMessage += data.message
-                        } else {
-                            // different phase
-                            statusMessage = data.message
-                        }
-                        statusPhase = data.phase
-                        updateMessageStatusInLocal(
-                            messageId = responseLocalMessage.MessageId,
-                            statusPhase = statusPhase?.titlecase(),
-                            statusMessage = statusMessage?.trimMargin()
-                        )
-                        onSseData(data)
-                    }
-
-                    SseEvent.CONTENT -> {
-                        val dataString = serverSentEvent.data ?: return@handleSseEvent
-                        val data = Json.decodeFromString<SseContentData>(dataString)
-                        log("data: $data")
-                        content += data.delta.text
-                        updateMessageContentInLocal(
-                            messageId = responseLocalMessage.MessageId,
-                            content = content
-                        )
-                        if (statusPhase != "") {
-                            statusPhase = "Answering"
+                },
+                handleEvent = handleSseEvent@{ serverSentEvent ->
+                    log("serverSentEvent: $serverSentEvent")
+                    when (serverSentEvent.event?.toSseEvent()) {
+                        SseEvent.START -> {
+                            val dataString = serverSentEvent.data ?: return@handleSseEvent
+                            val data = Json.decodeFromString<SseStartData>(dataString)
+                            log("data: $data")
+                            statusPhase = "Initiating"
                             statusMessage = ""
                             updateMessageStatusInLocal(
                                 messageId = responseLocalMessage.MessageId,
                                 statusPhase = statusPhase,
                                 statusMessage = statusMessage
                             )
+                            onSseData(data)
                         }
-                        onSseData(data)
-                    }
 
-                    SseEvent.STOP -> {
-                        val dataString = serverSentEvent.data ?: return@handleSseEvent
-                        val data = Json.decodeFromString<SseStopData>(dataString)
-                        log("data: $data")
-                        data.references?.forEach { reference ->
-                            dbQueries.upsertCitation(
+                        SseEvent.STATUS -> {
+                            val dataString = serverSentEvent.data ?: return@handleSseEvent
+                            val data = Json.decodeFromString<SseStatusData>(dataString)
+                            log("data: $data")
+                            if (data.phase == statusPhase) {
+                                // same phase
+                                statusMessage += data.message
+                            } else {
+                                // different phase
+                                statusMessage = data.message
+                            }
+                            statusPhase = data.phase
+                            updateMessageStatusInLocal(
                                 messageId = responseLocalMessage.MessageId,
-                                originalIndex = reference.metadata.originalIndex.toLong(),
-                                kbId = reference.metadata.kbId,
-                                documentId = reference.metadata.documentId,
-                                fileName = reference.metadata.filename,
-                                originalFileName = reference.metadata.originalFileName,
-                                chunkIndex = reference.metadata.chunkIndex?.toLong(),
-                                startIndex = reference.metadata.startIndex?.toLong(),
-                                endIndex = reference.metadata.endIndex?.toLong(),
-                                pageContent = reference.pageContent
+                                statusPhase = statusPhase?.titlecase(),
+                                statusMessage = statusMessage?.trimMargin()
                             )
+                            onSseData(data)
                         }
-                        statusPhase = null
-                        statusMessage = null
-                        updateMessageStatusInLocal(
-                            messageId = responseLocalMessage.MessageId,
-                            statusPhase = statusPhase,
-                            statusMessage = statusMessage
-                        )
-                        onSseData(data)
-                    }
 
-                    SseEvent.ERROR -> {
-                        val dataString = serverSentEvent.data ?: return@handleSseEvent
-                        val data = Json.decodeFromString<SseErrorData>(dataString)
-                        log("data: $data")
-                        statusPhase = null
-                        statusMessage = null
-                        updateMessageStatusInLocal(
-                            messageId = responseLocalMessage.MessageId,
-                            statusPhase = statusPhase,
-                            statusMessage = statusMessage
-                        )
-                        onSseData(data)
-                    }
+                        SseEvent.CONTENT -> {
+                            val dataString = serverSentEvent.data ?: return@handleSseEvent
+                            val data = Json.decodeFromString<SseContentData>(dataString)
+                            log("data: $data")
+                            content += data.delta.text
+                            updateMessageContentInLocal(
+                                messageId = responseLocalMessage.MessageId,
+                                content = content
+                            )
+                            if (statusPhase != "Answering") {
+                                statusPhase = "Answering"
+                                statusMessage = ""
+                                updateMessageStatusInLocal(
+                                    messageId = responseLocalMessage.MessageId,
+                                    statusPhase = statusPhase,
+                                    statusMessage = statusMessage
+                                )
+                            }
+                            onSseData(data)
+                        }
 
-                    null -> {
-                        log("Invalid Sse event: ${serverSentEvent.event}")
+                        SseEvent.STOP -> {
+                            val dataString = serverSentEvent.data ?: return@handleSseEvent
+                            val data = Json.decodeFromString<SseStopData>(dataString)
+                            log("data: $data")
+                            data.references?.forEach { reference ->
+                                dbQueries.upsertCitation(
+                                    messageId = responseLocalMessage.MessageId,
+                                    originalIndex = reference.metadata.originalIndex.toLong(),
+                                    kbId = reference.metadata.kbId,
+                                    documentId = reference.metadata.documentId,
+                                    fileName = reference.metadata.filename,
+                                    originalFileName = reference.metadata.originalFileName,
+                                    chunkIndex = reference.metadata.chunkIndex?.toLong(),
+                                    startIndex = reference.metadata.startIndex?.toLong(),
+                                    endIndex = reference.metadata.endIndex?.toLong(),
+                                    pageContent = reference.pageContent
+                                )
+                            }
+                            onSseData(data)
+                        }
+
+                        SseEvent.ERROR -> {
+                            val dataString = serverSentEvent.data ?: return@handleSseEvent
+                            val data = Json.decodeFromString<SseErrorData>(dataString)
+                            log("data: $data")
+                            onSseData(data)
+                        }
+
+                        null -> {
+                            log("Invalid Sse event: ${serverSentEvent.event}")
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
+        return processDuration
     }
 
     private suspend fun checkDocumentStatusUntilFinished(

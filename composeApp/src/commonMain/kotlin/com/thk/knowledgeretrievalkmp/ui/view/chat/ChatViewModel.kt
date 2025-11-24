@@ -22,6 +22,7 @@ import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 import com.thk.knowledgeretrievalkmp.util.titlecase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.time.DurationUnit
 
 data class ChatUiState(
     val snackBarHostState: SnackbarHostState = SnackbarHostState(),
@@ -194,13 +195,14 @@ class ChatViewModel(
                 if (newConversationId == null) return@launch
                 chatUiState.activeConversationId.value = newConversationId
             }
-            repository.collectSSEResponseFlow(
+            val processDuration = repository.collectSSEResponseFlow(
                 kbId = chatUiState.activeKbId.value,
                 conversationId = chatUiState.activeConversationId.value,
                 userRequest = userRequest,
                 agentic = chatUiState.agentic.value,
                 onSseData = onSseData
             )
+            showSnackbar("Message processed in ${processDuration.toString(DurationUnit.SECONDS, 3)}")
         }
     }
 
