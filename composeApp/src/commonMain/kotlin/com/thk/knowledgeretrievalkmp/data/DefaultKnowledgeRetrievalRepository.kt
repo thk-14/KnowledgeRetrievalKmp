@@ -660,9 +660,10 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         conversationId: String,
         userRequest: String,
         agentic: Boolean,
-        onSseData: (SseData) -> Unit
-    ): Duration {
-        val userId = sessionManager.getUserId() ?: return Duration.ZERO
+        onSseData: (SseData) -> Unit,
+        onCompletion: (Duration) -> Unit
+    ) {
+        val userId = sessionManager.getUserId() ?: return
         val latestMessageOrder =
             dbQueries.getLatestMessageInConversation(conversationId).awaitAsOneOrNull()?.MessageOrder ?: 0
         val requestNetworkMessage = NetworkMessage(
@@ -691,8 +692,8 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             )
         }
         var content = ""
-        var statusPhase: String? = null
-        var statusMessage: String? = null
+        var statusPhase: String? = "Establishing"
+        var statusMessage: String? = ""
         val responseLocalMessage = Message(
             MessageId = Uuid.generateV7().toString(),
             ConversationId = conversationId,
@@ -820,7 +821,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 }
             )
         }
-        return processDuration
+        onCompletion(processDuration)
     }
 
     private suspend fun checkDocumentStatusUntilFinished(

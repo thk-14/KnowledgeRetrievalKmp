@@ -162,12 +162,7 @@ fun ChatDrawer(
                         selected =
                             conversation.conversation.value.ConversationId == chatViewModel.chatUiState.activeConversationId.value,
                         onClick = {
-                            chatViewModel.chatUiState.activeConversationId.value =
-                                conversation.conversation.value.ConversationId
-                            chatViewModel.toggleConversationActive(
-                                chatViewModel.chatUiState.activeConversationId.value,
-                                true
-                            )
+                            chatViewModel.activateConversation(conversation.conversation.value.ConversationId)
                         },
                         interactionSource = interactionSource
                     )

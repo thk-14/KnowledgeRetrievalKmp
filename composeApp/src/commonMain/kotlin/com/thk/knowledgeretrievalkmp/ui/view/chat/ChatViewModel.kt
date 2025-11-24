@@ -21,8 +21,9 @@ import com.thk.knowledgeretrievalkmp.data.network.SseData
 import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 import com.thk.knowledgeretrievalkmp.util.titlecase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlin.time.DurationUnit
+import kotlin.time.Duration
 
 data class ChatUiState(
     val snackBarHostState: SnackbarHostState = SnackbarHostState(),
@@ -33,6 +34,7 @@ data class ChatUiState(
     val chatInputState: TextFieldState = TextFieldState(),
     val renameInputState: TextFieldState = TextFieldState(),
     val agentic: MutableState<Boolean> = mutableStateOf(true),
+    val sendEnabled: MutableState<Boolean> = mutableStateOf(true),
     val drawerState: DrawerState = DrawerState(initialValue = DrawerValue.Closed),
     val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null),
     val showDialogAction: MutableState<ChatShowDialogAction?> = mutableStateOf(null)
@@ -63,6 +65,7 @@ class ChatViewModel(
     val chatUiState = ChatUiState()
     var displayName: MutableState<String> = mutableStateOf("")
     private val repository: KnowledgeRetrievalRepository = DefaultKnowledgeRetrievalRepository
+    private var sendMessageJob: Job? = null
 
     init {
         chatUiState.activeKbId.value = checkNotNull(savedStateHandle.get<String>("initialKnowledgeBaseId"))
@@ -105,11 +108,12 @@ class ChatViewModel(
     }
 
     fun sendUserRequestWithSSE(
-        onSseData: (SseData) -> Unit
+        onSseData: (SseData) -> Unit,
+        onCompletion: (Duration) -> Unit
     ) {
         val userRequest = chatUiState.chatInputState.text.toString()
         if (userRequest.isEmpty()) return
-        viewModelScope.launch {
+        sendMessageJob = viewModelScope.launch {
             // FOR TESTING
 //            delay(5000)
 //            if (chatUiState.activeConversationId.value.isEmpty()) {
@@ -195,14 +199,14 @@ class ChatViewModel(
                 if (newConversationId == null) return@launch
                 chatUiState.activeConversationId.value = newConversationId
             }
-            val processDuration = repository.collectSSEResponseFlow(
+            repository.collectSSEResponseFlow(
                 kbId = chatUiState.activeKbId.value,
                 conversationId = chatUiState.activeConversationId.value,
                 userRequest = userRequest,
                 agentic = chatUiState.agentic.value,
-                onSseData = onSseData
+                onSseData = onSseData,
+                onCompletion = onCompletion
             )
-            showSnackbar("Message processed in ${processDuration.toString(DurationUnit.SECONDS, 3)}")
         }
     }
 
@@ -233,6 +237,19 @@ class ChatViewModel(
             repository.toggleConversationActive(conversationId, active)
             chatUiState.showLoadingAction.value = null
         }
+    }
+
+    fun activateConversation(conversationId: String) {
+        if (chatUiState.activeConversationId.value == conversationId) {
+            return
+        }
+        if (sendMessageJob?.isActive == true) {
+            sendMessageJob?.cancel()
+            chatUiState.sendEnabled.value = true
+            showSnackbar("Message aborted")
+        }
+        chatUiState.activeConversationId.value = conversationId
+        toggleConversationActive(conversationId, true)
     }
 
     fun deleteConversation(conversationId: String) {

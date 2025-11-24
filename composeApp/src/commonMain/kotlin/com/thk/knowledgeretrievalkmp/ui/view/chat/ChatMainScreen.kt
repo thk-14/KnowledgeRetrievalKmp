@@ -37,8 +37,6 @@ import com.mikepenz.markdown.model.rememberMarkdownState
 import com.thk.knowledgeretrievalkmp.data.local.db.MessageWithCitations
 import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
 import com.thk.knowledgeretrievalkmp.data.network.SseErrorData
-import com.thk.knowledgeretrievalkmp.data.network.SseStartData
-import com.thk.knowledgeretrievalkmp.data.network.SseStopData
 import com.thk.knowledgeretrievalkmp.db.Citation
 import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.ui.theme.*
@@ -51,6 +49,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
+import kotlin.time.DurationUnit
 
 @Composable
 fun ChatMainScreen(
@@ -98,14 +97,12 @@ fun ChatMainScreen(
                 textFieldState = chatViewModel.chatUiState.chatInputState,
                 numSource = activeKb?.documents?.size ?: 0,
                 agentic = chatViewModel.chatUiState.agentic.value,
+                sendEnabled = chatViewModel.chatUiState.sendEnabled.value,
                 kbs = chatViewModel.chatUiState.kbs,
                 activeKb = activeKb,
                 onActiveKbChange = { kbId ->
                     chatViewModel.chatUiState.activeKbId.value = kbId
-                    chatViewModel.toggleKbActive(
-                        chatViewModel.chatUiState.activeKbId.value,
-                        true
-                    )
+                    chatViewModel.toggleKbActive(kbId, true)
                 },
                 onAgenticChange = {
                     chatViewModel.chatUiState.agentic.value = !chatViewModel.chatUiState.agentic.value
@@ -115,27 +112,32 @@ fun ChatMainScreen(
                         "Agentic: $agenticStatusText"
                     )
                 },
-                onSendMessage = {
-                    chatViewModel.sendUserRequestWithSSE { sseData ->
-                        when (sseData) {
-                            is SseStartData -> {
-                                scrollToLast()
-                            }
-
-                            is SseStopData -> {
-                                scrollToLast()
-                            }
-
-                            is SseErrorData -> {
-                                scrollToLast()
-                                chatViewModel.showSnackbar("An error occurred.")
-                            }
-
-                            else -> {
-                                // do nothing
-                            }
-                        }
+                onSendMessage = sendSseMessage@{
+                    if (!chatViewModel.chatUiState.sendEnabled.value) {
+                        return@sendSseMessage
                     }
+                    chatViewModel.chatUiState.sendEnabled.value = false
+                    scrollToLast()
+                    chatViewModel.sendUserRequestWithSSE(
+                        onSseData = { sseData ->
+                            when (sseData) {
+                                is SseErrorData -> {
+                                    chatViewModel.showSnackbar("An error occurred.")
+                                }
+
+                                else -> {
+                                    // do nothing
+                                }
+                            }
+                        },
+                        onCompletion = { processDuration ->
+                            chatViewModel.chatUiState.sendEnabled.value = true
+                            scrollToLast()
+                            chatViewModel.showSnackbar(
+                                "Message processed in ${processDuration.toString(DurationUnit.SECONDS, 3)}"
+                            )
+                        }
+                    )
                     // clear chat input text
                     chatViewModel.chatUiState.chatInputState.clearText()
                     focusManager.clearFocus()
@@ -224,6 +226,7 @@ fun ChatBottomBar(
     textFieldState: TextFieldState,
     numSource: Int,
     agentic: Boolean,
+    sendEnabled: Boolean,
     kbs: SnapshotStateList<UiKnowledgeBase>,
     activeKb: UiKnowledgeBase?,
     onActiveKbChange: (String) -> Unit,
@@ -239,6 +242,7 @@ fun ChatBottomBar(
             textFieldState = textFieldState,
             numSource = numSource,
             agentic = agentic,
+            sendEnabled = sendEnabled,
             kbs = kbs,
             activeKb = activeKb,
             onActiveKbChange = onActiveKbChange,
@@ -254,6 +258,7 @@ fun ChatTextField(
     textFieldState: TextFieldState,
     numSource: Int,
     agentic: Boolean,
+    sendEnabled: Boolean,
     kbs: SnapshotStateList<UiKnowledgeBase>,
     activeKb: UiKnowledgeBase?,
     onActiveKbChange: (String) -> Unit,
@@ -349,8 +354,8 @@ fun ChatTextField(
                     Button(
                         onClick = onSendMessage,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = LightGreen,
-                            contentColor = White
+                            containerColor = if (sendEnabled) LightGreen else White80,
+                            contentColor = if (sendEnabled) White else Gray50
                         ),
                         modifier = Modifier
                             .size(40.dp)
@@ -359,9 +364,13 @@ fun ChatTextField(
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Icon(
-                            imageVector = vectorResource(Res.drawable.send),
+                            imageVector = vectorResource(
+                                if (sendEnabled) Res.drawable.send else Res.drawable.square
+                            ),
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(
+                                if (sendEnabled) 20.dp else 15.dp
+                            )
                         )
                     }
                 }

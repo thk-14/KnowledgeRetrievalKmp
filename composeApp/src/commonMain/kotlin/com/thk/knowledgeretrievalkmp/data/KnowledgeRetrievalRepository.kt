@@ -89,8 +89,9 @@ interface KnowledgeRetrievalRepository {
         conversationId: String,
         userRequest: String,
         agentic: Boolean,
-        onSseData: (SseData) -> Unit
-    ): Duration
+        onSseData: (SseData) -> Unit,
+        onCompletion: (Duration) -> Unit
+    )
 
     // FOR LOCAL DATABASE
     suspend fun getKnowledgeBasesInLocalFlow(): Flow<List<KbWithDocuments>>
