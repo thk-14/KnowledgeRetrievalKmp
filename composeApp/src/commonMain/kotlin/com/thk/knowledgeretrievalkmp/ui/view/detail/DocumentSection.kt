@@ -208,6 +208,7 @@ fun DocumentSectionTopBar(
                 imageVector = vectorResource(Res.drawable.menu),
                 contentDescription = null,
                 modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
                     .size(Dimens.top_bar_icon_size)
                     .clickable {
                         detailViewModel.detailUiState.apply {

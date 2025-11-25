@@ -40,6 +40,7 @@ fun ConversationBottomSheet(
         onDismissRequest = {
             onDismiss()
         },
+        containerColor = White,
         sheetMaxWidth = 200.dp,
         sheetGesturesEnabled = true
     ) {
@@ -102,6 +103,7 @@ fun MessageBottomSheet(
         onDismissRequest = {
             onDismiss()
         },
+        containerColor = White,
         sheetGesturesEnabled = true
     ) {
         SelectionContainer {
@@ -159,6 +161,9 @@ fun MessageBottomSheet(
                             inlineCodeBackground = White
                         ),
                         imageTransformer = Coil3ImageTransformerImpl
+                    )
+                    Spacer(
+                        modifier = Modifier.height(10.dp)
                     )
                 }
             }
