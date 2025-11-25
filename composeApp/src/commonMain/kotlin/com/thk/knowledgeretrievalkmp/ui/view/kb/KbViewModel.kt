@@ -43,7 +43,7 @@ class KbViewModel(
     init {
         viewModelScope.launch {
             profileUri.value = repository.getProfileUri() ?: ""
-            log("profileUri: $profileUri")
+            log("profileUri: ${profileUri.value}")
             repository.getKnowledgeBasesInLocalFlow().collect { kbsWithDocuments ->
                 kbUiState.knowledgeBases.clear()
                 kbUiState.knowledgeBases.addAll(kbsWithDocuments.map { it.kb })
