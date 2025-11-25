@@ -115,7 +115,6 @@ class ChatViewModel(
         if (userRequest.isEmpty()) return
         sendMessageJob = viewModelScope.launch {
             // FOR TESTING
-//            delay(5000)
 //            if (chatUiState.activeConversationId.value.isEmpty()) {
 //                val newConversationId = Uuid.generateV7().toString()
 //                DefaultKnowledgeRetrievalRepository.upsertNetworkConversationInLocal(

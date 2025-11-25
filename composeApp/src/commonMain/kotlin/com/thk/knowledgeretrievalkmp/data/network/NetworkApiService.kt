@@ -70,6 +70,10 @@ class NetworkApiService {
         }
     }
 
+    // FOR TESTING
+//    private val baseUrl = "test"
+    // END TESTING
+
     private val baseUrl = "https://smart-kind-macaque.ngrok-free.app"
 
     // Authentication

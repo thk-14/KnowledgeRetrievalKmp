@@ -78,7 +78,6 @@ fun SignupMainScreen(
 ) {
     val screenWidth = LocalWindowSize.current.width
     val screenHeight = LocalWindowSize.current.height
-    val coroutineScope = rememberCoroutineScope()
 
     val loginFailedWarning = stringResource(Res.string.login_failed_warning)
     val emailInvalidWarning = stringResource(Res.string.email_invalid_warning)
@@ -97,8 +96,7 @@ fun SignupMainScreen(
             verticalArrangement = Arrangement.Bottom,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 30.dp)
-                .height(0.05 * screenHeight)
+                .height(Dimens.logo_icon_size)
                 .padding(start = Dimens.padding_horizontal)
         ) {
             IconButton(

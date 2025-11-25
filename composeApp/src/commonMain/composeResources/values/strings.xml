@@ -29,7 +29,7 @@
     <string name="chat_rename_conversation_title">Rename Conversation</string>
     <string name="chat_rename_conversation_label">Name</string>
     <string name="chat_title">CHAT</string>
-    <string name="chat_placeholder">Ask %1$d sources...</string>
+    <string name="chat_placeholder">Ask %1$d sources</string>
 
     <!-- Warning -->
     <string name="email_invalid_warning">Email is not valid!</string>

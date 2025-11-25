@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
@@ -28,7 +29,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.times
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
 import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.m3.Markdown
@@ -41,9 +41,9 @@ import com.thk.knowledgeretrievalkmp.db.Citation
 import com.thk.knowledgeretrievalkmp.db.Message
 import com.thk.knowledgeretrievalkmp.ui.theme.*
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
-import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
+import com.thk.knowledgeretrievalkmp.ui.view.custom.sizeIn
 import knowledgeretrievalkmp.composeapp.generated.resources.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -54,6 +54,7 @@ import kotlin.time.DurationUnit
 @Composable
 fun ChatMainScreen(
     modifier: Modifier = Modifier,
+    showDrawerButton: Boolean = true,
     chatViewModel: ChatViewModel
 ) {
     val scrollState = rememberScrollState()
@@ -83,8 +84,11 @@ fun ChatMainScreen(
     Scaffold(
         topBar = {
             ChatTopBar(
-                modifier = modifier.padding(horizontal = Dimens.padding_horizontal),
+                modifier = Modifier.padding(horizontal = Dimens.padding_horizontal),
                 title = activeConversation?.conversation?.value?.Name ?: "",
+                showDrawerButton =
+                    if (showDrawerButton) chatViewModel.chatUiState.drawerState.isClosed
+                    else false,
                 onDrawerOpen = {
                     coroutineScope.launch {
                         chatViewModel.chatUiState.drawerState.open()
@@ -145,10 +149,15 @@ fun ChatMainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .padding(horizontal = Dimens.padding_horizontal),
+                    .padding(
+                        bottom = 5.dp
+                    ),
             )
         },
-        modifier = modifier
+        modifier = modifier.requiredSizeIn(
+            minWidth = 200.dp,
+            minHeight = 200.dp
+        )
     ) { contentPadding ->
         if (activeConversation == null || activeConversation!!.messagesWithCitations.isEmpty()) {
             // Placeholder
@@ -167,23 +176,21 @@ fun ChatMainScreen(
                 )
             }
         } else {
-            SelectionContainer {
-                ChatContent(
-                    modifier = Modifier
-                        .padding(contentPadding)
-                        .padding(horizontal = Dimens.padding_horizontal)
-                        .fillMaxSize(),
-                    scrollState = scrollState,
-                    messagesWithCitations = activeConversation!!.messagesWithCitations,
-                    onCitationClick = { citation ->
-                        chatViewModel.chatUiState.showDialogAction.value =
-                            ChatShowDialogAction.ShowMessageBottomSheet(
-                                header = citation.OriginalFileName,
-                                body = citation.PageContent
-                            )
-                    }
-                )
-            }
+            ChatContent(
+                modifier = Modifier
+                    .padding(contentPadding)
+                    .padding(horizontal = Dimens.padding_horizontal)
+                    .fillMaxSize(),
+                scrollState = scrollState,
+                messagesWithCitations = activeConversation!!.messagesWithCitations,
+                onCitationClick = { citation ->
+                    chatViewModel.chatUiState.showDialogAction.value =
+                        ChatShowDialogAction.ShowMessageBottomSheet(
+                            header = citation.OriginalFileName,
+                            body = citation.PageContent
+                        )
+                }
+            )
         }
     }
 }
@@ -192,21 +199,24 @@ fun ChatMainScreen(
 fun ChatTopBar(
     modifier: Modifier = Modifier,
     title: String,
+    showDrawerButton: Boolean,
     onDrawerOpen: () -> Unit,
 ) {
-    val screenWidth = LocalWindowSize.current.width
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(30.dp),
         modifier = modifier
     ) {
         IconButton(
-            onClick = onDrawerOpen
+            onClick = onDrawerOpen,
+            modifier = Modifier.alpha(
+                if (showDrawerButton) 1.0f else 0f
+            )
         ) {
             Icon(
                 imageVector = vectorResource(Res.drawable.menu),
                 contentDescription = null,
-                modifier = Modifier.size(Dimens.top_bar_icon_size),
+                modifier = Modifier.size(Dimens.top_bar_icon_size)
             )
         }
         Text(
@@ -215,7 +225,11 @@ fun ChatTopBar(
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.sizeIn(maxWidth = screenWidth * 0.7f)
+            modifier = Modifier
+                .weight(1f)
+                .padding(
+                    end = 10.dp
+                )
         )
     }
 }
@@ -247,7 +261,11 @@ fun ChatBottomBar(
             activeKb = activeKb,
             onActiveKbChange = onActiveKbChange,
             onSendMessage = onSendMessage,
-            onAgenticChange = onAgenticChange
+            onAgenticChange = onAgenticChange,
+            modifier = Modifier.requiredSizeIn(
+                minWidth = 300.dp,
+                maxHeight = 300.dp
+            )
         )
     }
 }
@@ -265,7 +283,6 @@ fun ChatTextField(
     onSendMessage: () -> Unit,
     onAgenticChange: () -> Unit
 ) {
-    val screenWidth = LocalWindowSize.current.width
     OutlinedCard(
         border = BorderStroke(1.dp, Black),
         modifier = modifier,
@@ -291,6 +308,7 @@ fun ChatTextField(
                         contentDescription = null,
                         tint = agenticColor,
                         modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
                             .size(40.dp)
                             .clickable {
                                 onAgenticChange()
@@ -300,11 +318,14 @@ fun ChatTextField(
                         state = textFieldState,
                         lineLimits = TextFieldLineLimits.MultiLine(),
                         placeholder = {
-                            Text(stringResource(Res.string.chat_placeholder, numSource))
+                            Text(
+                                text = stringResource(Res.string.chat_placeholder, numSource),
+                                fontSize = 15.sp
+                            )
                         },
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .width(0.5 * screenWidth)
+                            .fillMaxWidth(0.5f)
                             .onPreviewKeyEvent { event ->
                                 if (event.key.keyCode == Key.Enter.keyCode && event.type == KeyEventType.KeyDown) {
                                     if (event.isShiftPressed) {
@@ -325,7 +346,10 @@ fun ChatTextField(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send)
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                        onKeyboardAction = {
+                            onSendMessage()
+                        }
                     )
                 }
 
@@ -387,7 +411,8 @@ fun ChatTextField(
                 var isExpanded by remember { mutableStateOf(false) }
                 Text(
                     text = "Knowledge Base: ",
-                    color = Gray50
+                    color = Gray50,
+                    fontSize = 15.sp
                 )
                 ExposedDropdownMenuBox(
                     expanded = isExpanded,
@@ -399,13 +424,14 @@ fun ChatTextField(
                         text = activeKb?.kb?.value?.Name ?: "",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        fontSize = 15.sp,
                         modifier = Modifier
                             .menuAnchor(
                                 type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
                                 enabled = true
                             )
                             .fillMaxWidth(0.5f)
-                            .height(35.dp)
+                            .height(30.dp)
                             .border(
                                 width = 1.dp,
                                 color = Black,
@@ -429,7 +455,8 @@ fun ChatTextField(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = kb.kb.value.Name
+                                        text = kb.kb.value.Name,
+                                        fontSize = 15.sp
                                     )
                                 },
                                 onClick = {
@@ -470,29 +497,33 @@ fun ChatContent(
             val message = messageWithCitations.message
             when (message.Role) {
                 NetworkMessageRole.USER ->
-                    UserMessage(
-                        message = message
-                    )
+                    SelectionContainer {
+                        UserMessage(
+                            message = message
+                        )
+                    }
 
                 NetworkMessageRole.AGENT ->
-                    Column {
-                        if (message.StatusPhase != null) {
-                            ServerMessageStatusHeader(
-                                statusPhase = message.StatusPhase,
-                                statusMessage = message.StatusMessage ?: ""
+                    SelectionContainer {
+                        Column {
+                            if (message.StatusPhase != null) {
+                                ServerMessageStatusHeader(
+                                    statusPhase = message.StatusPhase,
+                                    statusMessage = message.StatusMessage ?: ""
+                                )
+                            }
+                            ServerMessageBody(
+                                content = message.Content,
+                                onCitationClick = { citationIndex ->
+                                    val citation = messageWithCitations.citations.firstOrNull {
+                                        it.OriginalIndex == citationIndex.toLong()
+                                    }
+                                    if (citation != null) {
+                                        onCitationClick(citation)
+                                    }
+                                }
                             )
                         }
-                        ServerMessageBody(
-                            content = message.Content,
-                            onCitationClick = { citationIndex ->
-                                val citation = messageWithCitations.citations.firstOrNull {
-                                    it.OriginalIndex == citationIndex.toLong()
-                                }
-                                if (citation != null) {
-                                    onCitationClick(citation)
-                                }
-                            }
-                        )
                     }
             }
         }
@@ -554,8 +585,6 @@ fun UserMessage(
     modifier: Modifier = Modifier,
     message: Message,
 ) {
-    val screenWidth = LocalWindowSize.current.width
-
     Row(
         modifier = modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.End
@@ -566,7 +595,7 @@ fun UserMessage(
                 contentColor = White
             ),
             modifier = Modifier
-                .sizeIn(maxWidth = screenWidth / 2)
+                .sizeIn(maxWidth = 0.5f)
                 .wrapContentWidth()
                 .padding(end = 5.dp)
         ) {

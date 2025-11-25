@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,8 +23,8 @@ import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import com.thk.knowledgeretrievalkmp.ui.theme.Black
 import com.thk.knowledgeretrievalkmp.ui.theme.White
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
-import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
 import knowledgeretrievalkmp.composeapp.generated.resources.*
@@ -199,15 +200,17 @@ fun KbTopBar(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.clickable {
-                onFetchData()
-            }
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .clickable {
+                    onFetchData()
+                }
         ) {
             Icon(
                 imageVector = vectorResource(Res.drawable.book_open),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(Dimens.top_bar_icon_size)
+                    .size(Dimens.logo_icon_size)
             )
             // Title
             Text(
@@ -226,7 +229,7 @@ fun KbTopBar(
                     placeholder = painterResource(Res.drawable.default_avatar),
                     error = painterResource(Res.drawable.default_avatar),
                     modifier = Modifier
-                        .size(Dimens.top_bar_icon_size)
+                        .size(Dimens.logo_icon_size)
                         .clip(CircleShape)
                         .clickable {
                             onProfileClicked()
@@ -267,7 +270,9 @@ fun KbTopBar(
                             contentDescription = null,
                         )
                     },
-                    onClick = onLogout
+                    onClick = onLogout,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
                 )
             }
         }

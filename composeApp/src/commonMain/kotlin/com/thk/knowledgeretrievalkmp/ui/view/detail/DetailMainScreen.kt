@@ -4,11 +4,13 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,13 +86,16 @@ fun DetailTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(
-                imageVector = vectorResource(Res.drawable.back),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(Dimens.top_bar_icon_size)
-                    .clickable { onBackPressed() }
-            )
+            IconButton(
+                onClick = onBackPressed
+            ) {
+                Icon(
+                    imageVector = vectorResource(Res.drawable.back),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(Dimens.top_bar_icon_size)
+                )
+            }
             with(sharedTransitionScope) {
                 // Title
                 Text(
@@ -137,7 +142,9 @@ fun DetailTopBar(
                         detailViewModel.detailUiState.renameInputState.clearText()
                         detailViewModel.detailUiState.showDialogAction.value =
                             DetailShowDialogAction.RenameKb
-                    }
+                    },
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
                 )
                 DropdownMenuItem(
                     text = {
@@ -147,7 +154,9 @@ fun DetailTopBar(
                         detailViewModel.detailUiState.kbMenuExpanded.value = false
                         detailViewModel.detailUiState.showDialogAction.value =
                             DetailShowDialogAction.DeleteKbConfirmation
-                    }
+                    },
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
                 )
             }
         }

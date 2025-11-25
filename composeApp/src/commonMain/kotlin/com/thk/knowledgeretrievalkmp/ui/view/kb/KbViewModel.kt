@@ -123,11 +123,6 @@ class KbViewModel(
             loadingText = "Fetching knowledge bases ...",
             loadingAnimation = LottieAnimation.FETCHING
         )
-
-        // FOR TESTING
-//        delay(5000)
-        // END TESTING
-
         val succeed = repository.fetchKnowledgeBasesWithDocuments()
         kbUiState.showLoadingAction.value = null
     }

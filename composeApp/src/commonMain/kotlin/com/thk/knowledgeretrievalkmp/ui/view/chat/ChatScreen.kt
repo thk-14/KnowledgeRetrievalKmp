@@ -1,12 +1,18 @@
 package com.thk.knowledgeretrievalkmp.ui.view.chat
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.input.clearText
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowSizeClass
 import com.thk.knowledgeretrievalkmp.ui.view.custom.*
 
 @Composable
@@ -15,25 +21,89 @@ fun ChatScreen(
     onNavigateToKnowledgeBase: () -> Unit,
     chatViewModel: ChatViewModel = viewModel(factory = ChatViewModel.Factory)
 ) {
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = chatViewModel.chatUiState.snackBarHostState)
         }
     ) {
-        ModalNavigationDrawer(
-            drawerState = chatViewModel.chatUiState.drawerState,
-            gesturesEnabled = true,
-            drawerContent = {
-                ChatDrawer(
-                    chatViewModel = chatViewModel,
-                    onNavigateToKnowledgeBase = onNavigateToKnowledgeBase
-                )
+        when {
+            windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) -> {
+                // expanded
+                Row(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    ChatDrawer(
+                        chatViewModel = chatViewModel,
+                        showDrawerButton = false,
+                        showConversationMenuButton = true,
+                        onNavigateToKnowledgeBase = onNavigateToKnowledgeBase,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(Dimens.drawer_width)
+                    )
+                    ChatMainScreen(
+                        chatViewModel = chatViewModel,
+                        showDrawerButton = false,
+                        modifier = modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                    )
+                }
             }
-        ) {
-            ChatMainScreen(
-                modifier = modifier,
-                chatViewModel = chatViewModel
-            )
+
+            windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) -> {
+                // medium
+                CustomResizeNavigationDrawer(
+                    drawerState = chatViewModel.chatUiState.drawerState,
+                    drawerWidth = Dimens.drawer_width,
+                    gestureEnabled = false,
+                    drawerContent = {
+                        ChatDrawer(
+                            chatViewModel = chatViewModel,
+                            showDrawerButton = true,
+                            showConversationMenuButton = false,
+                            onNavigateToKnowledgeBase = onNavigateToKnowledgeBase,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    },
+                ) {
+                    ChatMainScreen(
+                        chatViewModel = chatViewModel,
+                        showDrawerButton = true,
+                        modifier = modifier
+                            .fillMaxSize()
+                            .animateContentSize()
+                    )
+                }
+            }
+
+            else -> {
+                // compact
+                CustomResizeNavigationDrawer(
+                    drawerState = chatViewModel.chatUiState.drawerState,
+                    drawerWidth = Dimens.drawer_width,
+                    gestureEnabled = true,
+                    drawerContent = {
+                        ChatDrawer(
+                            chatViewModel = chatViewModel,
+                            showDrawerButton = false,
+                            showConversationMenuButton = false,
+                            onNavigateToKnowledgeBase = onNavigateToKnowledgeBase,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    },
+                ) {
+                    ChatMainScreen(
+                        chatViewModel = chatViewModel,
+                        showDrawerButton = true,
+                        modifier = modifier
+                            .fillMaxSize()
+                            .animateContentSize()
+                    )
+                }
+            }
         }
     }
 
