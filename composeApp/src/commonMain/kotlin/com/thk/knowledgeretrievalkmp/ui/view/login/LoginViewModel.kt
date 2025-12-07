@@ -96,7 +96,7 @@ class LoginViewModel(
 
     private suspend fun refreshToken() {
         loginUiState.showLoadingAction.value = ShowLoadingAction(
-            loadingText = "Checking ...",
+            loadingText = "Checking",
             loadingAnimation = LottieAnimation.LOADING
         )
         val succeed = repository.refreshToken()

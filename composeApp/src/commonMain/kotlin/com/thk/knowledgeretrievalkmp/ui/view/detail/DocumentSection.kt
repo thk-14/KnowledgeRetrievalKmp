@@ -3,12 +3,33 @@ package com.thk.knowledgeretrievalkmp.ui.view.detail
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,14 +43,34 @@ import com.thk.knowledgeretrievalkmp.ui.theme.Black
 import com.thk.knowledgeretrievalkmp.ui.theme.Blue
 import com.thk.knowledgeretrievalkmp.ui.theme.Gray
 import com.thk.knowledgeretrievalkmp.ui.theme.White
-import com.thk.knowledgeretrievalkmp.ui.view.custom.*
+import com.thk.knowledgeretrievalkmp.ui.view.custom.ColumnWithScrollbar
+import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
+import com.thk.knowledgeretrievalkmp.ui.view.custom.FileExtension
+import com.thk.knowledgeretrievalkmp.ui.view.custom.InfiniteLoadingCircle
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LocalWindowSize
+import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
+import com.thk.knowledgeretrievalkmp.ui.view.custom.ShowLoadingAction
 import com.thk.knowledgeretrievalkmp.util.log
-import io.github.vinceglb.filekit.*
+import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitPickerState
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
-import knowledgeretrievalkmp.composeapp.generated.resources.*
+import io.github.vinceglb.filekit.mimeType
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
+import io.github.vinceglb.filekit.size
+import knowledgeretrievalkmp.composeapp.generated.resources.LS_upload_document
+import knowledgeretrievalkmp.composeapp.generated.resources.Res
+import knowledgeretrievalkmp.composeapp.generated.resources.chat
+import knowledgeretrievalkmp.composeapp.generated.resources.delete
+import knowledgeretrievalkmp.composeapp.generated.resources.delete_btn
+import knowledgeretrievalkmp.composeapp.generated.resources.document
+import knowledgeretrievalkmp.composeapp.generated.resources.document_upload_failed
+import knowledgeretrievalkmp.composeapp.generated.resources.document_upload_finish
+import knowledgeretrievalkmp.composeapp.generated.resources.expandable
+import knowledgeretrievalkmp.composeapp.generated.resources.menu
+import knowledgeretrievalkmp.composeapp.generated.resources.upload
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -162,20 +203,17 @@ fun DocumentSection(
         floatingActionButtonPosition = FabPosition.End,
         modifier = modifier
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
+        ColumnWithScrollbar(
+            boxModifier = Modifier
+                .fillMaxSize()
                 .padding(paddingValues)
                 .padding(top = 30.dp),
             verticalArrangement = Arrangement.spacedBy(30.dp)
         ) {
-            items(
-                items = detailViewModel.detailUiState.knowledgeBase.value.documents,
-                key = { it.DocumentId }
-            ) { document ->
+            detailViewModel.detailUiState.knowledgeBase.value.documents.forEach { document ->
                 DocumentItem(
                     document = document,
                     showDocumentDeleteOption = detailViewModel.detailUiState.showDocumentDeleteOption.value,
-                    modifier = Modifier.animateItem(),
                     onDocumentDelete = {
                         detailViewModel.detailUiState.showDocumentDeleteOption.value = false
                         detailViewModel.detailUiState.showDialogAction.value =

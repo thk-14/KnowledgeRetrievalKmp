@@ -211,8 +211,8 @@ class ChatViewModel(
 
     fun toggleKbActive(kbId: String, active: Boolean) {
         val loadingText =
-            if (active) "Activating knowledge base ..."
-            else "Deactivating knowledge base ..."
+            if (active) "Activating knowledge base"
+            else "Deactivating knowledge base"
         viewModelScope.launch {
             chatUiState.showLoadingAction.value = ShowLoadingAction(
                 loadingText = loadingText,
@@ -226,8 +226,8 @@ class ChatViewModel(
 
     fun toggleConversationActive(conversationId: String, active: Boolean) {
         val loadingText =
-            if (active) "Activating conversation ..."
-            else "Deactivating conversation ..."
+            if (active) "Activating conversation"
+            else "Deactivating conversation"
         viewModelScope.launch {
             chatUiState.showLoadingAction.value = ShowLoadingAction(
                 loadingText = loadingText,
@@ -263,7 +263,7 @@ class ChatViewModel(
 
 
             chatUiState.showLoadingAction.value = ShowLoadingAction(
-                loadingText = "Deleting conversation ...",
+                loadingText = "Deleting conversation",
                 loadingAnimation = LottieAnimation.DELETING
             )
             val succeed = repository.deleteConversation(conversationId)
@@ -273,13 +273,17 @@ class ChatViewModel(
                 }
             }
             chatUiState.showLoadingAction.value = null
+            val message =
+                if (succeed) "Delete successfully."
+                else "Delete failed."
+            showSnackbar(message)
         }
     }
 
     fun renameConversation(conversationId: String, newName: String) {
         viewModelScope.launch {
             chatUiState.showLoadingAction.value = ShowLoadingAction(
-                loadingText = "Renaming conversation ...",
+                loadingText = "Renaming conversation",
                 loadingAnimation = LottieAnimation.CHANGING
             )
             val succeed = repository.renameConversation(conversationId, newName)

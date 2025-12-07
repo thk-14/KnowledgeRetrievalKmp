@@ -150,7 +150,7 @@ class DetailViewModel(
 
     private suspend fun fetchKnowledgeBaseWithDocuments() {
         detailUiState.showLoadingAction.value = ShowLoadingAction(
-            loadingText = "Fetching knowledge base ...",
+            loadingText = "Fetching knowledge base",
             loadingAnimation = LottieAnimation.FETCHING
         )
         val succeed = repository.fetchKnowledgeBaseWithDocuments(knowledgeBaseId)

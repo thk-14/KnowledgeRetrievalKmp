@@ -3,13 +3,32 @@ package com.thk.knowledgeretrievalkmp.ui.view.chat
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.clearText
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,9 +36,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.thk.knowledgeretrievalkmp.ui.theme.*
+import com.thk.knowledgeretrievalkmp.ui.theme.Black
+import com.thk.knowledgeretrievalkmp.ui.theme.Gray50
+import com.thk.knowledgeretrievalkmp.ui.theme.LightBlue
+import com.thk.knowledgeretrievalkmp.ui.theme.White50
+import com.thk.knowledgeretrievalkmp.ui.theme.WhiteBlue
+import com.thk.knowledgeretrievalkmp.ui.view.custom.ColumnWithScrollbar
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
-import knowledgeretrievalkmp.composeapp.generated.resources.*
+import knowledgeretrievalkmp.composeapp.generated.resources.Res
+import knowledgeretrievalkmp.composeapp.generated.resources.back
+import knowledgeretrievalkmp.composeapp.generated.resources.chat
+import knowledgeretrievalkmp.composeapp.generated.resources.menu
+import knowledgeretrievalkmp.composeapp.generated.resources.morevert
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -138,15 +166,12 @@ fun ChatDrawer(
                     top = 10.dp,
                 )
             )
-            LazyColumn(
-                modifier = Modifier.padding(
+            ColumnWithScrollbar(
+                boxModifier = Modifier.padding(
                     start = Dimens.padding_horizontal
                 )
             ) {
-                items(
-                    items = chatViewModel.chatUiState.conversations,
-                    key = { it.conversation.value.ConversationId }
-                ) { conversation ->
+                chatViewModel.chatUiState.conversations.forEach { conversation ->
                     val interactionSource = remember { MutableInteractionSource() }
                     val isHovered by interactionSource.collectIsHoveredAsState()
                     var isMenuExpanded by remember { mutableStateOf(false) }

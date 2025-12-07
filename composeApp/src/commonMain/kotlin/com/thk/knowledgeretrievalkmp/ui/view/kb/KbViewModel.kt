@@ -120,7 +120,7 @@ class KbViewModel(
 
     private suspend fun fetchKnowledgeBasesWithDocuments() {
         kbUiState.showLoadingAction.value = ShowLoadingAction(
-            loadingText = "Fetching knowledge bases ...",
+            loadingText = "Fetching knowledge bases",
             loadingAnimation = LottieAnimation.FETCHING
         )
         val succeed = repository.fetchKnowledgeBasesWithDocuments()
@@ -129,7 +129,7 @@ class KbViewModel(
 
     private suspend fun fetchConversationsWithMessages() {
         kbUiState.showLoadingAction.value = ShowLoadingAction(
-            loadingText = "Fetching conversations ...",
+            loadingText = "Fetching conversations",
             loadingAnimation = LottieAnimation.FETCHING
         )
         val succeed = repository.fetchConversationsWithMessages()
