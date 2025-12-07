@@ -79,6 +79,35 @@ fun LoginMainScreen(
     val loginFailedWarning = stringResource(Res.string.login_failed_warning)
     val logInLoadingText = stringResource(Res.string.LS_login)
 
+    fun onLogin() {
+        val email = loginViewModel.loginUiState.emailInputState.text.toString().trim()
+        val password =
+            loginViewModel.loginUiState.passwordInputState.text.toString().trim()
+        if (!email.isValidEmail()) {
+            loginViewModel.showSnackbar(emailInvalidWarning)
+            return
+        }
+        if (password.isEmpty()) {
+            loginViewModel.showSnackbar(passwordEmptyWarning)
+            return
+        }
+
+        loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(
+            loadingText = logInLoadingText,
+            loadingAnimation = LottieAnimation.LOADING
+        )
+        loginViewModel.authenticateUser(
+            onLoginFinish = { succeed ->
+                loginViewModel.loginUiState.showLoadingAction.value = null
+                if (succeed) {
+                    loginViewModel.loginUiState.isLoggedIn.value = true
+                } else {
+                    loginViewModel.showSnackbar(loginFailedWarning)
+                }
+            }
+        )
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.05 * screenHeight),
@@ -145,10 +174,13 @@ fun LoginMainScreen(
                 label = { Text(stringResource(Res.string.email)) },
                 placeholder = { Text(stringResource(Res.string.email_placeholder)) },
                 modifier = Modifier
-                    .sizeIn(minHeight = 50.dp)
+                    .sizeIn(
+                        minWidth = 200.dp,
+                        maxWidth = 500.dp
+                    )
                     .size(
                         width = 0.8 * screenWidth,
-                        height = 0.05 * screenHeight
+                        height = 55.dp
                     ),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = White,
@@ -162,10 +194,13 @@ fun LoginMainScreen(
                 state = loginViewModel.loginUiState.passwordInputState,
                 label = { Text(stringResource(Res.string.password)) },
                 modifier = Modifier
-                    .sizeIn(minHeight = 50.dp)
+                    .sizeIn(
+                        minWidth = 200.dp,
+                        maxWidth = 500.dp
+                    )
                     .size(
                         width = 0.8 * screenWidth,
-                        height = 0.05 * screenHeight
+                        height = 55.dp
                     ),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = White,
@@ -173,7 +208,10 @@ fun LoginMainScreen(
                     focusedIndicatorColor = DeepBlue,
                     unfocusedIndicatorColor = LightBlue
                 ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                onKeyboardAction = {
+                    onLogin()
+                }
             )
         }
         // Login btn
@@ -181,44 +219,20 @@ fun LoginMainScreen(
             verticalArrangement = Arrangement.spacedBy(0.01 * screenHeight)
         ) {
             Button(
-                onClick = OnLoginClick@{
-                    val email = loginViewModel.loginUiState.emailInputState.text.toString().trim()
-                    val password =
-                        loginViewModel.loginUiState.passwordInputState.text.toString().trim()
-                    if (!email.isValidEmail()) {
-                        loginViewModel.showSnackbar(emailInvalidWarning)
-                        return@OnLoginClick
-                    }
-                    if (password.isEmpty()) {
-                        loginViewModel.showSnackbar(passwordEmptyWarning)
-                        return@OnLoginClick
-                    }
-
-                    loginViewModel.loginUiState.showLoadingAction.value = ShowLoadingAction(
-                        loadingText = logInLoadingText,
-                        loadingAnimation = LottieAnimation.LOADING
-                    )
-                    loginViewModel.authenticateUser(
-                        onLoginFinish = { succeed ->
-                            loginViewModel.loginUiState.showLoadingAction.value = null
-                            if (succeed) {
-                                loginViewModel.loginUiState.isLoggedIn.value = true
-                            } else {
-                                loginViewModel.showSnackbar(loginFailedWarning)
-                            }
-                        }
-                    )
-                },
+                onClick = ::onLogin,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Blue,
                     contentColor = White
                 ),
                 modifier = Modifier
-                    .sizeIn(minHeight = 40.dp)
+                    .sizeIn(
+                        minWidth = 200.dp,
+                        maxWidth = 500.dp
+                    )
                     .size(
                         width = 0.8 * screenWidth,
-                        height = 0.05 * screenHeight
-                    )
+                        height = 50.dp
+                    ),
             ) {
                 Text(
                     text = stringResource(Res.string.login_btn),
@@ -227,7 +241,11 @@ fun LoginMainScreen(
             }
             // Don't have an account? Sign up
             Row(
-                modifier = Modifier.offset(x = 20.dp),
+                modifier = Modifier
+                    .offset(x = 20.dp)
+                    .sizeIn(
+                        minWidth = 200.dp
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Text(stringResource(Res.string.signup_prompt))

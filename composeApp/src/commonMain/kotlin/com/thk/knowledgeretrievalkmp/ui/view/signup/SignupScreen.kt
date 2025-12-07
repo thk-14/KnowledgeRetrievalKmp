@@ -7,7 +7,6 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +84,35 @@ fun SignupMainScreen(
     val loginLoadingText = stringResource(Res.string.LS_login)
     val signupLoadingText = stringResource(Res.string.LS_signup)
 
+    fun onSignup() {
+        val email = signupViewModel.signupUiState.emailInputState.text.toString().trim()
+        val password =
+            signupViewModel.signupUiState.passwordInputState.text.toString().trim()
+        if (!email.isValidEmail()) {
+            signupViewModel.showSnackbar(emailInvalidWarning)
+            return
+        }
+        val passwordError = checkValidPasswordError(password)
+        if (passwordError != null) {
+            signupViewModel.showSnackbar(passwordError)
+            return
+        }
+        signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(
+            loadingText = signupLoadingText,
+            loadingAnimation = LottieAnimation.LOADING
+        )
+        signupViewModel.signupUser(
+            onSignupFinish = { succeed ->
+                signupViewModel.signupUiState.showLoadingAction.value = null
+                if (succeed) {
+                    signupViewModel.signupUiState.signupCompleted.value = true
+                } else {
+                    signupViewModel.showSnackbar(signupFailedWarning)
+                }
+            }
+        )
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.05 * screenHeight),
@@ -160,10 +188,13 @@ fun SignupMainScreen(
                 label = { Text(stringResource(Res.string.email)) },
                 placeholder = { Text(stringResource(Res.string.email_placeholder)) },
                 modifier = Modifier
-                    .sizeIn(minHeight = 50.dp)
+                    .sizeIn(
+                        minWidth = 200.dp,
+                        maxWidth = 500.dp
+                    )
                     .size(
                         width = 0.8 * screenWidth,
-                        height = 0.05 * screenHeight
+                        height = 55.dp
                     ),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = White,
@@ -177,10 +208,13 @@ fun SignupMainScreen(
                 state = signupViewModel.signupUiState.passwordInputState,
                 label = { Text(stringResource(Res.string.password)) },
                 modifier = Modifier
-                    .sizeIn(minHeight = 50.dp)
+                    .sizeIn(
+                        minWidth = 200.dp,
+                        maxWidth = 500.dp
+                    )
                     .size(
                         width = 0.8 * screenWidth,
-                        height = 0.05 * screenHeight
+                        height = 55.dp
                     ),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = White,
@@ -188,49 +222,28 @@ fun SignupMainScreen(
                     focusedIndicatorColor = DeepBlue,
                     unfocusedIndicatorColor = LightBlue
                 ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                onKeyboardAction = {
+                    onSignup()
+                }
             )
         }
         // Signup btn
         Button(
-            onClick = onSignupClick@{
-                val email = signupViewModel.signupUiState.emailInputState.text.toString().trim()
-                val password =
-                    signupViewModel.signupUiState.passwordInputState.text.toString().trim()
-                if (!email.isValidEmail()) {
-                    signupViewModel.showSnackbar(emailInvalidWarning)
-                    return@onSignupClick
-                }
-                val passwordError = checkValidPasswordError(password)
-                if (passwordError != null) {
-                    signupViewModel.showSnackbar(passwordError)
-                    return@onSignupClick
-                }
-                signupViewModel.signupUiState.showLoadingAction.value = ShowLoadingAction(
-                    loadingText = signupLoadingText,
-                    loadingAnimation = LottieAnimation.LOADING
-                )
-                signupViewModel.signupUser(
-                    onSignupFinish = { succeed ->
-                        signupViewModel.signupUiState.showLoadingAction.value = null
-                        if (succeed) {
-                            signupViewModel.signupUiState.signupCompleted.value = true
-                        } else {
-                            signupViewModel.showSnackbar(signupFailedWarning)
-                        }
-                    }
-                )
-            },
+            onClick = ::onSignup,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Blue,
                 contentColor = White
             ),
             modifier = Modifier
-                .sizeIn(minHeight = 40.dp)
+                .sizeIn(
+                    minWidth = 200.dp,
+                    maxWidth = 500.dp
+                )
                 .size(
                     width = 0.8 * screenWidth,
-                    height = 0.05 * screenHeight
-                )
+                    height = 50.dp
+                ),
         ) {
             Text(
                 text = stringResource(Res.string.signup_btn),

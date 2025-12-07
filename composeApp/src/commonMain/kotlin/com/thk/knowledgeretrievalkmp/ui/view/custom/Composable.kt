@@ -97,7 +97,7 @@ fun FullScreenLoader(
     loadingText: String?,
     loadingAnimation: LottieAnimation?,
     textColor: Color = Black,
-    textFontSize: TextUnit = 30.sp
+    textFontSize: TextUnit = 20.sp
 ) {
 
     AnimatedVisibility(

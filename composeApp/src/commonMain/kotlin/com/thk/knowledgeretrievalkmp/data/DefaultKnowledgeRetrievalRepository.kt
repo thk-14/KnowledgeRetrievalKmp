@@ -432,30 +432,38 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         kbId: String,
         active: Boolean
     ): Boolean {
-        var succeed = false
+        var succeed = true
         withContext(dispatcher) {
             val localDocuments = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
             localDocuments.forEach { localDocument ->
-                launch(dispatcher) {
-                    if (localDocument.Status != NetworkDocumentStatus.FINISHED) {
-                        checkDocumentStatusUntilFinished(
-                            documentId = localDocument.DocumentId
-                        )
-                        toggleDocumentActive(
-                            documentId = localDocument.DocumentId,
-                            active = active
-                        )
-                    } else {
-                        if (localDocument.IsInactive != !active) {
-                            toggleDocumentActive(
-                                documentId = localDocument.DocumentId,
-                                active = active
-                            )
-                        }
-                    }
+
+//                launch(dispatcher) {
+//                    if (localDocument.Status != NetworkDocumentStatus.FINISHED) {
+//                        checkDocumentStatusUntilFinished(
+//                            documentId = localDocument.DocumentId
+//                        )
+//                        toggleDocumentActive(
+//                            documentId = localDocument.DocumentId,
+//                            active = active
+//                        )
+//                    } else {
+//                        if (localDocument.IsInactive != !active) {
+//                            toggleDocumentActive(
+//                                documentId = localDocument.DocumentId,
+//                                active = active
+//                            )
+//                        }
+//                    }
+//                }
+
+                if (localDocument.IsInactive != !active) {
+                    val toggleSucceed = toggleDocumentActive(
+                        documentId = localDocument.DocumentId,
+                        active = active
+                    )
+                    if (!toggleSucceed) succeed = false
                 }
             }
-            succeed = true
         }
         log("toggleDocumentsActiveForKnowledgeBase $active succeed: $succeed")
         return succeed
@@ -471,6 +479,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         onUploadFinish: () -> Unit,
         onUploadFailed: () -> Unit
     ): Boolean {
+        var succeed = false
         withContext(dispatcher) {
             val newDocumentData = apiService.uploadDocument(
                 knowledgeBaseId = knowledgeBaseId,
@@ -507,20 +516,19 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             withContext(Dispatchers.Main) {
                 onUploadFinish()
             }
-            launch(dispatcher) {
-                // check and wait until finish processing
-                checkDocumentStatusUntilFinished(
-                    documentId = newDocumentData.id
-                )
-                // set document active
-                toggleDocumentActive(
-                    documentId = newDocumentData.id,
-                    active = true
-                )
-            }
+            // check and wait until finish processing
+            checkDocumentStatusUntilFinished(
+                documentId = newDocumentData.id
+            )
+            // set document active
+            toggleDocumentActive(
+                documentId = newDocumentData.id,
+                active = true
+            )
+            succeed = true
         }
-        log("Upload document finish")
-        return true
+        log("Upload document succeed: $succeed")
+        return succeed
     }
 
     override suspend fun deleteDocument(documentId: String): Boolean {
@@ -532,7 +540,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             }
         }
         log("deleteDocument succeed: $succeed")
-        return true
+        return succeed
     }
 
     override suspend fun createConversation(conversationName: String): String? {
@@ -871,13 +879,14 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     private suspend fun toggleDocumentActive(
         documentId: String,
         active: Boolean
-    ) {
+    ): Boolean {
         val networkDocument = apiService.toggleDocumentActive(
             id = documentId,
             active = active
-        )?.data ?: return
+        )?.data ?: return false
         upsertNetworkDocumentInLocal(networkDocument)
         log("toggleDocumentActive $documentId $active success")
+        return true
     }
 
     // FOR LOCAL DATABASE

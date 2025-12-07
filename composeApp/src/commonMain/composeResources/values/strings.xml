@@ -47,20 +47,20 @@
     <string name="kb_rename_success">Rename knowledge base success !</string>
     <string name="kb_rename_failed">Rename knowledge base failed !</string>
     <string name="kb_delete_success">Knowledge base deleted !</string>
-    <string name="kb_delete_failed">Error deleting knowledge base !</string>
+    <string name="kb_delete_failed">Error deleting knowledge base.</string>
     <string name="document_upload_finish">Document uploaded !</string>
     <string name="document_upload_failed">Error processing document.</string>
     <string name="document_delete_success">Document deleted !</string>
     <string name="document_delete_failed">Error deleting document.</string>
 
     <!-- Loading Screen -->
-    <string name="LS_login">Logging in ...</string>
-    <string name="LS_signup">Signing up ...</string>
-    <string name="LS_logout">Logging out ...</string>
-    <string name="LS_create_kb">Creating Knowledge Base ...</string>
-    <string name="LS_rename_kb">Rename Knowledge Base ...</string>
-    <string name="LS_delete_kb">Deleting Knowledge Base ...</string>
+    <string name="LS_login">Logging in</string>
+    <string name="LS_signup">Signing up</string>
+    <string name="LS_logout">Logging out</string>
+    <string name="LS_create_kb">Creating Knowledge Base</string>
+    <string name="LS_rename_kb">Rename Knowledge Base</string>
+    <string name="LS_delete_kb">Deleting Knowledge Base</string>
     <string name="LS_upload_document">Uploading document</string>
-    <string name="LS_delete_document">Deleting document ...</string>
+    <string name="LS_delete_document">Deleting document</string>
 
 </resources>

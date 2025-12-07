@@ -122,7 +122,6 @@ class DetailViewModel(
             onUploadFinish = onUploadFinish,
             onUploadFailed = onUploadFailed
         )
-        log("uploadDocument succeed: $succeed")
     }
 
     fun deleteDocument(
@@ -137,7 +136,6 @@ class DetailViewModel(
 
 
         val succeed = repository.deleteDocument(documentId)
-        log("deleteDocument succeed: $succeed")
         onDeleteFinish(succeed)
     }
 
