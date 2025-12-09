@@ -145,10 +145,7 @@ fun MessageBottomSheet(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                ) {
+                ColumnWithScrollbar {
                     val markdownState = rememberMarkdownState(
                         content = body,
                         retainState = true
