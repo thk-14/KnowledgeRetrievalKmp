@@ -9,7 +9,34 @@ import com.thk.knowledgeretrievalkmp.Configs
 import com.thk.knowledgeretrievalkmp.data.local.db.ConversationWithMessages
 import com.thk.knowledgeretrievalkmp.data.local.db.KbWithDocuments
 import com.thk.knowledgeretrievalkmp.data.local.db.MessageWithCitations
-import com.thk.knowledgeretrievalkmp.data.network.*
+import com.thk.knowledgeretrievalkmp.data.network.AskRequest
+import com.thk.knowledgeretrievalkmp.data.network.CreateKnowledgeBaseRequest
+import com.thk.knowledgeretrievalkmp.data.network.DeleteKnowledgeBaseRequest
+import com.thk.knowledgeretrievalkmp.data.network.ExchangeGoogleAuthCodeRequest
+import com.thk.knowledgeretrievalkmp.data.network.GetKnowledgeBasesRequest
+import com.thk.knowledgeretrievalkmp.data.network.LoginUserRequest
+import com.thk.knowledgeretrievalkmp.data.network.LogoutRequest
+import com.thk.knowledgeretrievalkmp.data.network.NetworkApiService
+import com.thk.knowledgeretrievalkmp.data.network.NetworkConversation
+import com.thk.knowledgeretrievalkmp.data.network.NetworkDocument
+import com.thk.knowledgeretrievalkmp.data.network.NetworkDocumentStatus
+import com.thk.knowledgeretrievalkmp.data.network.NetworkKnowledgeBase
+import com.thk.knowledgeretrievalkmp.data.network.NetworkMessage
+import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageMetadata
+import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
+import com.thk.knowledgeretrievalkmp.data.network.NetworkPartText
+import com.thk.knowledgeretrievalkmp.data.network.RefreshTokenRequest
+import com.thk.knowledgeretrievalkmp.data.network.RegisterUserRequest
+import com.thk.knowledgeretrievalkmp.data.network.SseContentData
+import com.thk.knowledgeretrievalkmp.data.network.SseData
+import com.thk.knowledgeretrievalkmp.data.network.SseErrorData
+import com.thk.knowledgeretrievalkmp.data.network.SseEvent
+import com.thk.knowledgeretrievalkmp.data.network.SseStartData
+import com.thk.knowledgeretrievalkmp.data.network.SseStatusData
+import com.thk.knowledgeretrievalkmp.data.network.SseStopData
+import com.thk.knowledgeretrievalkmp.data.network.UpdateConversationRequest
+import com.thk.knowledgeretrievalkmp.data.network.UpdateKnowledgeBaseRequest
+import com.thk.knowledgeretrievalkmp.data.network.initiateLogin
 import com.thk.knowledgeretrievalkmp.db.Document
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBase
 import com.thk.knowledgeretrievalkmp.db.KnowledgeBaseQueries
@@ -18,12 +45,20 @@ import com.thk.knowledgeretrievalkmp.util.generateV7
 import com.thk.knowledgeretrievalkmp.util.log
 import com.thk.knowledgeretrievalkmp.util.titlecase
 import com.thk.knowledgeretrievalkmp.util.toSseEvent
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 import kotlin.time.measureTime
@@ -39,6 +74,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     private val coroutineScope = CoroutineScope(
         dispatcher + SupervisorJob() + CoroutineName("KbCoroutine")
     )
+    private var fetchConversationJob: Job? = null
     private var initLoginJob: Job? = null
     private var codeExchangeJob: Job? = null
     private var codeExchangeChannel = Channel<String?>().apply { close() }
@@ -284,7 +320,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         return succeed
     }
 
-    override suspend fun fetchConversationsWithMessages(): Boolean {
+    private suspend fun fetchConversationsWithMessages(): Boolean {
         val userId = sessionManager.getUserId() ?: return false
         var succeed = false
         withContext(dispatcher) {
@@ -324,6 +360,15 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         }
         log("Fetch conversations succeed: $succeed")
         return succeed
+    }
+
+    override fun fetchConversationsWithMessagesGlobally() {
+        coroutineScope.launch {
+            fetchConversationJob?.cancelAndJoin()
+            fetchConversationJob = launch {
+                fetchConversationsWithMessages()
+            }
+        }
     }
 
     override suspend fun createKnowledgeBase(

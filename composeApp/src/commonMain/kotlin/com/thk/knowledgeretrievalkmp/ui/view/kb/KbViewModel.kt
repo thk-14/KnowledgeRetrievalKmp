@@ -127,13 +127,8 @@ class KbViewModel(
         kbUiState.showLoadingAction.value = null
     }
 
-    private suspend fun fetchConversationsWithMessages() {
-        kbUiState.showLoadingAction.value = ShowLoadingAction(
-            loadingText = "Fetching conversations",
-            loadingAnimation = LottieAnimation.FETCHING
-        )
-        val succeed = repository.fetchConversationsWithMessages()
-        kbUiState.showLoadingAction.value = null
+    private fun fetchConversationsWithMessages() {
+        repository.fetchConversationsWithMessagesGlobally()
     }
 
     companion object {

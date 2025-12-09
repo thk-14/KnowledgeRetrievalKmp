@@ -41,7 +41,7 @@ interface KnowledgeRetrievalRepository {
 
     suspend fun fetchKnowledgeBaseWithDocuments(kbId: String): Boolean
 
-    suspend fun fetchConversationsWithMessages(): Boolean
+    fun fetchConversationsWithMessagesGlobally()
 
     suspend fun createKnowledgeBase(kbName: String, kbDescription: String): Boolean
 
