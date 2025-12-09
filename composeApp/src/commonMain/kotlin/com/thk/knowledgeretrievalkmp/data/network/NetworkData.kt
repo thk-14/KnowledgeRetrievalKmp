@@ -96,25 +96,25 @@ data class RefreshTokenRequest(
 // Response
 @Serializable
 data class NetworkResponse<T>(
-    val success: Boolean,
+    val success: Boolean? = null,
     @SerialName("status_code")
-    val statusCode: Int,
-    val message: String,
+    val statusCode: Int? = null,
+    val message: String? = null,
     val data: T?,
-    val error: NetworkError?,
-    val timestamp: String
+    val error: NetworkError? = null,
+    val timestamp: String? = null
 )
 
 @Serializable
 data class NetworkError(
-    val type: String,
-    val detail: NetworkErrorDetail
+    val type: String? = null,
+    val detail: NetworkErrorDetail? = null
 )
 
 @Serializable
 data class NetworkErrorDetail(
-    val message: String,
-    val code: String
+    val message: String? = null,
+    val code: String? = null
 )
 
 @Serializable
@@ -125,13 +125,13 @@ data class NetworkKnowledgeBase(
     val userId: String,
     val description: String,
     @SerialName("created_at")
-    val createdAt: String,
+    val createdAt: String? = null,
     @SerialName("updated_at")
-    val updatedAt: String,
+    val updatedAt: String? = null,
     @SerialName("is_active")
     val isActive: Boolean,
     @SerialName("document_count")
-    val documentCount: Long
+    val documentCount: Long? = null
 )
 
 @Serializable
@@ -140,30 +140,30 @@ data class NetworkDocument(
     @SerialName("knowledge_base_id")
     val knowledgeBaseId: String,
     val filename: String,
-    val description: String?,
+    val description: String? = null,
     @SerialName("original_filename")
     val originalFileName: String,
     @SerialName("file_path")
-    val filePath: String,
+    val filePath: String? = null,
     @SerialName("file_size")
-    val fileSize: Long,
+    val fileSize: Long? = null,
     @SerialName("file_type")
-    val fileType: String,
+    val fileType: String? = null,
     @SerialName("mime_type")
     val mimeType: String,
     val status: NetworkDocumentStatus,
     @SerialName("processing_error")
-    val processingError: String?,
+    val processingError: String? = null,
     @SerialName("created_at")
-    val createdAt: String,
+    val createdAt: String? = null,
     @SerialName("updated_at")
-    val updatedAt: String,
+    val updatedAt: String? = null,
     @SerialName("uploaded_by")
-    val uploadedBy: String?,
+    val uploadedBy: String? = null,
     @SerialName("total_chunks")
-    val totalChunks: Int,
+    val totalChunks: Int? = null,
     @SerialName("processed_at")
-    val processedAt: String,
+    val processedAt: String? = null,
     @SerialName("is_inactive")
     val isInactive: Boolean
 )
@@ -193,9 +193,9 @@ data class NetworkConversation(
     @SerialName("is_active")
     val isActive: Boolean,
     val name: String,
-    val summary: String?,
+    val summary: String? = null,
     @SerialName("summarized_up_to_message_order")
-    val summarizedUpToMessageOrder: Int?
+    val summarizedUpToMessageOrder: Int? = null
 )
 
 @Serializable
@@ -300,21 +300,21 @@ data class NetworkDocumentQa(
 @Serializable
 data class GetKnowledgeBasesData(
     val items: List<NetworkKnowledgeBase>?,
-    val total: Int,
-    val skip: Int,
-    val limit: Int,
+    val total: Int? = null,
+    val skip: Int? = null,
+    val limit: Int? = null,
     @SerialName("has_more")
-    val hasMore: Boolean
+    val hasMore: Boolean? = null
 )
 
 @Serializable
 data class GetDocumentsData(
     val items: List<NetworkDocument>,
-    val total: Int,
-    val skip: Int,
-    val limit: Int,
+    val total: Int? = null,
+    val skip: Int? = null,
+    val limit: Int? = null,
     @SerialName("has_more")
-    val hasMore: Boolean
+    val hasMore: Boolean? = null
 )
 
 @Serializable
@@ -326,7 +326,7 @@ data class UploadDocumentData(
     val originalFileName: String,
     val status: NetworkDocumentStatus,
     @SerialName("task_id")
-    val taskId: String
+    val taskId: String? = null
 )
 
 @Serializable
@@ -338,11 +338,11 @@ data class GetDocumentStatusData(
     val originalFileName: String,
     val status: NetworkDocumentStatus,
     @SerialName("processing_error")
-    val processingError: String?,
+    val processingError: String? = null,
     @SerialName("processed_at")
-    val processedAt: String?,
+    val processedAt: String? = null,
     @SerialName("total_chunks")
-    val totalChunks: Int
+    val totalChunks: Int? = null
 )
 
 @Serializable

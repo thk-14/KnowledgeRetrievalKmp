@@ -221,6 +221,7 @@ fun DocumentSection(
                     }
                 )
             }
+            Spacer(Modifier)
         }
     }
 }
@@ -307,9 +308,7 @@ fun DocumentItem(
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier
-//                    .clickable {}
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Icon(
                     imageVector = vectorResource(Res.drawable.document),
@@ -345,7 +344,7 @@ fun DocumentItem(
                             contentDescription = null,
                             modifier = Modifier
                                 .size(Dimens.top_bar_icon_size)
-                                .offset(x = (-10).dp)
+                                .offset(x = -Dimens.fab_icon_size)
                                 .clickable {
                                     onDocumentDelete()
                                 }

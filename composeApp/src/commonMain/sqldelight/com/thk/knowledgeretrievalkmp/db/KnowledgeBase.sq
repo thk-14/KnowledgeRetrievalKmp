@@ -7,10 +7,10 @@ CREATE TABLE KnowledgeBase (
     UserId TEXT NOT NULL,
     Name TEXT NOT NULL,
     Description TEXT NOT NULL,
-    CreatedAt TEXT NOT NULL,
-    UpdatedAt TEXT NOT NULL,
+    CreatedAt TEXT,
+    UpdatedAt TEXT,
     IsActive INTEGER AS Boolean NOT NULL,
-    DocumentCount INTEGER NOT NULL
+    DocumentCount INTEGER
 );
 
 CREATE TABLE Document (
