@@ -392,7 +392,7 @@ class NetworkApiService {
                     onCompletion()
                 }
                 .onEach {
-//                    delay(10)
+                    delay(1)
                 }
                 .collect { event ->
                     handleEvent(event)
