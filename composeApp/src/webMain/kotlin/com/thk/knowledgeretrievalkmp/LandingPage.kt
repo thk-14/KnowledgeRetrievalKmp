@@ -128,7 +128,7 @@ fun LandingPage(onLoginClick: () -> Unit) {
                         icon = vectorResource(Res.drawable.ic_android),
                         containerColor = Color(0xFF3B82F6),
                         onClick = {
-                            window.open("https://drive.google.com/file/d/1L-qWkSBvn3eys8C0BYu_ROR2MBlV87Ho/view?usp=sharing")
+                            window.open("https://drive.google.com/file/d/12ZDIAyX5T0-q3dKQ3ZDhodvxj-xU7Ucy/view?usp=sharing")
                         }
                     )
                     DownloadButton(
