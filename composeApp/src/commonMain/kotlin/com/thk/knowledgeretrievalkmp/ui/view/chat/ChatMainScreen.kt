@@ -268,7 +268,7 @@ fun ChatTopBar(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(30.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = modifier
     ) {
         IconButton(
@@ -285,7 +285,7 @@ fun ChatTopBar(
         }
         Text(
             text = title,
-            fontSize = 40.sp,
+            fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
