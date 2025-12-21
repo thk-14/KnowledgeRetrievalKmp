@@ -254,9 +254,9 @@ data class CitedChunkMetadata(
     @SerialName("end_index")
     val endIndex: Int? = null,
     @SerialName("chunk_index")
-    val chunkIndex: Int? = null,
+    val chunkIndex: Int,
     @SerialName("original_index")
-    val originalIndex: Int,
+    val originalIndex: Int? = null,
     val favicon: String? = null
 )
 

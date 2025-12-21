@@ -52,16 +52,16 @@ CREATE TABLE Message (
 
 CREATE TABLE Citation (
     MessageId TEXT NOT NULL,
-    OriginalIndex INTEGER NOT NULL,
+    ChunkIndex INTEGER NOT NULL,
     OriginalFileName TEXT NOT NULL,
     PageContent TEXT NOT NULL,
     KbId TEXT,
     DocumentId TEXT,
     FileName TEXT,
-    ChunkIndex INTEGER,
+    OriginalIndex INTEGER,
     StartIndex INTEGER,
     EndIndex INTEGER,
-    PRIMARY KEY (MessageId, OriginalIndex)
+    PRIMARY KEY (MessageId, ChunkIndex)
 );
 
 -- Upsert

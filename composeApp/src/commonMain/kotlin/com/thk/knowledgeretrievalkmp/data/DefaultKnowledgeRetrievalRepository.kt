@@ -854,15 +854,16 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                             val dataString = serverSentEvent.data ?: return@handleSseEvent
                             val data = Json.decodeFromString<SseStopData>(dataString)
                             log("data: $data")
+                            log("content: $content")
                             data.references?.forEach { reference ->
                                 dbQueries.upsertCitation(
                                     messageId = responseLocalMessage.MessageId,
-                                    originalIndex = reference.metadata.originalIndex.toLong(),
+                                    originalIndex = reference.metadata.originalIndex?.toLong(),
                                     kbId = reference.metadata.kbId,
                                     documentId = reference.metadata.documentId,
                                     fileName = reference.metadata.filename,
                                     originalFileName = reference.metadata.originalFileName,
-                                    chunkIndex = reference.metadata.chunkIndex?.toLong(),
+                                    chunkIndex = reference.metadata.chunkIndex.toLong(),
                                     startIndex = reference.metadata.startIndex?.toLong(),
                                     endIndex = reference.metadata.endIndex?.toLong(),
                                     pageContent = reference.pageContent
@@ -1131,12 +1132,12 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         networkMessage.retrievalContext?.citedChunks?.forEach { citedChunk ->
             dbQueries.upsertCitation(
                 messageId = networkMessage.id,
-                originalIndex = citedChunk.metadata.originalIndex.toLong(),
+                originalIndex = citedChunk.metadata.originalIndex?.toLong(),
                 kbId = citedChunk.metadata.kbId,
                 documentId = citedChunk.metadata.documentId,
                 fileName = citedChunk.metadata.fileName,
                 originalFileName = citedChunk.metadata.originalFileName,
-                chunkIndex = citedChunk.metadata.chunkIndex?.toLong(),
+                chunkIndex = citedChunk.metadata.chunkIndex.toLong(),
                 startIndex = citedChunk.metadata.startIndex?.toLong(),
                 endIndex = citedChunk.metadata.endIndex?.toLong(),
                 pageContent = citedChunk.pageContent

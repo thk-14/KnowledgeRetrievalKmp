@@ -114,7 +114,7 @@ data class SseStopReference(
 @JsonIgnoreUnknownKeys
 data class SseStopReferenceMetadata(
     @SerialName("chunk_index")
-    val chunkIndex: Int? = null,
+    val chunkIndex: Int,
     val filename: String? = null,
     @SerialName("kb_id")
     val kbId: String? = null,
@@ -127,7 +127,7 @@ data class SseStopReferenceMetadata(
     @SerialName("end_index")
     val endIndex: Int? = null,
     @SerialName("original_index")
-    val originalIndex: Int
+    val originalIndex: Int? = null
 )
 
 @Serializable
