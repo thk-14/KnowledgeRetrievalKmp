@@ -1,6 +1,7 @@
 package com.thk.knowledgeretrievalkmp.data.network
 
 import com.thk.knowledgeretrievalkmp.data.AppContainer
+import com.thk.knowledgeretrievalkmp.data.DefaultSetting
 import com.thk.knowledgeretrievalkmp.util.log
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -74,7 +75,7 @@ class NetworkApiService {
 //    private val baseUrl = "test"
     // END TESTING
 
-    private val baseUrl = "https://smart-kind-macaque.ngrok-free.app"
+    var baseUrl = DefaultSetting.BASE_URL
 
     // Authentication
 

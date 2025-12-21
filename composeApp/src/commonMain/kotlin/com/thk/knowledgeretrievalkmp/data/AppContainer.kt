@@ -22,3 +22,7 @@ object AppContainer {
 
     private const val WEB_CLIENT_ID = "725888804337-h9fgbvec56iqs2etcais2mkr6kcvb3pq.apps.googleusercontent.com"
 }
+
+object DefaultSetting {
+    const val BASE_URL = "https://smart-kind-macaque.ngrok-free.app"
+}

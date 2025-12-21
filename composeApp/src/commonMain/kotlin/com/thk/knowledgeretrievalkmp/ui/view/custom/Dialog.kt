@@ -286,3 +286,89 @@ fun CreateKbDialog(
         }
     }
 }
+
+@Composable
+fun SettingDialog(
+    modifier: Modifier = Modifier,
+    currentBaseUrl: String,
+    baseUrlState: TextFieldState,
+    onDismiss: () -> Unit,
+    onReset: () -> Unit,
+    onSave: () -> Unit
+) {
+    val screenWidth = LocalWindowSize.current.width
+    val screenHeight = LocalWindowSize.current.height
+
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth(0.8f)
+                .wrapContentHeight(),
+            colors = CardDefaults.cardColors(
+                containerColor = White
+            )
+        ) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(0.01 * screenHeight),
+                modifier = Modifier.padding(10.dp)
+            ) {
+                Text(
+                    text = "Setting",
+                    color = Black,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                OutlinedTextField(
+                    state = baseUrlState,
+                    lineLimits = TextFieldLineLimits.SingleLine,
+                    label = { Text("Base URL") },
+                    placeholder = { Text(currentBaseUrl) },
+                    modifier = Modifier
+                        .sizeIn(minHeight = 60.dp)
+                        .width(width = 0.6 * screenWidth),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = White,
+                        unfocusedContainerColor = White,
+                        focusedIndicatorColor = DeepBlue,
+                        unfocusedIndicatorColor = LightBlue
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(0.05 * screenWidth)
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Button(
+                        onClick = onReset,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Gray,
+                            contentColor = White
+                        ),
+                        modifier = Modifier
+                            .sizeIn(minHeight = 60.dp)
+                            .height(0.05 * screenHeight),
+                    ) {
+                        Text("Reset")
+                    }
+
+                    Button(
+                        onClick = onSave,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Black,
+                            contentColor = White
+                        ),
+                        modifier = Modifier
+                            .sizeIn(minHeight = 60.dp)
+                            .height(0.05 * screenHeight)
+                    ) {
+                        Text("Save")
+                    }
+                }
+            }
+        }
+    }
+}

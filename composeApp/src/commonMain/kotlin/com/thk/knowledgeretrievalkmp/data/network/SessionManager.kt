@@ -31,6 +31,10 @@ class SessionManager(private val dataStore: SuspendSettings) {
 
     suspend fun setRefreshToken(value: String) = setValue(REFRESH_TOKEN_KEY, value)
 
+    suspend fun getBaseUrl(): String? = getValue(BASE_URL_KEY)
+
+    suspend fun setBaseUrl(value: String) = setValue(BASE_URL_KEY, value)
+
     suspend fun clearSession() {
         dataStore.clear()
         isDataFetched = false
@@ -68,6 +72,7 @@ class SessionManager(private val dataStore: SuspendSettings) {
         private const val PROFILE_URI_KEY = "p_uri"
         private const val ACCESS_TOKEN_KEY = "access_TK"
         private const val REFRESH_TOKEN_KEY = "refresh_TK"
+        private const val BASE_URL_KEY = "base_URL"
         private const val KEY = "1f2250d22a4071e5b3bf566708fb85e6"
     }
 }

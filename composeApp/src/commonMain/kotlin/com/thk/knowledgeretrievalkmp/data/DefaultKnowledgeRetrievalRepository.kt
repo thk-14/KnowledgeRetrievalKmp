@@ -88,8 +88,19 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
     override suspend fun getProfileUri() = sessionManager.getProfileUri()
     override suspend fun getDisplayName() = sessionManager.getDisplayName()
     override suspend fun getUserId(): String? = sessionManager.getUserId()
+    override suspend fun getBaseUrl() = sessionManager.getBaseUrl() ?: DefaultSetting.BASE_URL
+    override suspend fun setBaseUrl(value: String) {
+        apiService.baseUrl = value
+        sessionManager.setBaseUrl(value)
+    }
 
     private const val APP_NAME = "KMS"
+
+    init {
+        coroutineScope.launch {
+            apiService.baseUrl = sessionManager.getBaseUrl() ?: DefaultSetting.BASE_URL
+        }
+    }
 
     // FOR NETWORK
 

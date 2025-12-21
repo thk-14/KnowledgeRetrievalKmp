@@ -186,8 +186,7 @@ fun ChatDrawer(
                                     // long-press duration
                                     delay(500)
                                     // If the coroutine is still active, it means the press was held
-                                    chatViewModel.chatUiState.showDialogAction.value =
-                                        ChatShowDialogAction.ShowConversationBottomSheet(conversation)
+                                    chatViewModel.showConversationBottomSheet(conversation)
                                 }
                             }
                         }
@@ -228,9 +227,7 @@ fun ChatDrawer(
                                             },
                                             onClick = {
                                                 isMenuExpanded = false
-                                                chatViewModel.chatUiState.renameInputState.clearText()
-                                                chatViewModel.chatUiState.showDialogAction.value =
-                                                    ChatShowDialogAction.RenameConversation(conversation)
+                                                chatViewModel.showRenameConversationDialog(conversation)
                                             },
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(10.dp))
@@ -241,8 +238,7 @@ fun ChatDrawer(
                                             },
                                             onClick = {
                                                 isMenuExpanded = false
-                                                chatViewModel.chatUiState.showDialogAction.value =
-                                                    ChatShowDialogAction.DeleteConversationConfirmation(conversation)
+                                                chatViewModel.showDeleteConversationDialog(conversation)
                                             },
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(10.dp))

@@ -248,11 +248,10 @@ fun ChatMainScreen(
                 scrollState = scrollState,
                 messagesWithCitations = activeConversation!!.messagesWithCitations,
                 onCitationClick = { citation ->
-                    chatViewModel.chatUiState.showDialogAction.value =
-                        ChatShowDialogAction.ShowMessageBottomSheet(
-                            header = citation.OriginalFileName,
-                            body = citation.PageContent
-                        )
+                    chatViewModel.showMessageBottomSheet(
+                        header = citation.OriginalFileName,
+                        body = citation.PageContent
+                    )
                 }
             )
         }

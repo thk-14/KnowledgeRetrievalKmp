@@ -1,6 +1,7 @@
 package com.thk.knowledgeretrievalkmp.ui.view.detail
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
@@ -137,6 +138,23 @@ class DetailViewModel(
 
         val succeed = repository.deleteDocument(documentId)
         onDeleteFinish(succeed)
+    }
+
+    fun dismissDialog() {
+        detailUiState.showDialogAction.value = null
+    }
+
+    fun showRenameKbDialog() {
+        detailUiState.renameInputState.clearText()
+        detailUiState.showDialogAction.value = DetailShowDialogAction.RenameKb
+    }
+
+    fun showDeleteKbDialog() {
+        detailUiState.showDialogAction.value = DetailShowDialogAction.DeleteKbConfirmation
+    }
+
+    fun showDeleteDocumentDialog(document: Document) {
+        detailUiState.showDialogAction.value = DetailShowDialogAction.DeleteDocumentConfirmation(document)
     }
 
     fun showSnackbar(message: String) {

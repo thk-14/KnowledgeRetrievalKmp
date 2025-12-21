@@ -56,10 +56,10 @@ fun DetailScreen(
                 title = "Delete Knowledge Base",
                 content = "Remove this knowledge base and all its contents",
                 onDismiss = {
-                    detailViewModel.detailUiState.showDialogAction.value = null
+                    detailViewModel.dismissDialog()
                 },
                 onConfirm = {
-                    detailViewModel.detailUiState.showDialogAction.value = null
+                    detailViewModel.dismissDialog()
                     detailViewModel.detailUiState.showLoadingAction.value =
                         ShowLoadingAction(
                             loadingText = deleteKbLoadingText,
@@ -89,10 +89,10 @@ fun DetailScreen(
                 ),
                 content = stringResource(Res.string.chat_delete_document_content),
                 onDismiss = {
-                    detailViewModel.detailUiState.showDialogAction.value = null
+                    detailViewModel.dismissDialog()
                 },
                 onConfirm = {
-                    detailViewModel.detailUiState.showDialogAction.value = null
+                    detailViewModel.dismissDialog()
                     detailViewModel.detailUiState.showLoadingAction.value =
                         ShowLoadingAction(
                             loadingText = deleteDocumentLoadingText,
@@ -122,7 +122,7 @@ fun DetailScreen(
                 textFieldPlaceholder = detailViewModel.detailUiState.knowledgeBase.value.kb.value.Name,
                 renameTextState = detailViewModel.detailUiState.renameInputState,
                 onDismiss = {
-                    detailViewModel.detailUiState.showDialogAction.value = null
+                    detailViewModel.dismissDialog()
                 },
                 onConfirm = ConfirmRename@{
                     val newName = detailViewModel.detailUiState.renameInputState.text.toString()
@@ -134,7 +134,7 @@ fun DetailScreen(
                         detailViewModel.showSnackbar(sameNameWarning)
                         return@ConfirmRename
                     }
-                    detailViewModel.detailUiState.showDialogAction.value = null
+                    detailViewModel.dismissDialog()
                     detailViewModel.detailUiState.showLoadingAction.value =
                         ShowLoadingAction(
                             loadingText = renameKbLoadingText,

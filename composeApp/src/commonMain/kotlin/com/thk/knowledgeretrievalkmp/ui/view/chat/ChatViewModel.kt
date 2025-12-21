@@ -1,6 +1,7 @@
 package com.thk.knowledgeretrievalkmp.ui.view.chat
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.SnackbarDuration
@@ -293,6 +294,31 @@ class ChatViewModel(
                 else "Rename failed."
             showSnackbar(message)
         }
+    }
+
+    fun dismissDialog() {
+        chatUiState.showDialogAction.value = null
+    }
+
+    fun showConversationBottomSheet(conversation: UiConversation) {
+        chatUiState.showDialogAction.value = ChatShowDialogAction.ShowConversationBottomSheet(conversation)
+    }
+
+    fun showMessageBottomSheet(header: String, body: String) {
+        chatUiState.showDialogAction.value =
+            ChatShowDialogAction.ShowMessageBottomSheet(
+                header = header,
+                body = body
+            )
+    }
+
+    fun showRenameConversationDialog(conversation: UiConversation) {
+        chatUiState.renameInputState.clearText()
+        chatUiState.showDialogAction.value = ChatShowDialogAction.RenameConversation(conversation)
+    }
+
+    fun showDeleteConversationDialog(conversation: UiConversation) {
+        chatUiState.showDialogAction.value = ChatShowDialogAction.DeleteConversationConfirmation(conversation)
     }
 
     fun showSnackbar(message: String) {

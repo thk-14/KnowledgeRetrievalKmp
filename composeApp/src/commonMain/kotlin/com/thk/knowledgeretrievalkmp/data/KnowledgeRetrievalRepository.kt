@@ -11,6 +11,8 @@ interface KnowledgeRetrievalRepository {
     suspend fun getProfileUri(): String?
     suspend fun getDisplayName(): String?
     suspend fun getUserId(): String?
+    suspend fun getBaseUrl(): String
+    suspend fun setBaseUrl(value: String)
 
     // FOR NETWORK
     suspend fun registerUser(

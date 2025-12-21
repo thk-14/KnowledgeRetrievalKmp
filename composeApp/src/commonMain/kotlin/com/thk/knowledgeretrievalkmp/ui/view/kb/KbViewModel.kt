@@ -2,6 +2,7 @@ package com.thk.knowledgeretrievalkmp.ui.view.kb
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.MutableState
@@ -27,16 +28,23 @@ data class KbUiState(
     val knowledgeBases: SnapshotStateList<KnowledgeBase> = mutableStateListOf(),
     val createKbNameState: TextFieldState = TextFieldState(),
     val createKbDescriptionState: TextFieldState = TextFieldState(),
-    val showKBCreateDialog: MutableState<Boolean> = mutableStateOf(false),
+    val baseUrlState: TextFieldState = TextFieldState(),
     val menuExpanded: MutableState<Boolean> = mutableStateOf(false),
-    val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null)
+    val showLoadingAction: MutableState<ShowLoadingAction?> = mutableStateOf(null),
+    val showDialogAction: MutableState<KbShowDialogAction?> = mutableStateOf(null)
 )
+
+sealed class KbShowDialogAction {
+    object CreateKb : KbShowDialogAction()
+    object Setting : KbShowDialogAction()
+}
 
 class KbViewModel(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     val kbUiState = KbUiState()
-    var profileUri: MutableState<String> = mutableStateOf("")
+    val profileUri: MutableState<String> = mutableStateOf("")
+    val baseUrl: MutableState<String> = mutableStateOf("")
 
     private val repository: KnowledgeRetrievalRepository = DefaultKnowledgeRetrievalRepository
 
@@ -44,6 +52,8 @@ class KbViewModel(
         viewModelScope.launch {
             profileUri.value = repository.getProfileUri() ?: ""
             log("profileUri: ${profileUri.value}")
+            baseUrl.value = repository.getBaseUrl()
+            log("baseUrl: ${baseUrl.value}")
             repository.getKnowledgeBasesInLocalFlow().collect { kbsWithDocuments ->
                 kbUiState.knowledgeBases.clear()
                 kbUiState.knowledgeBases.addAll(kbsWithDocuments.map { it.kb })
@@ -90,16 +100,19 @@ class KbViewModel(
         onCreateKbFinish(succeed)
     }
 
-    fun dismissKbCreateDialog() {
-        kbUiState.createKbNameState.clearText()
-        kbUiState.createKbDescriptionState.clearText()
-        kbUiState.showKBCreateDialog.value = false
+    fun dismissDialog() {
+        kbUiState.showDialogAction.value = null
     }
 
-    fun showKbCreateDialog() {
+    fun showCreateKbDialog() {
         kbUiState.createKbNameState.clearText()
         kbUiState.createKbDescriptionState.clearText()
-        kbUiState.showKBCreateDialog.value = true
+        kbUiState.showDialogAction.value = KbShowDialogAction.CreateKb
+    }
+
+    fun showSettingDialog() {
+        kbUiState.baseUrlState.setTextAndPlaceCursorAtEnd(baseUrl.value)
+        kbUiState.showDialogAction.value = KbShowDialogAction.Setting
     }
 
     fun showSnackbar(message: String) {
@@ -115,6 +128,13 @@ class KbViewModel(
         viewModelScope.launch {
             fetchKnowledgeBasesWithDocuments()
             fetchConversationsWithMessages()
+        }
+    }
+
+    fun setBaseUrl(value: String) {
+        viewModelScope.launch {
+            repository.setBaseUrl(value)
+            baseUrl.value = value
         }
     }
 

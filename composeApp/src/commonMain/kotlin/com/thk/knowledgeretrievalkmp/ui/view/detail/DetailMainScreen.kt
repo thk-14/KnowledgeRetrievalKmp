@@ -140,9 +140,7 @@ fun DetailTopBar(
                     },
                     onClick = {
                         detailViewModel.detailUiState.kbMenuExpanded.value = false
-                        detailViewModel.detailUiState.renameInputState.clearText()
-                        detailViewModel.detailUiState.showDialogAction.value =
-                            DetailShowDialogAction.RenameKb
+                        detailViewModel.showRenameKbDialog()
                     },
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
@@ -153,8 +151,7 @@ fun DetailTopBar(
                     },
                     onClick = {
                         detailViewModel.detailUiState.kbMenuExpanded.value = false
-                        detailViewModel.detailUiState.showDialogAction.value =
-                            DetailShowDialogAction.DeleteKbConfirmation
+                        detailViewModel.showDeleteKbDialog()
                     },
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))

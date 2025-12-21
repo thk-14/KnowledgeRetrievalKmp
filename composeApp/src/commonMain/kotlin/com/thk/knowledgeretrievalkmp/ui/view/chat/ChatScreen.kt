@@ -113,16 +113,13 @@ fun ChatScreen(
                 (chatViewModel.chatUiState.showDialogAction.value as ChatShowDialogAction.ShowConversationBottomSheet).conversation
             ConversationBottomSheet(
                 onDismiss = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
+                    chatViewModel.dismissDialog()
                 },
                 onDelete = {
-                    chatViewModel.chatUiState.showDialogAction.value =
-                        ChatShowDialogAction.DeleteConversationConfirmation(conversation)
+                    chatViewModel.showDeleteConversationDialog(conversation)
                 },
                 onRename = {
-                    chatViewModel.chatUiState.renameInputState.clearText()
-                    chatViewModel.chatUiState.showDialogAction.value =
-                        ChatShowDialogAction.RenameConversation(conversation)
+                    chatViewModel.showRenameConversationDialog(conversation)
                 }
             )
         }
@@ -134,7 +131,7 @@ fun ChatScreen(
                 header = sheetContent.header,
                 body = sheetContent.body,
                 onDismiss = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
+                    chatViewModel.dismissDialog()
                 }
             )
         }
@@ -146,10 +143,10 @@ fun ChatScreen(
                 title = "Delete Conversation",
                 content = "Remove this conversation and all its contents",
                 onDismiss = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
+                    chatViewModel.dismissDialog()
                 },
                 onConfirm = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
+                    chatViewModel.dismissDialog()
                     chatViewModel.deleteConversation(conversation.conversation.value.ConversationId)
                 }
             )
@@ -164,10 +161,10 @@ fun ChatScreen(
                 textFieldPlaceholder = conversation.conversation.value.Name,
                 renameTextState = chatViewModel.chatUiState.renameInputState,
                 onDismiss = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
+                    chatViewModel.dismissDialog()
                 },
                 onConfirm = {
-                    chatViewModel.chatUiState.showDialogAction.value = null
+                    chatViewModel.dismissDialog()
                     chatViewModel.renameConversation(
                         conversation.conversation.value.ConversationId,
                         chatViewModel.chatUiState.renameInputState.text.toString()

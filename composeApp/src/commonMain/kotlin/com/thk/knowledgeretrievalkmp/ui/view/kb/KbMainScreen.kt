@@ -63,6 +63,7 @@ import knowledgeretrievalkmp.composeapp.generated.resources.knowledge_base_title
 import knowledgeretrievalkmp.composeapp.generated.resources.logout
 import knowledgeretrievalkmp.composeapp.generated.resources.logout_btn
 import knowledgeretrievalkmp.composeapp.generated.resources.logout_failed_warning
+import knowledgeretrievalkmp.composeapp.generated.resources.setting
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -99,6 +100,10 @@ fun KbMainScreen(
                         menuExpanded.value = !menuExpanded.value
                     }
                 },
+                onSettingClicked = {
+                    kbViewModel.kbUiState.menuExpanded.value = false
+                    kbViewModel.showSettingDialog()
+                },
                 onLogout = {
                     kbViewModel.kbUiState.menuExpanded.value = false
                     kbViewModel.kbUiState.showLoadingAction.value = ShowLoadingAction(
@@ -134,7 +139,7 @@ fun KbMainScreen(
                         SmallFloatingActionButton(
                             onClick = {
                                 fabExpanded = !fabExpanded
-                                kbViewModel.showKbCreateDialog()
+                                kbViewModel.showCreateKbDialog()
                             },
                             containerColor = White,
                             contentColor = Black
@@ -220,6 +225,7 @@ fun KbTopBar(
     menuExpanded: Boolean,
     onMenuDismissRequest: () -> Unit,
     onProfileClicked: () -> Unit,
+    onSettingClicked: () -> Unit,
     onLogout: () -> Unit,
     onFetchData: () -> Unit
 ) {
@@ -291,6 +297,20 @@ fun KbTopBar(
                 expanded = menuExpanded,
                 onDismissRequest = onMenuDismissRequest
             ) {
+                DropdownMenuItem(
+                    text = {
+                        Text("Setting")
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = vectorResource(Res.drawable.setting),
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = onSettingClicked,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                )
                 DropdownMenuItem(
                     text = {
                         Text(stringResource(Res.string.logout_btn))

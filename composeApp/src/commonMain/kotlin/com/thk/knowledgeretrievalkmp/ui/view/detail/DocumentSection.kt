@@ -216,8 +216,7 @@ fun DocumentSection(
                     showDocumentDeleteOption = detailViewModel.detailUiState.showDocumentDeleteOption.value,
                     onDocumentDelete = {
                         detailViewModel.detailUiState.showDocumentDeleteOption.value = false
-                        detailViewModel.detailUiState.showDialogAction.value =
-                            DetailShowDialogAction.DeleteDocumentConfirmation(document)
+                        detailViewModel.showDeleteDocumentDialog(document)
                     }
                 )
             }
