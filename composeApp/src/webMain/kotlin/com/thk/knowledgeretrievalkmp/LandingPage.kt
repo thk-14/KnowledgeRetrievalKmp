@@ -128,7 +128,7 @@ fun LandingPage(onLoginClick: () -> Unit) {
                         icon = vectorResource(Res.drawable.ic_android),
                         containerColor = Color(0xFF3B82F6),
                         onClick = {
-                            window.open("https://drive.google.com/file/d/12ZDIAyX5T0-q3dKQ3ZDhodvxj-xU7Ucy/view?usp=sharing")
+                            window.open("https://drive.google.com/file/d/1YJmxpxcpfAAPPAOdNrPRAARsoa_N3B4e/view?usp=sharing")
                         }
                     )
                     DownloadButton(
@@ -136,7 +136,7 @@ fun LandingPage(onLoginClick: () -> Unit) {
                         icon = vectorResource(Res.drawable.ic_windows),
                         containerColor = Color(0xFF8B5CF6),
                         onClick = {
-                            window.open("https://drive.google.com/file/d/1N4u3ezdXpo7KJfC_bxfdrSwqvtRLBVZo/view?usp=sharing")
+                            window.open("https://drive.google.com/file/d/1c1pIrEFuLV2SG3n7f-LGO7z6EaVdlz34/view?usp=sharing")
                         }
                     )
                 }
