@@ -67,6 +67,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.SpanStyle
@@ -774,63 +775,13 @@ fun ServerMessageBody(
                                     // link reference
                                     val label = groups[2]
                                     val citationIndex = groups[3].toIntOrNull()
-                                    val linkListener = LinkInteractionListener {
-                                        if (citationIndex != null) onCitationClick(citationIndex)
-                                    }
-                                    withLink(
-                                        link = LinkAnnotation.Url(
-                                            url = label,
-                                            styles = TextLinkStyles(
-                                                style = SpanStyle(
-                                                    color = Blue
-                                                ),
-                                                focusedStyle = SpanStyle(
-                                                    color = Blue
-                                                ),
-                                                hoveredStyle = SpanStyle(
-                                                    color = Blue,
-                                                    textDecoration = TextDecoration.Underline
-                                                )
-                                            ),
-                                            linkInteractionListener = linkListener
-                                        )
-                                    ) {
-                                        append(label)
-                                    }
+                                    buildLinkReferenceCitation(label, citationIndex, onCitationClick)
                                 }
 
                                 groups[4].isNotEmpty() -> {
                                     // document reference
-                                    var label = groups[4]
-                                    var labelContent = label.drop(1).dropLast(1)
-                                    if(labelContent.uppercase().startsWith("CITATION: ")) {
-                                        labelContent = labelContent.drop(10)
-                                        label = "[$labelContent]"
-                                    }
-                                    val citationIndex = labelContent.toIntOrNull()
-                                    val linkListener = LinkInteractionListener {
-                                        if (citationIndex != null) onCitationClick(citationIndex)
-                                    }
-                                    withLink(
-                                        link = LinkAnnotation.Url(
-                                            url = label,
-                                            styles = TextLinkStyles(
-                                                style = SpanStyle(
-                                                    color = Blue
-                                                ),
-                                                focusedStyle = SpanStyle(
-                                                    color = Blue
-                                                ),
-                                                hoveredStyle = SpanStyle(
-                                                    color = Blue,
-                                                    textDecoration = TextDecoration.Underline
-                                                )
-                                            ),
-                                            linkInteractionListener = linkListener
-                                        )
-                                    ) {
-                                        append(label)
-                                    }
+                                    val citation = groups[4]
+                                    buildDocumentReferenceCitation(citation, onCitationClick)
                                 }
 
                                 groups[5].isNotEmpty() -> {
@@ -842,7 +793,7 @@ fun ServerMessageBody(
                                             fontStyle = FontStyle.Italic
                                         )
                                     ) {
-                                        append(content)
+                                        buildStringWithCitation(content, onCitationClick)
                                     }
                                 }
 
@@ -854,7 +805,7 @@ fun ServerMessageBody(
                                             fontWeight = FontWeight.Bold
                                         )
                                     ) {
-                                        append(content)
+                                        buildStringWithCitation(content, onCitationClick)
                                     }
                                 }
 
@@ -866,7 +817,7 @@ fun ServerMessageBody(
                                             fontStyle = FontStyle.Italic
                                         )
                                     ) {
-                                        append(content)
+                                        buildStringWithCitation(content, onCitationClick)
                                     }
                                 }
 
@@ -883,5 +834,103 @@ fun ServerMessageBody(
                 }
             )
         )
+    }
+}
+
+private fun AnnotatedString.Builder.buildStringWithCitation(
+    content: String,
+    onCitationClick: (Int) -> Unit
+) {
+    val regex =
+        """(\[([^\]]*[a-zA-Z][^\]]*)\]\[(\d+)\])|(\[[^\]]*\])|([^\[\*]+)""".toRegex()
+    val matches = regex.findAll(content)
+    matches.forEach { match ->
+        val value = match.value
+        val groups = match.groupValues
+        when {
+            groups[1].isNotEmpty() -> {
+                // link reference
+                val label = groups[2]
+                val citationIndex = groups[3].toIntOrNull()
+                buildLinkReferenceCitation(label, citationIndex, onCitationClick)
+            }
+
+            groups[4].isNotEmpty() -> {
+                // document reference
+                val citation = groups[4]
+                buildDocumentReferenceCitation(citation, onCitationClick)
+            }
+
+            else -> {
+                // normal
+                append(value)
+            }
+        }
+    }
+}
+
+private fun AnnotatedString.Builder.buildLinkReferenceCitation(
+    label: String,
+    citationIndex: Int?,
+    onCitationClick: (Int) -> Unit
+) {
+    val linkListener = LinkInteractionListener {
+        if (citationIndex != null) onCitationClick(citationIndex)
+    }
+    withLink(
+        link = LinkAnnotation.Url(
+            url = label,
+            styles = TextLinkStyles(
+                style = SpanStyle(
+                    color = Blue
+                ),
+                focusedStyle = SpanStyle(
+                    color = Blue
+                ),
+                hoveredStyle = SpanStyle(
+                    color = Blue,
+                    textDecoration = TextDecoration.Underline
+                )
+            ),
+            linkInteractionListener = linkListener
+        )
+    ) {
+        append(label)
+    }
+}
+
+private fun AnnotatedString.Builder.buildDocumentReferenceCitation(
+    citation: String,
+    onCitationClick: (Int) -> Unit
+) {
+    var label = citation
+    var labelContent = label.drop(1).dropLast(1)
+    if (labelContent.uppercase().startsWith("CITATION: ")) {
+        labelContent = labelContent.drop(10)
+        label = "[$labelContent]"
+    }
+    val citationIndex = labelContent.toIntOrNull()
+    val linkListener = LinkInteractionListener {
+        if (citationIndex != null) onCitationClick(citationIndex)
+    }
+    withLink(
+        link = LinkAnnotation.Url(
+            url = label,
+            styles = TextLinkStyles(
+                style = SpanStyle(
+                    color = Blue
+                ),
+                focusedStyle = SpanStyle(
+                    color = Blue
+                ),
+                hoveredStyle = SpanStyle(
+                    color = Blue,
+                    textDecoration = TextDecoration.Underline
+                )
+            ),
+            linkInteractionListener = linkListener
+        )
+    ) {
+        append(label)
     }
 }
