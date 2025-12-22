@@ -758,7 +758,7 @@ fun ServerMessageBody(
             components = markdownComponents(
                 paragraph = { model ->
                     val regex =
-                        """(\[([^\]]*)\]\[(\d+)\])|(\[[^\]]*\])|(\*\*\*(.*?)\*\*\*)|(\*\*(.*?)\*\*)|(\*(.*?)\*)|([^\[\*]+)""".toRegex()
+                        """(\[([^\]]*[a-zA-Z][^\]]*)\]\[(\d+)\])|(\[[^\]]*\])|(\*\*\*(.*?)\*\*\*)|(\*\*(.*?)\*\*)|(\*(.*?)\*)|([^\[\*]+)""".toRegex()
                     val matches = regex.findAll(
                         model.content.substring(
                             model.node.startOffset,
@@ -801,13 +801,19 @@ fun ServerMessageBody(
 
                                 groups[4].isNotEmpty() -> {
                                     // document reference
-                                    val citationIndex = groups[4].toIntOrNull()
+                                    var label = groups[4]
+                                    var labelContent = label.drop(1).dropLast(1)
+                                    if(labelContent.uppercase().startsWith("CITATION: ")) {
+                                        labelContent = labelContent.drop(10)
+                                        label = "[$labelContent]"
+                                    }
+                                    val citationIndex = labelContent.toIntOrNull()
                                     val linkListener = LinkInteractionListener {
                                         if (citationIndex != null) onCitationClick(citationIndex)
                                     }
                                     withLink(
                                         link = LinkAnnotation.Url(
-                                            url = value,
+                                            url = label,
                                             styles = TextLinkStyles(
                                                 style = SpanStyle(
                                                     color = Blue
@@ -823,7 +829,7 @@ fun ServerMessageBody(
                                             linkInteractionListener = linkListener
                                         )
                                     ) {
-                                        append(value)
+                                        append(label)
                                     }
                                 }
 
