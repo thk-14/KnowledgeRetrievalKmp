@@ -580,7 +580,7 @@ fun ChatContent(
                                 content = message.Content,
                                 onCitationClick = { citationIndex ->
                                     val citation = messageWithCitations.citations.firstOrNull {
-                                        it.ChunkIndex == citationIndex.toLong() - 1
+                                        it.CitationIndex == citationIndex.toLong()
                                     }
                                     if (citation != null) {
                                         onCitationClick(citation)

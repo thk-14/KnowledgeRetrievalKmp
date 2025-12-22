@@ -52,16 +52,17 @@ CREATE TABLE Message (
 
 CREATE TABLE Citation (
     MessageId TEXT NOT NULL,
-    ChunkIndex INTEGER NOT NULL,
+    CitationIndex INTEGER NOT NULL,
     OriginalFileName TEXT NOT NULL,
     PageContent TEXT NOT NULL,
     KbId TEXT,
     DocumentId TEXT,
     FileName TEXT,
+    ChunkIndex INTEGER,
     OriginalIndex INTEGER,
     StartIndex INTEGER,
     EndIndex INTEGER,
-    PRIMARY KEY (MessageId, ChunkIndex)
+    PRIMARY KEY (MessageId, CitationIndex)
 );
 
 -- Upsert
@@ -83,8 +84,8 @@ INSERT OR REPLACE INTO Message(MessageId, ConversationId, KbId, UserId, Role, Co
 VALUES (:messageId, :conversationId, :kbId, :userId, :role, :content, :messageOrder, :statusPhase, :statusMessage);
 
 upsertCitation:
-INSERT OR REPLACE INTO Citation(MessageId, OriginalIndex, KbId, DocumentId, FileName, OriginalFileName, ChunkIndex, StartIndex, EndIndex, PageContent)
-VALUES (:messageId, :originalIndex, :kbId, :documentId, :fileName, :originalFileName, :chunkIndex, :startIndex, :endIndex, :pageContent);
+INSERT OR REPLACE INTO Citation(MessageId, CitationIndex, OriginalIndex, KbId, DocumentId, FileName, OriginalFileName, ChunkIndex, StartIndex, EndIndex, PageContent)
+VALUES (:messageId, :citationIndex, :originalIndex, :kbId, :documentId, :fileName, :originalFileName, :chunkIndex, :startIndex, :endIndex, :pageContent);
 
 -- Update
 

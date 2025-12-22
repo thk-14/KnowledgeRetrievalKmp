@@ -851,19 +851,24 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                         }
 
                         SseEvent.STOP -> {
+                            log("-----".repeat(5))
+                            log("content: $content")
+                            log("-----".repeat(5))
                             val dataString = serverSentEvent.data ?: return@handleSseEvent
                             val data = Json.decodeFromString<SseStopData>(dataString)
                             log("data: $data")
-                            log("content: $content")
+                            var citationIndex = 0
                             data.references?.forEach { reference ->
+                                citationIndex++
                                 dbQueries.upsertCitation(
                                     messageId = responseLocalMessage.MessageId,
+                                    citationIndex = citationIndex.toLong(),
                                     originalIndex = reference.metadata.originalIndex?.toLong(),
                                     kbId = reference.metadata.kbId,
                                     documentId = reference.metadata.documentId,
                                     fileName = reference.metadata.filename,
                                     originalFileName = reference.metadata.originalFileName,
-                                    chunkIndex = reference.metadata.chunkIndex.toLong(),
+                                    chunkIndex = reference.metadata.chunkIndex?.toLong(),
                                     startIndex = reference.metadata.startIndex?.toLong(),
                                     endIndex = reference.metadata.endIndex?.toLong(),
                                     pageContent = reference.pageContent
@@ -1129,15 +1134,18 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             statusPhase = null,
             statusMessage = null
         )
+        var citationIndex = 0
         networkMessage.retrievalContext?.citedChunks?.forEach { citedChunk ->
+            citationIndex++
             dbQueries.upsertCitation(
                 messageId = networkMessage.id,
+                citationIndex = citationIndex.toLong(),
                 originalIndex = citedChunk.metadata.originalIndex?.toLong(),
                 kbId = citedChunk.metadata.kbId,
                 documentId = citedChunk.metadata.documentId,
                 fileName = citedChunk.metadata.fileName,
                 originalFileName = citedChunk.metadata.originalFileName,
-                chunkIndex = citedChunk.metadata.chunkIndex.toLong(),
+                chunkIndex = citedChunk.metadata.chunkIndex?.toLong(),
                 startIndex = citedChunk.metadata.startIndex?.toLong(),
                 endIndex = citedChunk.metadata.endIndex?.toLong(),
                 pageContent = citedChunk.pageContent
