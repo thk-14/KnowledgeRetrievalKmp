@@ -82,6 +82,10 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.model.rememberMarkdownState
 import com.thk.knowledgeretrievalkmp.data.local.db.MessageWithCitations
 import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
 import com.thk.knowledgeretrievalkmp.data.network.SseErrorData
@@ -708,8 +712,18 @@ fun ServerMessageStatusHeader(
                         thickness = 1.dp,
                         color = Gray50
                     )
-                    DefaultMarkdown(
-                        content = statusMessage
+                    val markdownState = rememberMarkdownState(
+                        content = statusMessage,
+                        retainState = true
+                    )
+                    Markdown(
+                        markdownState = markdownState,
+                        colors = markdownColor(
+                            codeBackground = White,
+                            tableBackground = White,
+                            inlineCodeBackground = White
+                        ),
+                        imageTransformer = Coil3ImageTransformerImpl
                     )
                 }
             }
@@ -804,7 +818,8 @@ fun ServerMessageBody(
                     }
                 }
                 Text(
-                    text = text
+                    text = text,
+                    fontSize = 15.sp
                 )
             }
         )

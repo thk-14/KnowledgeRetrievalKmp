@@ -323,7 +323,9 @@ fun DefaultMarkdown(
                 val content = model.content.substring(
                     model.node.startOffset,
                     model.node.endOffset
-                ).drop(2)
+                )
+                    .replace("*", "")
+                    .drop(2)
                 val text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
@@ -342,7 +344,9 @@ fun DefaultMarkdown(
                 val content = model.content.substring(
                     model.node.startOffset,
                     model.node.endOffset
-                ).drop(3)
+                )
+                    .replace("*", "")
+                    .drop(3)
                 val text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
@@ -361,7 +365,9 @@ fun DefaultMarkdown(
                 val content = model.content.substring(
                     model.node.startOffset,
                     model.node.endOffset
-                ).drop(4)
+                )
+                    .replace("*", "")
+                    .drop(4)
                 val text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
@@ -380,7 +386,9 @@ fun DefaultMarkdown(
                 val content = model.content.substring(
                     model.node.startOffset,
                     model.node.endOffset
-                ).drop(5)
+                )
+                    .replace("*", "")
+                    .drop(5)
                 val text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
@@ -399,7 +407,9 @@ fun DefaultMarkdown(
                 val content = model.content.substring(
                     model.node.startOffset,
                     model.node.endOffset
-                ).drop(6)
+                )
+                    .replace("*", "")
+                    .drop(6)
                 val text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
@@ -418,7 +428,9 @@ fun DefaultMarkdown(
                 val content = model.content.substring(
                     model.node.startOffset,
                     model.node.endOffset
-                ).drop(7)
+                )
+                    .replace("*", "")
+                    .drop(7)
                 val text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
