@@ -45,7 +45,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -315,7 +318,131 @@ fun DefaultMarkdown(
         imageTransformer = Coil3ImageTransformerImpl,
         modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
         components = markdownComponents(
-            paragraph = paragraph
+            paragraph = paragraph,
+            heading1 = { model ->
+                val content = model.content.substring(
+                    model.node.startOffset,
+                    model.node.endOffset
+                ).drop(2)
+                val text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(content)
+                    }
+                }
+                Text(
+                    text,
+                    fontSize = 25.sp
+                )
+            },
+            heading2 = { model ->
+                val content = model.content.substring(
+                    model.node.startOffset,
+                    model.node.endOffset
+                ).drop(3)
+                val text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(content)
+                    }
+                }
+                Text(
+                    text,
+                    fontSize = 23.sp
+                )
+            },
+            heading3 = { model ->
+                val content = model.content.substring(
+                    model.node.startOffset,
+                    model.node.endOffset
+                ).drop(4)
+                val text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(content)
+                    }
+                }
+                Text(
+                    text,
+                    fontSize = 21.sp
+                )
+            },
+            heading4 = { model ->
+                val content = model.content.substring(
+                    model.node.startOffset,
+                    model.node.endOffset
+                ).drop(5)
+                val text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(content)
+                    }
+                }
+                Text(
+                    text,
+                    fontSize = 19.sp
+                )
+            },
+            heading5 = { model ->
+                val content = model.content.substring(
+                    model.node.startOffset,
+                    model.node.endOffset
+                ).drop(6)
+                val text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(content)
+                    }
+                }
+                Text(
+                    text,
+                    fontSize = 17.sp
+                )
+            },
+            heading6 = { model ->
+                val content = model.content.substring(
+                    model.node.startOffset,
+                    model.node.endOffset
+                ).drop(7)
+                val text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(content)
+                    }
+                }
+                Text(
+                    text,
+                    fontSize = 15.sp
+                )
+            },
+            text = { model ->
+                val content = model.content.substring(
+                    model.node.startOffset,
+                    model.node.endOffset
+                )
+                Text(
+                    content,
+                    fontSize = 15.sp
+                )
+            }
         )
     )
 }
