@@ -833,19 +833,39 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                             val dataString = serverSentEvent.data ?: return@handleSseEvent
                             val data = Json.decodeFromString<SseContentData>(dataString)
                             log("data: $data")
-                            content += data.delta.text
-                            updateMessageContentInLocal(
-                                messageId = responseLocalMessage.MessageId,
-                                content = content
-                            )
-                            if (statusPhase != "Answering") {
-                                statusPhase = "Answering"
-                                statusMessage = ""
-                                updateMessageStatusInLocal(
-                                    messageId = responseLocalMessage.MessageId,
-                                    statusPhase = statusPhase,
-                                    statusMessage = statusMessage
-                                )
+                            when(data.delta.type) {
+                                "text_delta" -> {
+                                    content += data.delta.text
+                                    updateMessageContentInLocal(
+                                        messageId = responseLocalMessage.MessageId,
+                                        content = content
+                                    )
+                                    if (statusPhase != "Answering") {
+                                        statusPhase = "Answering"
+                                        statusMessage = ""
+                                        updateMessageStatusInLocal(
+                                            messageId = responseLocalMessage.MessageId,
+                                            statusPhase = statusPhase,
+                                            statusMessage = statusMessage
+                                        )
+                                    }
+                                }
+
+                                "thinking_delta" -> {
+                                    if (statusPhase == "Thinking") {
+                                        // same phase
+                                        statusMessage += data.delta.text
+                                    } else {
+                                        // different phase
+                                        statusMessage = data.delta.text
+                                    }
+                                    statusPhase = "Thinking"
+                                    updateMessageStatusInLocal(
+                                        messageId = responseLocalMessage.MessageId,
+                                        statusPhase = statusPhase?.titlecase(),
+                                        statusMessage = statusMessage?.trimMargin()
+                                    )
+                                }
                             }
                             onSseData(data)
                         }
