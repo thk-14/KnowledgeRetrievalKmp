@@ -215,13 +215,13 @@ class ChatViewModel(
             if (active) "Activating knowledge base"
             else "Deactivating knowledge base"
         viewModelScope.launch {
-            chatUiState.showLoadingAction.value = ShowLoadingAction(
-                loadingText = loadingText,
-                loadingAnimation = LottieAnimation.ACTIVATING
-            )
+//            chatUiState.showLoadingAction.value = ShowLoadingAction(
+//                loadingText = loadingText,
+//                loadingAnimation = LottieAnimation.ACTIVATING
+//            )
             repository.toggleKnowledgeBaseActive(kbId, active)
             repository.toggleDocumentsActiveForKnowledgeBase(kbId, active)
-            chatUiState.showLoadingAction.value = null
+//            chatUiState.showLoadingAction.value = null
         }
     }
 
@@ -230,12 +230,12 @@ class ChatViewModel(
             if (active) "Activating conversation"
             else "Deactivating conversation"
         viewModelScope.launch {
-            chatUiState.showLoadingAction.value = ShowLoadingAction(
-                loadingText = loadingText,
-                loadingAnimation = LottieAnimation.ACTIVATING
-            )
+//            chatUiState.showLoadingAction.value = ShowLoadingAction(
+//                loadingText = loadingText,
+//                loadingAnimation = LottieAnimation.ACTIVATING
+//            )
             repository.toggleConversationActive(conversationId, active)
-            chatUiState.showLoadingAction.value = null
+//            chatUiState.showLoadingAction.value = null
         }
     }
 
