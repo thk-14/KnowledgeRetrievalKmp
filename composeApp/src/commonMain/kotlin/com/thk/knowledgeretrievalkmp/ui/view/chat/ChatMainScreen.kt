@@ -99,6 +99,7 @@ import com.thk.knowledgeretrievalkmp.ui.theme.LightGreen
 import com.thk.knowledgeretrievalkmp.ui.theme.White
 import com.thk.knowledgeretrievalkmp.ui.theme.White80
 import com.thk.knowledgeretrievalkmp.ui.view.custom.ColumnWithScrollbar
+import com.thk.knowledgeretrievalkmp.ui.view.custom.DefaultMarkdown
 import com.thk.knowledgeretrievalkmp.ui.view.custom.Dimens
 import com.thk.knowledgeretrievalkmp.ui.view.custom.LottieAnimation
 import com.thk.knowledgeretrievalkmp.ui.view.custom.UiKnowledgeBase
@@ -743,96 +744,83 @@ fun ServerMessageBody(
             .wrapContentHeight(),
         horizontalArrangement = Arrangement.Start
     ) {
-        val markdownState = rememberMarkdownState(
+        DefaultMarkdown(
             content = content,
-            retainState = true
-        )
-        Markdown(
-            markdownState = markdownState,
-            colors = markdownColor(
-                codeBackground = White,
-                tableBackground = White,
-                inlineCodeBackground = White
-            ),
-            imageTransformer = Coil3ImageTransformerImpl,
-            modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
-            components = markdownComponents(
-                paragraph = { model ->
-                    val regex =
-                        """(\[([^\]]*[a-zA-Z][^\]]*)\]\[(\d+)\])|(\[[^\]]*\])|(\*\*\*(.*?)\*\*\*)|(\*\*(.*?)\*\*)|(\*(.*?)\*)|([^\[\*]+)""".toRegex()
-                    val matches = regex.findAll(
-                        model.content.substring(
-                            model.node.startOffset,
-                            model.node.endOffset
-                        )
+            paragraph = { model ->
+                val regex =
+                    """(\[([^\]]*[a-zA-Z][^\]]*)\]\[(\d+)\])|(\[[^\]]*\])|(\*\*\*(.*?)\*\*\*)|(\*\*(.*?)\*\*)|(\*(.*?)\*)|([^\[\*]+)""".toRegex()
+                val matches = regex.findAll(
+                    model.content.substring(
+                        model.node.startOffset,
+                        model.node.endOffset
                     )
-                    val text = buildAnnotatedString {
-                        matches.forEach { match ->
-                            val value = match.value
-                            val groups = match.groupValues
-                            when {
-                                groups[1].isNotEmpty() -> {
-                                    // link reference
-                                    val label = groups[2]
-                                    val citationIndex = groups[3].toIntOrNull()
-                                    buildLinkReferenceCitation(label, citationIndex, onCitationClick)
-                                }
+                )
+                val text = buildAnnotatedString {
+                    matches.forEach { match ->
+                        val value = match.value
+                        val groups = match.groupValues
+                        when {
+                            groups[1].isNotEmpty() -> {
+                                // link reference
+                                val label = groups[2]
+                                val citationIndex = groups[3].toIntOrNull()
+                                buildLinkReferenceCitation(label, citationIndex, onCitationClick)
+                            }
 
-                                groups[4].isNotEmpty() -> {
-                                    // document reference
-                                    val citation = groups[4]
-                                    buildDocumentReferenceCitation(citation, onCitationClick)
-                                }
+                            groups[4].isNotEmpty() -> {
+                                // document reference
+                                val citation = groups[4]
+                                buildDocumentReferenceCitation(citation, onCitationClick)
+                            }
 
-                                groups[5].isNotEmpty() -> {
-                                    // bold and italic
-                                    val content = groups[6]
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Bold,
-                                            fontStyle = FontStyle.Italic
-                                        )
-                                    ) {
-                                        buildStringWithCitation(content, onCitationClick)
-                                    }
+                            groups[5].isNotEmpty() -> {
+                                // bold and italic
+                                val content = groups[6]
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Bold,
+                                        fontStyle = FontStyle.Italic
+                                    )
+                                ) {
+                                    buildStringWithCitation(content, onCitationClick)
                                 }
+                            }
 
-                                groups[7].isNotEmpty() -> {
-                                    // bold
-                                    val content = groups[8]
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    ) {
-                                        buildStringWithCitation(content, onCitationClick)
-                                    }
+                            groups[7].isNotEmpty() -> {
+                                // bold
+                                val content = groups[8]
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                ) {
+                                    buildStringWithCitation(content, onCitationClick)
                                 }
+                            }
 
-                                groups[9].isNotEmpty() -> {
-                                    // italic
-                                    val content = groups[10]
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontStyle = FontStyle.Italic
-                                        )
-                                    ) {
-                                        buildStringWithCitation(content, onCitationClick)
-                                    }
+                            groups[9].isNotEmpty() -> {
+                                // italic
+                                val content = groups[10]
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontStyle = FontStyle.Italic
+                                    )
+                                ) {
+                                    buildStringWithCitation(content, onCitationClick)
                                 }
+                            }
 
-                                else -> {
-                                    // normal
-                                    append(value)
-                                }
+                            else -> {
+                                // normal
+                                append(value)
                             }
                         }
                     }
-                    Text(
-                        text = text
-                    )
                 }
-            )
+                Text(
+                    text = text
+                )
+            }
         )
     }
 }

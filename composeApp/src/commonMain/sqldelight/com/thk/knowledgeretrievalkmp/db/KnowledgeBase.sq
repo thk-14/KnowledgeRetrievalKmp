@@ -31,6 +31,11 @@ CREATE TABLE Document (
     IsInactive INTEGER AS Boolean
 );
 
+CREATE TABLE DocumentContent (
+    DocumentId TEXT NOT NULL PRIMARY KEY,
+    Content TEXT NOT NULL
+);
+
 CREATE TABLE Conversation (
     ConversationId TEXT NOT NULL PRIMARY KEY,
     UserId TEXT NOT NULL,
@@ -75,6 +80,10 @@ upsertDocument:
 INSERT OR REPLACE INTO Document(DocumentId, KbId, FileName, Description, FilePath, FileSize, FileType, MimeType, Status, ProcessingError, CreatedAt, UpdatedAt, UploadedBy, ProcessedAt, IsInactive)
 VALUES (:documentId, :kbId, :fileName, :description, :filePath, :fileSize, :fileType, :mimeType, :status, :processingError, :createdAt, :updatedAt, :uploadedBy, :processedAt, :isInactive);
 
+upsertDocumentContent:
+INSERT OR REPLACE INTO DocumentContent(DocumentId, Content)
+VALUES (:documentId, :content);
+
 upsertConversation:
 INSERT OR REPLACE INTO Conversation(ConversationId, UserId, Name, IsActive)
 VALUES (:conversationId, :userId, :name, :isActive);
@@ -113,6 +122,12 @@ DELETE FROM Document WHERE DocumentId = :documentId;
 deleteDocumentsWithKbId:
 DELETE FROM Document WHERE KbId = :kbId;
 
+deleteDocumentContentWithId:
+DELETE FROM DocumentContent WHERE DocumentId = :documentId;
+
+deleteDocumentContentsWithKbId:
+DELETE FROM DocumentContent WHERE DocumentId IN (SELECT DocumentId FROM Document WHERE KbId = :kbId);
+
 deleteConversationWithId:
 DELETE FROM Conversation WHERE ConversationId = :conversationId;
 
@@ -148,6 +163,9 @@ SELECT * FROM Document WHERE DocumentId = :documentId;
 
 getDocumentsWithKbId:
 SELECT * FROM Document WHERE KbId = :kbId;
+
+getDocumentContentWithId:
+SELECT * FROM DocumentContent WHERE DocumentId = :documentId;
 
 getMessagesWithUserId:
 SELECT * FROM Message WHERE UserId = :userId;

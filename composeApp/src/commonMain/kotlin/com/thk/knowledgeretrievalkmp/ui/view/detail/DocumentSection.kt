@@ -80,7 +80,8 @@ import kotlin.math.floor
 fun DocumentSection(
     modifier: Modifier = Modifier,
     detailViewModel: DetailViewModel,
-    onNavigateToChat: (String) -> Unit
+    onNavigateToChat: (String) -> Unit,
+    onNavigateToDocument: (String) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val documentUploadFinish = stringResource(Res.string.document_upload_finish)
@@ -217,6 +218,11 @@ fun DocumentSection(
                     onDocumentDelete = {
                         detailViewModel.detailUiState.showDocumentDeleteOption.value = false
                         detailViewModel.showDeleteDocumentDialog(document)
+                    },
+                    onDocumentClick = {
+                        if(document.Status == NetworkDocumentStatus.FINISHED) {
+                            onNavigateToDocument(document.DocumentId)
+                        }
                     }
                 )
             }
@@ -281,7 +287,8 @@ fun DocumentItem(
     modifier: Modifier = Modifier,
     document: Document,
     showDocumentDeleteOption: Boolean,
-    onDocumentDelete: () -> Unit
+    onDocumentDelete: () -> Unit,
+    onDocumentClick: () -> Unit
 ) {
     val screenWidth = LocalWindowSize.current.width
 
@@ -307,7 +314,12 @@ fun DocumentItem(
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable {
+                        onDocumentClick()
+                    }
             ) {
                 Icon(
                     imageVector = vectorResource(Res.drawable.document),

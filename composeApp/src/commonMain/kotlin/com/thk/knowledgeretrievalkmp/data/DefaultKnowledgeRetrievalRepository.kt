@@ -282,7 +282,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
                 val localDocuments = dbQueries.getDocumentsWithKbId(networkKnowledgeBase.id).awaitAsList()
                 localDocuments.map { it.DocumentId }.forEach { documentId ->
                     if (documentId !in networkDocuments.map { it.id }) {
-                        dbQueries.deleteDocumentWithId(documentId)
+                        deleteDocumentInLocal(documentId)
                     }
                 }
             }
@@ -322,7 +322,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
             val localDocuments = dbQueries.getDocumentsWithKbId(kbId).awaitAsList()
             localDocuments.map { it.DocumentId }.forEach { documentId ->
                 if (documentId !in networkDocuments.map { it.id }) {
-                    dbQueries.deleteDocumentWithId(documentId)
+                    deleteDocumentInLocal(documentId)
                 }
             }
             succeed = true
@@ -592,7 +592,7 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         withContext(dispatcher) {
             succeed = apiService.deleteDocument(documentId)
             if (succeed) {
-                dbQueries.deleteDocumentWithId(documentId)
+                deleteDocumentInLocal(documentId)
             }
         }
         log("deleteDocument succeed: $succeed")
@@ -914,6 +914,22 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
         onCompletion(processDuration)
     }
 
+    override suspend fun getDocumentContent(documentId: String): String {
+        var content: String? = null
+        withContext(dispatcher) {
+            content = dbQueries.getDocumentContentWithId(documentId).awaitAsOneOrNull()?.Content
+            if (content == null) {
+                content = apiService.getDocumentContent(documentId)?.data?.content ?: return@withContext
+                dbQueries.upsertDocumentContent(documentId, content)
+            }
+        }
+        return content ?: ""
+    }
+
+    override suspend fun getDocumentName(documentId: String): String {
+        return dbQueries.getDocumentWithId(documentId).awaitAsOneOrNull()?.FileName ?: ""
+    }
+
     private suspend fun checkDocumentStatusUntilFinished(
         documentId: String,
         checkInterval: Long = 5000
@@ -1175,7 +1191,13 @@ object DefaultKnowledgeRetrievalRepository : KnowledgeRetrievalRepository {
 
     suspend fun deleteKnowledgeBaseInLocal(kbId: String) {
         dbQueries.deleteDocumentsWithKbId(kbId)
+        dbQueries.deleteDocumentContentsWithKbId(kbId)
         dbQueries.deleteKnowledgeBaseWithId(kbId)
+    }
+
+    suspend fun deleteDocumentInLocal(documentId: String) {
+        dbQueries.deleteDocumentWithId(documentId)
+        dbQueries.deleteDocumentContentWithId(documentId)
     }
 
     suspend fun deleteConversationInLocal(conversationId: String) {

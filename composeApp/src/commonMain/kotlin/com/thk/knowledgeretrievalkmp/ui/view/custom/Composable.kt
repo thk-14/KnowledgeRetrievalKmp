@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
@@ -49,6 +50,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
+import com.mikepenz.markdown.compose.components.CurrentComponentsBridge
+import com.mikepenz.markdown.compose.components.MarkdownComponent
+import com.mikepenz.markdown.compose.components.markdownComponents
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.model.rememberMarkdownState
 import com.mmk.kmpauth.google.GoogleButtonUiContainer
 import com.mmk.kmpauth.google.GoogleUser
 import com.thk.knowledgeretrievalkmp.ui.theme.Black
@@ -286,4 +294,28 @@ fun ColumnWithScrollbar(
             )
         }
     }
+}
+
+@Composable
+fun DefaultMarkdown(
+    content: String,
+    paragraph: MarkdownComponent = CurrentComponentsBridge.paragraph
+) {
+    val markdownState = rememberMarkdownState(
+        content = content,
+        retainState = true
+    )
+    Markdown(
+        markdownState = markdownState,
+        colors = markdownColor(
+            codeBackground = White,
+            tableBackground = White,
+            inlineCodeBackground = White
+        ),
+        imageTransformer = Coil3ImageTransformerImpl,
+        modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
+        components = markdownComponents(
+            paragraph = paragraph
+        )
+    )
 }

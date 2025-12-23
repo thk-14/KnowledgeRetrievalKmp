@@ -28,6 +28,7 @@ fun DetailMainScreen(
     detailViewModel: DetailViewModel,
     onBackPressed: () -> Unit,
     onNavigateToChat: (String) -> Unit,
+    onNavigateToDocument: (String) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope
 ) {
@@ -61,6 +62,7 @@ fun DetailMainScreen(
         DocumentSection(
             detailViewModel = detailViewModel,
             onNavigateToChat = onNavigateToChat,
+            onNavigateToDocument = onNavigateToDocument,
             modifier = Modifier
                 .padding(horizontal = Dimens.padding_horizontal)
                 .padding(paddingValues)

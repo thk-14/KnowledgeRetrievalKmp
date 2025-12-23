@@ -20,6 +20,7 @@ fun DetailScreen(
     detailViewModel: DetailViewModel = viewModel(factory = DetailViewModel.Factory),
     onBackPressed: () -> Unit,
     onNavigateToChat: (String) -> Unit,
+    onNavigateToDocument: (String) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope
 ) {
@@ -44,6 +45,7 @@ fun DetailScreen(
             detailViewModel = detailViewModel,
             onBackPressed = onBackPressed,
             onNavigateToChat = onNavigateToChat,
+            onNavigateToDocument = onNavigateToDocument,
             sharedTransitionScope = sharedTransitionScope,
             animatedContentScope = animatedContentScope
         )

@@ -300,6 +300,13 @@ class NetworkApiService {
         null
     }
 
+    suspend fun getDocumentContent(id: String): NetworkResponse<GetDocumentContentData>? = try {
+        client.get("$baseUrl/documents/documents/$id/content").body()
+    } catch (exception: Exception) {
+        log("getDocumentContent failed: ${exception.message}")
+        null
+    }
+
     // Conversation and Messages
 
     suspend fun getConversations(userId: String): NetworkResponse<List<NetworkConversation>>? = try {

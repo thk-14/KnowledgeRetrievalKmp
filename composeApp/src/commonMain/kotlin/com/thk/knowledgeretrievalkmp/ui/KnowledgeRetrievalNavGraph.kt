@@ -9,6 +9,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.thk.knowledgeretrievalkmp.ui.view.chat.ChatScreen
 import com.thk.knowledgeretrievalkmp.ui.view.detail.DetailScreen
+import com.thk.knowledgeretrievalkmp.ui.view.document.DocumentScreen
 import com.thk.knowledgeretrievalkmp.ui.view.kb.KbScreen
 import com.thk.knowledgeretrievalkmp.ui.view.login.LoginScreen
 import com.thk.knowledgeretrievalkmp.ui.view.signup.SignupScreen
@@ -124,8 +125,23 @@ fun KnowledgeRetrievalNavGraph(
                             }
                         )
                     },
+                    onNavigateToDocument = { documentId ->
+                        navController.navigate(
+                            route = KbDestination.Document(documentId),
+                            builder = {
+                                launchSingleTop = true
+                            }
+                        )
+                    },
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedContentScope = this@composable
+                )
+            }
+            composable<KbDestination.Document> {
+                DocumentScreen(
+                    onBackPressed = {
+                        navController.popBackStack()
+                    }
                 )
             }
             composable<KbDestination.Chat> {
@@ -168,6 +184,11 @@ sealed class KbDestination {
     @Serializable
     data class Detail(
         val knowledgeBaseId: String
+    ) : KbDestination()
+
+    @Serializable
+    data class Document(
+        val documentId: String
     ) : KbDestination()
 
     @Serializable

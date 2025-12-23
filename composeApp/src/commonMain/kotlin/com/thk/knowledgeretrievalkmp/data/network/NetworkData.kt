@@ -346,6 +346,16 @@ data class GetDocumentStatusData(
 )
 
 @Serializable
+data class GetDocumentContentData(
+    @SerialName("document_id")
+    val documentId: String,
+    val content: String,
+    val filename: String? = null,
+    @SerialName("processed_at")
+    val processedAt: String? = null
+)
+
+@Serializable
 data class AuthenticationData(
     @SerialName("access_token")
     val accessToken: String,

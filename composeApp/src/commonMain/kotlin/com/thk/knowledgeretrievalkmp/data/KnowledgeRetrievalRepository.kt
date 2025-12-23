@@ -68,6 +68,10 @@ interface KnowledgeRetrievalRepository {
 
     suspend fun toggleDocumentsActiveForKnowledgeBase(kbId: String, active: Boolean): Boolean
 
+    suspend fun getDocumentContent(documentId: String): String
+
+    suspend fun getDocumentName(documentId: String): String
+
     /**
      * @return conversation Id if success, else null
      */
