@@ -80,10 +80,10 @@ fun KbScreen(
                         kbViewModel.showSnackbar(nameEmptyWarning)
                         return@onConfirmButtonClick
                     }
-                    if (description.isEmpty()) {
-                        kbViewModel.showSnackbar(descriptionEmptyWarning)
-                        return@onConfirmButtonClick
-                    }
+//                    if (description.isEmpty()) {
+//                        kbViewModel.showSnackbar(descriptionEmptyWarning)
+//                        return@onConfirmButtonClick
+//                    }
                     kbViewModel.dismissDialog()
                     kbViewModel.kbUiState.showLoadingAction.value = ShowLoadingAction(
                         loadingText = createKbLoadingText,

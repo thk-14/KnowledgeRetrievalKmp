@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -167,7 +166,7 @@ fun ChatDrawer(
                 )
             )
             ColumnWithScrollbar(
-                boxModifier = Modifier.padding(
+                modifier = Modifier.padding(
                     start = Dimens.padding_horizontal
                 )
             ) {

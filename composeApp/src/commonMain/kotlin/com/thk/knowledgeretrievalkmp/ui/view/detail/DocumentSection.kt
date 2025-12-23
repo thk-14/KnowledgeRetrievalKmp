@@ -205,7 +205,7 @@ fun DocumentSection(
         modifier = modifier
     ) { paddingValues ->
         ColumnWithScrollbar(
-            boxModifier = Modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(top = 30.dp),

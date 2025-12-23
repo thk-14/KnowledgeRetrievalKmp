@@ -82,11 +82,6 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
-import com.mikepenz.markdown.compose.components.markdownComponents
-import com.mikepenz.markdown.m3.Markdown
-import com.mikepenz.markdown.m3.markdownColor
-import com.mikepenz.markdown.model.rememberMarkdownState
 import com.thk.knowledgeretrievalkmp.data.local.db.MessageWithCitations
 import com.thk.knowledgeretrievalkmp.data.network.NetworkMessageRole
 import com.thk.knowledgeretrievalkmp.data.network.SseErrorData
@@ -557,7 +552,7 @@ fun ChatContent(
     ColumnWithScrollbar(
         scrollState = scrollState,
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        boxModifier = modifier
+        modifier = modifier
     ) {
         messagesWithCitations.forEach { messageWithCitations ->
             val message = messageWithCitations.message
@@ -713,18 +708,8 @@ fun ServerMessageStatusHeader(
                         thickness = 1.dp,
                         color = Gray50
                     )
-                    val markdownState = rememberMarkdownState(
-                        content = statusMessage,
-                        retainState = true
-                    )
-                    Markdown(
-                        markdownState = markdownState,
-                        colors = markdownColor(
-                            codeBackground = White,
-                            tableBackground = White,
-                            inlineCodeBackground = White
-                        ),
-                        imageTransformer = Coil3ImageTransformerImpl
+                    DefaultMarkdown(
+                        content = statusMessage
                     )
                 }
             }
@@ -745,6 +730,7 @@ fun ServerMessageBody(
         horizontalArrangement = Arrangement.Start
     ) {
         DefaultMarkdown(
+            modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
             content = content,
             paragraph = { model ->
                 val regex =

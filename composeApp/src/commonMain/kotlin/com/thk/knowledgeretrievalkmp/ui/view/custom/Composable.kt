@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
@@ -259,8 +258,7 @@ fun CustomResizeNavigationDrawer(
 @Composable
 fun ColumnWithScrollbar(
     scrollState: ScrollState = rememberScrollState(),
-    boxModifier: Modifier = Modifier.fillMaxSize(),
-    columnModifier: Modifier = Modifier.fillMaxSize(),
+    modifier: Modifier = Modifier.fillMaxSize(),
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: @Composable ColumnScope.() -> Unit
@@ -274,13 +272,14 @@ fun ColumnWithScrollbar(
     )
 
     Box(
-        modifier = boxModifier.hoverable(interactionSource)
+        modifier = modifier.hoverable(interactionSource)
     ) {
 
         Column(
             horizontalAlignment = horizontalAlignment,
             verticalArrangement = verticalArrangement,
-            modifier = columnModifier
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(end = 12.dp)
         ) {
@@ -301,6 +300,7 @@ fun ColumnWithScrollbar(
 
 @Composable
 fun DefaultMarkdown(
+    modifier: Modifier = Modifier,
     content: String,
     paragraph: MarkdownComponent = CurrentComponentsBridge.paragraph
 ) {
@@ -316,7 +316,7 @@ fun DefaultMarkdown(
             inlineCodeBackground = White
         ),
         imageTransformer = Coil3ImageTransformerImpl,
-        modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
+        modifier = modifier,
         components = markdownComponents(
             paragraph = paragraph,
             heading1 = { model ->

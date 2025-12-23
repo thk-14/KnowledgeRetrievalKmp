@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.HorizontalDivider
@@ -83,7 +84,7 @@ fun DocumentScreen(
         }
     ) { paddingValues ->
         ColumnWithScrollbar(
-            boxModifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues)
         ) {
             if (documentViewModel.content.value.isEmpty()) {
                 Row(
@@ -98,7 +99,10 @@ fun DocumentScreen(
                 }
             } else {
                 SelectionContainer {
-                    DefaultMarkdown(documentViewModel.content.value)
+                    DefaultMarkdown(
+                        modifier = Modifier.padding(8.dp).sizeIn(minHeight = 50.dp),
+                        content = documentViewModel.content.value
+                    )
                 }
             }
         }

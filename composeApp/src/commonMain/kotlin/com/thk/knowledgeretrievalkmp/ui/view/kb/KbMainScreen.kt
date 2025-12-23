@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
@@ -195,7 +198,7 @@ fun KbMainScreen(
         ColumnWithScrollbar(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(0.01 * screenHeight),
-            boxModifier = Modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
@@ -367,6 +370,8 @@ fun KbItem(
                     color = Black,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                     modifier = Modifier
                         .sharedElement(
                             sharedTransitionScope.rememberSharedContentState(key = knowledgeBase.KbId),
@@ -375,21 +380,23 @@ fun KbItem(
                         .padding(10.dp)
                 )
             }
-            ColumnWithScrollbar(
-                boxModifier = Modifier
+
+            Column(
+                modifier = Modifier
                     .sizeIn(maxHeight = 0.3 * screenHeight)
                     .wrapContentHeight()
                     .fillMaxWidth()
-                    .padding(10.dp),
-                columnModifier = Modifier
-                    .sizeIn(maxHeight = 0.3 * screenHeight)
-                    .wrapContentHeight()
-                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        start = 10.dp,
+                        end = 10.dp,
+                        bottom = 10.dp
+                    )
             ) {
                 Text(
                     text = knowledgeBase.Description,
                     color = Black,
-                    fontSize = 15.sp,
+                    fontSize = 15.sp
                 )
             }
         }

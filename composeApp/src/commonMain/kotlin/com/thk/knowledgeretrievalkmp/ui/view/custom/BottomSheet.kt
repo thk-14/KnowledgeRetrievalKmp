@@ -146,18 +146,8 @@ fun MessageBottomSheet(
                     overflow = TextOverflow.Ellipsis
                 )
                 ColumnWithScrollbar {
-                    val markdownState = rememberMarkdownState(
-                        content = body,
-                        retainState = true
-                    )
-                    Markdown(
-                        markdownState = markdownState,
-                        colors = markdownColor(
-                            codeBackground = White,
-                            tableBackground = White,
-                            inlineCodeBackground = White
-                        ),
-                        imageTransformer = Coil3ImageTransformerImpl
+                    DefaultMarkdown(
+                        content = body
                     )
                     Spacer(
                         modifier = Modifier.height(10.dp)
