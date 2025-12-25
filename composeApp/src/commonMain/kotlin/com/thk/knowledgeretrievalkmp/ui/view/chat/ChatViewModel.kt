@@ -94,7 +94,7 @@ class ChatViewModel(
         viewModelScope.launch {
             if (chatUiState.activeConversationId.value.isEmpty()) {
                 val newConversationId = repository.createConversation(
-                    conversationName = userRequest.titlecase()
+                    conversationName = userRequest.titlecase().take(100)
                 )
                 if (newConversationId == null) return@launch
                 chatUiState.activeConversationId.value = newConversationId
@@ -194,7 +194,7 @@ class ChatViewModel(
 
             if (chatUiState.activeConversationId.value.isEmpty()) {
                 val newConversationId = repository.createConversation(
-                    conversationName = userRequest.titlecase()
+                    conversationName = userRequest.titlecase().take(100)
                 )
                 if (newConversationId == null) return@launch
                 chatUiState.activeConversationId.value = newConversationId

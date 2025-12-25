@@ -134,5 +134,5 @@ data class SseStopReferenceMetadata(
 @JsonIgnoreUnknownKeys
 data class SseStatusMetadata(
     @SerialName("sources_count")
-    val sourcesCount: Int
+    val sourcesCount: Int? = null
 )
